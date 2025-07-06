@@ -60,6 +60,7 @@ typedef enum {
     TOKEN_SLASH_ASSIGN, // /=
     TOKEN_INCREMENT,    // ++
     TOKEN_DECREMENT,    // --
+    TOKEN_QUESTION,     // ?
     TOKEN_UNKNOWN
 } TokenType;
 

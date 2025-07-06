@@ -325,6 +325,8 @@ Token *lexer_next_token(Lexer *lexer) {
             return create_token(TOKEN_CARET, "^", line, column);
         case '~':
             return create_token(TOKEN_TILDE, "~", line, column);
+        case '?':
+            return create_token(TOKEN_QUESTION, "?", line, column);
     }
     
     char unknown[2] = {ch, '\0'};
@@ -348,7 +350,7 @@ const char *token_type_to_string(TokenType type) {
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 
         "LSHIFT", "RSHIFT", "PLUS_ASSIGN", "MINUS_ASSIGN", "STAR_ASSIGN", "SLASH_ASSIGN", 
-        "INCREMENT", "DECREMENT", "UNKNOWN"
+        "INCREMENT", "DECREMENT", "QUESTION", "UNKNOWN"
     };
     return names[type];
 }

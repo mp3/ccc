@@ -34,7 +34,8 @@ typedef enum {
     AST_SIZEOF,
     AST_SWITCH_STMT,
     AST_CASE_STMT,
-    AST_DEFAULT_STMT
+    AST_DEFAULT_STMT,
+    AST_TERNARY
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -157,6 +158,11 @@ typedef struct ASTNode {
             struct ASTNode **statements;   // Statements for default case
             int statement_count;
         } default_stmt;
+        struct {
+            struct ASTNode *condition;      // Condition expression
+            struct ASTNode *true_expr;      // Expression if true
+            struct ASTNode *false_expr;     // Expression if false
+        } ternary;
     } data;
 } ASTNode;
 

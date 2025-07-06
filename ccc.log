@@ -1,560 +1,657 @@
-[Sun Jul  6 22:05:13 2025] [INFO] main.c:21 - ccc compiler starting
-[Sun Jul  6 22:05:13 2025] [INFO] main.c:63 - Compiling tests/test_bitwise.c to tests/test_bitwise.ll
-[Sun Jul  6 22:05:13 2025] [DEBUG] lexer.c:190 - Created lexer for file: tests/test_bitwise.c
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: main
-[Sun Jul  6 22:05:13 2025] [DEBUG] parser.c:75 - Created parser
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 3:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 12
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 3:12
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 12
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:726 - Parsed variable declaration: int a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 4:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 10
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 4:12
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 10
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:726 - Parsed variable declaration: int b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 5:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 5:12
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 5:16
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:726 - Parsed variable declaration: int c
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 6:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 6:8
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 8
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: c
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 6:13
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 8
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 1
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 6:16
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 6:23
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 1
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 9:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 9:12
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 9:16
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:726 - Parsed variable declaration: int d
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 10:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 10:8
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 14
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: d
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 10:13
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 14
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 2
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 10:17
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 10:24
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 2
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: e
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 13:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 13:12
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 13:16
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:726 - Parsed variable declaration: int e
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 14:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: e
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 14:8
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 6
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: e
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 14:13
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 6
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 3
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 14:16
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 14:23
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 3
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 17:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 0
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: TILDE
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: TILDE
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: TILDE at 17:12
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 17:13
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:211 - Parsed int literal: 0
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:146 - Parsed bitwise NOT operator
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:726 - Parsed variable declaration: int f
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 18:4
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 18:8
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:313 - Parsed identifier: f
-[Sun Jul  6 22:05:13 2025] [TRACE] lexer.c:54 - Lexed integer: 1
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:13 2025] [TRACE] parser.c:96 - parse_primary called with token: MINUS at 18:13
-[Sun Jul  6 22:05:13 2025] [ERROR] parser.c:325 - Unexpected token in primary expression: MINUS at 18:13
-[Sun Jul  6 22:05:32 2025] [INFO] main.c:21 - ccc compiler starting
-[Sun Jul  6 22:05:32 2025] [INFO] main.c:63 - Compiling tests/test_bitwise.c to tests/test_bitwise.ll
-[Sun Jul  6 22:05:32 2025] [DEBUG] lexer.c:190 - Created lexer for file: tests/test_bitwise.c
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: main
-[Sun Jul  6 22:05:32 2025] [DEBUG] parser.c:75 - Created parser
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 3:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 3:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 4:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 10
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 4:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 10
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 5:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 5:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 5:16
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int c
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 6:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 6:8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: c
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 6:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 1
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 6:16
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 6:23
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 1
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 9:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 9:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 9:16
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int d
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 10:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 10:8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 14
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: d
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 10:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 14
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 10:17
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 10:24
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: e
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 13:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 13:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 13:16
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int e
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 14:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: e
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 14:8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 6
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: e
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 14:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 6
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 3
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 14:16
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 14:23
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 3
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 17:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 0
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: TILDE
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: TILDE
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: TILDE at 17:12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 17:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 0
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:146 - Parsed bitwise NOT operator
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int f
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 18:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 18:8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: f
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 1
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: MINUS at 18:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:203 - Parsed negative int literal: -1
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 4
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 18:17
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 18:24
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: g
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 20:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: TILDE
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: TILDE
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: TILDE at 20:12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 20:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:146 - Parsed bitwise NOT operator
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int g
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 21:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: g
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 21:8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: g
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 13
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: MINUS at 21:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:203 - Parsed negative int literal: -13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 5
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 21:18
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 21:25
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 5
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: h
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 24:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 3
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 24:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 3
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 24:17
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int h
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 25:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: h
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 25:8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: h
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 25:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 6
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 25:17
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 25:24
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 6
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: i
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 28:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 28:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 28:18
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int i
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 29:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: i
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 29:8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 3
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: i
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 29:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 3
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 7
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 29:16
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 29:23
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 7
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: j
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 32:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: MINUS
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: MINUS
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: MINUS at 32:12
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:203 - Parsed negative int literal: -8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 32:18
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int j
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 33:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: j
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 33:8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: j
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 2
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: MINUS at 33:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:203 - Parsed negative int literal: -2
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 8
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 33:17
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 33:24
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed INT: int
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: k
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: INT at 36:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: LPAREN
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: LPAREN
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: LPAREN at 36:12
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 36:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: a
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 36:17
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: b
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: LPAREN
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: LPAREN at 36:22
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 36:23
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: c
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 36:27
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: d
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IF: if
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:726 - Parsed variable declaration: int k
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: IF at 37:4
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: k
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: IDENTIFIER
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: IDENTIFIER at 37:8
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 14
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:313 - Parsed identifier: k
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 37:13
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 14
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 9
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 37:17
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 37:24
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 9
-[Sun Jul  6 22:05:32 2025] [TRACE] lexer.c:54 - Lexed integer: 0
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:751 - Parsed if statement
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:600 - parse_statement called with token: RETURN at 39:4
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:565 - parse_expression called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:424 - parse_bitwise_and called, current token: INT_LITERAL
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:330 - parse_multiplicative called
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:96 - parse_primary called with token: INT_LITERAL at 39:11
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:211 - Parsed int literal: 0
-[Sun Jul  6 22:05:32 2025] [TRACE] parser.c:841 - Parsed return statement
-[Sun Jul  6 22:05:32 2025] [DEBUG] parser.c:1094 - Parsed function: main with 0 parameters
-[Sun Jul  6 22:05:32 2025] [INFO] parser.c:1178 - Parsed program with 1 functions and 0 global variables
-[Sun Jul  6 22:05:32 2025] [INFO] main.c:81 - Applying optimizations (level 1)
-[Sun Jul  6 22:05:32 2025] [DEBUG] optimizer.c:12 - Created optimizer
-[Sun Jul  6 22:05:32 2025] [INFO] optimizer.c:567 - Starting optimization pass
-[Sun Jul  6 22:05:32 2025] [INFO] optimizer.c:575 - Optimization complete: 0 optimizations performed
-[Sun Jul  6 22:05:32 2025] [DEBUG] codegen.c:18 - Created code generator
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:160 - Inserted function 'main' (returns: int, params: 0)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600001f98040
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600001f98060
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'a' (type: int, offset: 0)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'b' (type: int, offset: 4)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'c' (type: int, offset: 8)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'd' (type: int, offset: 12)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'e' (type: int, offset: 16)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'f' (type: int, offset: 20)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'g' (type: int, offset: 24)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'h' (type: int, offset: 28)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'i' (type: int, offset: 32)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'j' (type: int, offset: 36)
-[Sun Jul  6 22:05:32 2025] [DEBUG] symtab.c:76 - Inserted symbol 'k' (type: int, offset: 40)
-[Sun Jul  6 22:05:32 2025] [DEBUG] codegen.c:1325 - Generated code for function: main
-[Sun Jul  6 22:05:32 2025] [INFO] codegen.c:1426 - Code generation complete
-[Sun Jul  6 22:05:32 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 22:32:17 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 22:32:17 2025] [INFO] main.c:63 - Compiling tests/test_ternary.c to tests/test_ternary.ll
+[Sun Jul  6 22:32:17 2025] [DEBUG] lexer.c:190 - Created lexer for file: tests/test_ternary.c
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: main
+[Sun Jul  6 22:32:17 2025] [DEBUG] parser.c:75 - Created parser
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 3:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 3:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 4:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 4:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 4:16
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 4:20
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 20
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 4:25
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 20
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int b
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 5:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: b
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 5:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: b
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 5:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 5:17
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 5:24
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 8:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 8:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 8:16
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 100
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 8:20
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 200
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 100
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 8:26
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 200
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int c
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 9:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: c
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 9:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 200
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: c
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 9:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 200
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 2
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 9:18
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 9:25
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 2
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 12:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 12:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 12:16
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 12:20
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 12:24
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 12:29
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 2
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 12:33
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 2
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 12:37
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int d
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 13:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: d
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 13:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: d
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 13:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 13:16
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 13:23
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: e
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 16:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 2
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 16:12
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 2
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: LPAREN at 16:16
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 16:17
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 16:21
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 16:25
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 16:29
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int e
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 17:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: e
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 17:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: e
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 17:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 17:16
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 17:23
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 20:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 20:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: g
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 21:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: LPAREN
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: LPAREN
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: LPAREN at 21:12
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 21:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 21:17
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 3
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 21:22
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 20
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 21:26
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 20
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 21:32
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 21:36
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 21:40
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 21:44
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: f
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int g
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 22:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: g
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 22:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 15
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: g
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 22:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 15
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 22:17
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 22:24
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: h
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 25:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: putchar
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 25:12
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: CHAR_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: CHAR_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: CHAR_LITERAL at 25:20
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:248 - Parsed char literal: 'A'
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:306 - Parsed function call: putchar with 1 arguments
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 25:27
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 25:31
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 25:35
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: putchar
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int h
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IDENTIFIER at 26:4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 26:4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: CHAR_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: CHAR_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: CHAR_LITERAL at 26:12
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:248 - Parsed char literal: '
+'
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:306 - Parsed function call: putchar with 1 arguments
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:1094 - After parsing expression statement, current token: SEMICOLON at 26:17
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 27:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: h
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 27:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: h
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 27:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 6
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 27:16
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 27:23
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 6
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 30:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 30:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 5
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 31:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 31:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 32:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 15
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 32:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 15
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: max
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 33:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:14
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:18
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: y
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: LPAREN
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: LPAREN
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: LPAREN at 33:22
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:23
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:27
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:31
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: x
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:35
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: LPAREN
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: LPAREN at 33:40
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:41
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:45
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:49
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: y
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 33:53
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: z
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int max
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 34:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: max
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 34:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 15
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: max
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 34:15
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 15
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 7
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 34:19
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 34:26
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 7
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 37:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 37:17
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IDENTIFIER at 38:4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 38:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 38:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: a
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 38:17
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 38:21
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 38:30
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 38:35
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 38:44
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:1094 - After parsing expression statement, current token: SEMICOLON at 38:46
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 39:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 39:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: result
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 39:18
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 10
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 8
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 39:22
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 39:29
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: i
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 42:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 42:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed INT: int
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 1
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: j
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int i
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: INT at 43:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: i
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 43:12
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 42
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: i
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 43:16
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 42
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 43:21
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IF: if
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:605 - Parsed ternary operator
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:837 - Parsed variable declaration: int j
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: IF at 44:4
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed IDENTIFIER: j
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: IDENTIFIER
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: IDENTIFIER at 44:8
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 42
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:342 - Parsed identifier: j
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 44:13
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 42
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 9
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 44:17
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 44:24
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:88 - Lexed RETURN: return
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 9
+[Sun Jul  6 22:32:17 2025] [TRACE] lexer.c:54 - Lexed integer: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:862 - Parsed if statement
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:711 - parse_statement called with token: RETURN at 46:4
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:676 - parse_expression called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:481 - parse_bitwise_and called, current token: INT_LITERAL
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:387 - parse_multiplicative called
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:97 - parse_primary called with token: INT_LITERAL at 46:11
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:240 - Parsed int literal: 0
+[Sun Jul  6 22:32:17 2025] [TRACE] parser.c:952 - Parsed return statement
+[Sun Jul  6 22:32:17 2025] [DEBUG] parser.c:1205 - Parsed function: main with 0 parameters
+[Sun Jul  6 22:32:17 2025] [INFO] parser.c:1289 - Parsed program with 1 functions and 0 global variables
+[Sun Jul  6 22:32:17 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 22:32:17 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 22:32:17 2025] [INFO] optimizer.c:567 - Starting optimization pass
+[Sun Jul  6 22:32:17 2025] [INFO] optimizer.c:575 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 22:32:17 2025] [DEBUG] codegen.c:18 - Created code generator
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:160 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000024fc040
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000024fc060
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'a' (type: int, offset: 0)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'b' (type: int, offset: 4)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'c' (type: int, offset: 8)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'd' (type: int, offset: 12)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'e' (type: int, offset: 16)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'f' (type: int, offset: 20)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'g' (type: int, offset: 24)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'h' (type: int, offset: 28)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'x' (type: int, offset: 32)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'y' (type: int, offset: 36)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'z' (type: int, offset: 40)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'max' (type: int, offset: 44)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'result' (type: int, offset: 48)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'i' (type: int, offset: 52)
+[Sun Jul  6 22:32:17 2025] [DEBUG] symtab.c:76 - Inserted symbol 'j' (type: int, offset: 56)
+[Sun Jul  6 22:32:17 2025] [DEBUG] codegen.c:1437 - Generated code for function: main
+[Sun Jul  6 22:32:17 2025] [INFO] codegen.c:1538 - Code generation complete
+[Sun Jul  6 22:32:17 2025] [INFO] main.c:124 - Compilation complete

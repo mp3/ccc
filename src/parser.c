@@ -585,8 +585,32 @@ static ASTNode *parse_logical_or(Parser *parser) {
 
 // Forward declaration for ast_clone (defined at end of file)
 
+static ASTNode *parse_ternary(Parser *parser) {
+    ASTNode *condition = parse_logical_or(parser);
+    
+    if (parser->current_token->type == TOKEN_QUESTION) {
+        int line = parser->current_token->line;
+        int column = parser->current_token->column;
+        parser_advance(parser); // consume '?'
+        
+        ASTNode *true_expr = parse_expression(parser);
+        parser_expect(parser, TOKEN_COLON);
+        ASTNode *false_expr = parse_ternary(parser); // Right associative
+        
+        ASTNode *node = create_ast_node(AST_TERNARY, line, column);
+        node->data.ternary.condition = condition;
+        node->data.ternary.true_expr = true_expr;
+        node->data.ternary.false_expr = false_expr;
+        
+        LOG_TRACE("Parsed ternary operator");
+        return node;
+    }
+    
+    return condition;
+}
+
 static ASTNode *parse_assignment(Parser *parser) {
-    ASTNode *left = parse_logical_or(parser);
+    ASTNode *left = parse_ternary(parser);
     
     TokenType op_type = parser->current_token->type;
     if (op_type == TOKEN_ASSIGN || 
@@ -1574,6 +1598,11 @@ ASTNode *ast_clone(ASTNode *node) {
         case AST_MEMBER_ACCESS:
             clone->data.member_access.object = ast_clone(node->data.member_access.object);
             clone->data.member_access.member_name = strdup(node->data.member_access.member_name);
+            break;
+        case AST_TERNARY:
+            clone->data.ternary.condition = ast_clone(node->data.ternary.condition);
+            clone->data.ternary.true_expr = ast_clone(node->data.ternary.true_expr);
+            clone->data.ternary.false_expr = ast_clone(node->data.ternary.false_expr);
             break;
         default:
             LOG_ERROR("ast_clone not implemented for node type: %d", node->type);

@@ -150,7 +150,8 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
         
         case AST_CHAR_LITERAL: {
             char *temp = codegen_next_temp(gen);
-            fprintf(gen->output, "  %s = add i8 0, %d\n", temp, (int)expr->data.char_literal.value);
+            // Generate as i32 instead of i8 for compatibility with function calls
+            fprintf(gen->output, "  %s = add i32 0, %d\n", temp, (int)expr->data.char_literal.value);
             return temp;
         }
         
@@ -864,6 +865,48 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             fprintf(gen->output, "  %s = add i32 0, %d\n", temp, size);
             LOG_TRACE("Generated sizeof: %d", size);
             return temp;
+        }
+        
+        case AST_TERNARY: {
+            // Generate code for condition
+            char *cond = codegen_expression(gen, expr->data.ternary.condition);
+            
+            // Create labels
+            char *true_label = codegen_next_label(gen, "ternary.true.");
+            char *false_label = codegen_next_label(gen, "ternary.false.");
+            char *end_label = codegen_next_label(gen, "ternary.end.");
+            
+            // Check if condition is true (non-zero)
+            char *cond_bool = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond);
+            fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                    cond_bool, true_label, false_label);
+            
+            // True branch
+            fprintf(gen->output, "\n%s:\n", true_label);
+            char *true_val = codegen_expression(gen, expr->data.ternary.true_expr);
+            fprintf(gen->output, "  br label %%%s\n", end_label);
+            
+            // False branch
+            fprintf(gen->output, "\n%s:\n", false_label);
+            char *false_val = codegen_expression(gen, expr->data.ternary.false_expr);
+            fprintf(gen->output, "  br label %%%s\n", end_label);
+            
+            // End - phi node to get result
+            fprintf(gen->output, "\n%s:\n", end_label);
+            char *result = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = phi i32 [ %s, %%%s ], [ %s, %%%s ]\n",
+                    result, true_val, true_label, false_val, false_label);
+            
+            free(cond);
+            free(cond_bool);
+            free(true_val);
+            free(false_val);
+            free(true_label);
+            free(false_label);
+            free(end_label);
+            
+            return result;
         }
         
         default:
