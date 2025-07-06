@@ -117,6 +117,50 @@ static ASTNode *parse_primary(Parser *parser) {
         return node;
     }
     
+    // Handle sizeof operator
+    if (token->type == TOKEN_KEYWORD_SIZEOF) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        parser_expect(parser, TOKEN_LPAREN);
+        
+        ASTNode *node = create_ast_node(AST_SIZEOF, line, column);
+        
+        // Check if next token is a type keyword
+        if (parser->current_token->type == TOKEN_KEYWORD_INT || 
+            parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+            // sizeof(type)
+            char *base_type = strdup(parser->current_token->type == TOKEN_KEYWORD_INT ? "int" : "char");
+            parser_advance(parser);
+            
+            // Check for pointer type
+            int pointer_count = 0;
+            while (parser->current_token->type == TOKEN_STAR) {
+                pointer_count++;
+                parser_advance(parser);
+            }
+            
+            // Build the complete type string
+            char type_name[256];
+            strcpy(type_name, base_type);
+            for (int i = 0; i < pointer_count; i++) {
+                strcat(type_name, "*");
+            }
+            free(base_type);
+            
+            node->data.sizeof_op.type_name = strdup(type_name);
+            node->data.sizeof_op.expression = NULL;
+        } else {
+            // sizeof(expression)
+            node->data.sizeof_op.type_name = NULL;
+            node->data.sizeof_op.expression = parse_expression(parser);
+        }
+        
+        parser_expect(parser, TOKEN_RPAREN);
+        LOG_TRACE("Parsed sizeof operator");
+        return node;
+    }
+    
     if (token->type == TOKEN_INT_LITERAL) {
         ASTNode *node = create_ast_node(AST_INT_LITERAL, token->line, token->column);
         node->data.int_literal.value = token->value.int_value;
@@ -202,6 +246,22 @@ static ASTNode *parse_primary(Parser *parser) {
             node->data.array_access.array = array_node;
             node->data.array_access.index = index;
             LOG_TRACE("Parsed array access: %s[...]", name);
+            return node;
+        } else if (parser->current_token->type == TOKEN_DOT) {
+            // Member access
+            parser_advance(parser); // consume '.'
+            
+            Token *member_token = parser->current_token;
+            char *member_name = strdup(member_token->text);
+            parser_expect(parser, TOKEN_IDENTIFIER);
+            
+            ASTNode *object_node = create_ast_node(AST_IDENTIFIER, line, column);
+            object_node->data.identifier.name = name;
+            
+            ASTNode *node = create_ast_node(AST_MEMBER_ACCESS, line, column);
+            node->data.member_access.object = object_node;
+            node->data.member_access.member_name = member_name;
+            LOG_TRACE("Parsed member access: %s.%s", name, member_name);
             return node;
         } else {
             // Regular identifier
@@ -356,6 +416,79 @@ static ASTNode *parse_compound_statement(Parser *parser) {
 static ASTNode *parse_statement(Parser *parser) {
     Token *token = parser->current_token;
     
+    // Struct declaration
+    if (token->type == TOKEN_KEYWORD_STRUCT) {
+        parser_advance(parser); // consume 'struct'
+        
+        Token *name_token = parser->current_token;
+        char *struct_name = strdup(name_token->text);
+        parser_expect(parser, TOKEN_IDENTIFIER);
+        parser_expect(parser, TOKEN_LBRACE);
+        
+        // Parse struct members
+        int capacity = 8;
+        ASTNode **members = malloc(capacity * sizeof(ASTNode*));
+        int member_count = 0;
+        
+        while (parser->current_token->type != TOKEN_RBRACE) {
+            if (member_count >= capacity) {
+                capacity *= 2;
+                members = realloc(members, capacity * sizeof(ASTNode*));
+            }
+            
+            // Parse member declaration (similar to variable declaration)
+            if (parser->current_token->type == TOKEN_KEYWORD_INT || 
+                parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+                
+                char *member_type = strdup(parser->current_token->type == TOKEN_KEYWORD_INT ? "int" : "char");
+                parser_advance(parser);
+                
+                // Check for pointer type
+                int pointer_count = 0;
+                while (parser->current_token->type == TOKEN_STAR) {
+                    pointer_count++;
+                    parser_advance(parser);
+                }
+                
+                // Build the complete type string  
+                char type_name[256];
+                strcpy(type_name, member_type);
+                for (int i = 0; i < pointer_count; i++) {
+                    strcat(type_name, "*");
+                }
+                
+                Token *member_name_token = parser->current_token;
+                char *member_name = strdup(member_name_token->text);
+                parser_expect(parser, TOKEN_IDENTIFIER);
+                parser_expect(parser, TOKEN_SEMICOLON);
+                
+                // Create member declaration node
+                ASTNode *member = create_ast_node(AST_VAR_DECL, member_name_token->line, member_name_token->column);
+                member->data.var_decl.type = strdup(type_name);
+                member->data.var_decl.name = member_name;
+                member->data.var_decl.initializer = NULL;
+                member->data.var_decl.array_size = NULL;
+                
+                members[member_count++] = member;
+                free(member_type);
+            } else {
+                LOG_ERROR("Expected type in struct member declaration");
+                exit(1);
+            }
+        }
+        
+        parser_expect(parser, TOKEN_RBRACE);
+        parser_expect(parser, TOKEN_SEMICOLON);
+        
+        // Create struct declaration node
+        ASTNode *struct_node = create_ast_node(AST_STRUCT_DECL, name_token->line, name_token->column);
+        struct_node->data.struct_decl.name = struct_name;
+        struct_node->data.struct_decl.members = members;
+        struct_node->data.struct_decl.member_count = member_count;
+        
+        return struct_node;
+    }
+    
     // Variable declaration
     if (token->type == TOKEN_KEYWORD_INT || token->type == TOKEN_KEYWORD_CHAR) {
         char *base_type = strdup(token->type == TOKEN_KEYWORD_INT ? "int" : "char");
@@ -436,6 +569,24 @@ static ASTNode *parse_statement(Parser *parser) {
         return node;
     }
     
+    if (token->type == TOKEN_KEYWORD_DO) {
+        parser_advance(parser);
+        
+        ASTNode *body = parse_statement(parser);
+        
+        parser_expect(parser, TOKEN_KEYWORD_WHILE);
+        parser_expect(parser, TOKEN_LPAREN);
+        ASTNode *condition = parse_expression(parser);
+        parser_expect(parser, TOKEN_RPAREN);
+        parser_expect(parser, TOKEN_SEMICOLON);
+        
+        ASTNode *node = create_ast_node(AST_DO_WHILE_STMT, token->line, token->column);
+        node->data.do_while_stmt.body = body;
+        node->data.do_while_stmt.condition = condition;
+        LOG_TRACE("Parsed do-while statement");
+        return node;
+    }
+    
     if (token->type == TOKEN_KEYWORD_WHILE) {
         parser_advance(parser);
         parser_expect(parser, TOKEN_LPAREN);
@@ -452,12 +603,187 @@ static ASTNode *parse_statement(Parser *parser) {
         return node;
     }
     
+    if (token->type == TOKEN_KEYWORD_FOR) {
+        parser_advance(parser);
+        parser_expect(parser, TOKEN_LPAREN);
+        
+        // Parse init (can be a variable declaration or expression)
+        ASTNode *init = NULL;
+        if (parser->current_token->type != TOKEN_SEMICOLON) {
+            if (parser->current_token->type == TOKEN_KEYWORD_INT || 
+                parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+                // Variable declaration as init
+                init = parse_statement(parser);
+                // The parse_statement will consume the semicolon for var decl
+            } else {
+                // Expression as init
+                init = parse_expression(parser);
+                parser_expect(parser, TOKEN_SEMICOLON);
+            }
+        } else {
+            parser_advance(parser); // consume semicolon
+        }
+        
+        // Parse condition (optional)
+        ASTNode *condition = NULL;
+        if (parser->current_token->type != TOKEN_SEMICOLON) {
+            condition = parse_expression(parser);
+        }
+        parser_expect(parser, TOKEN_SEMICOLON);
+        
+        // Parse update (optional)
+        ASTNode *update = NULL;
+        if (parser->current_token->type != TOKEN_RPAREN) {
+            update = parse_expression(parser);
+        }
+        parser_expect(parser, TOKEN_RPAREN);
+        
+        // Parse body
+        ASTNode *body = parse_statement(parser);
+        
+        ASTNode *node = create_ast_node(AST_FOR_STMT, token->line, token->column);
+        node->data.for_stmt.init = init;
+        node->data.for_stmt.condition = condition;
+        node->data.for_stmt.update = update;
+        node->data.for_stmt.body = body;
+        LOG_TRACE("Parsed for statement");
+        return node;
+    }
+    
     if (token->type == TOKEN_KEYWORD_RETURN) {
         parser_advance(parser);
         ASTNode *node = create_ast_node(AST_RETURN_STMT, token->line, token->column);
         node->data.return_stmt.expression = parse_expression(parser);
         parser_expect(parser, TOKEN_SEMICOLON);
         LOG_TRACE("Parsed return statement");
+        return node;
+    }
+    
+    if (token->type == TOKEN_KEYWORD_BREAK) {
+        parser_advance(parser);
+        ASTNode *node = create_ast_node(AST_BREAK_STMT, token->line, token->column);
+        parser_expect(parser, TOKEN_SEMICOLON);
+        LOG_TRACE("Parsed break statement");
+        return node;
+    }
+    
+    if (token->type == TOKEN_KEYWORD_CONTINUE) {
+        parser_advance(parser);
+        ASTNode *node = create_ast_node(AST_CONTINUE_STMT, token->line, token->column);
+        parser_expect(parser, TOKEN_SEMICOLON);
+        LOG_TRACE("Parsed continue statement");
+        return node;
+    }
+    
+    if (token->type == TOKEN_KEYWORD_SWITCH) {
+        parser_advance(parser);
+        parser_expect(parser, TOKEN_LPAREN);
+        ASTNode *expr = parse_expression(parser);
+        parser_expect(parser, TOKEN_RPAREN);
+        parser_expect(parser, TOKEN_LBRACE);
+        
+        ASTNode *node = create_ast_node(AST_SWITCH_STMT, token->line, token->column);
+        node->data.switch_stmt.expression = expr;
+        node->data.switch_stmt.cases = NULL;
+        node->data.switch_stmt.case_count = 0;
+        node->data.switch_stmt.default_case = NULL;
+        
+        // Parse cases
+        int case_capacity = 10;
+        node->data.switch_stmt.cases = malloc(case_capacity * sizeof(ASTNode*));
+        
+        while (parser->current_token->type != TOKEN_RBRACE &&
+               parser->current_token->type != TOKEN_EOF) {
+            
+            if (parser->current_token->type == TOKEN_KEYWORD_CASE) {
+                int case_line = parser->current_token->line;
+                int case_column = parser->current_token->column;
+                parser_advance(parser);
+                
+                // Parse case value (must be constant)
+                ASTNode *case_value = parse_primary(parser);
+                parser_expect(parser, TOKEN_COLON);
+                
+                // Create case node
+                ASTNode *case_node = create_ast_node(AST_CASE_STMT, case_line, case_column);
+                case_node->data.case_stmt.value = case_value;
+                case_node->data.case_stmt.statements = NULL;
+                case_node->data.case_stmt.statement_count = 0;
+                
+                // Parse statements until next case/default/closing brace
+                int stmt_capacity = 10;
+                case_node->data.case_stmt.statements = malloc(stmt_capacity * sizeof(ASTNode*));
+                
+                while (parser->current_token->type != TOKEN_KEYWORD_CASE &&
+                       parser->current_token->type != TOKEN_KEYWORD_DEFAULT &&
+                       parser->current_token->type != TOKEN_RBRACE &&
+                       parser->current_token->type != TOKEN_EOF) {
+                    
+                    if (case_node->data.case_stmt.statement_count >= stmt_capacity) {
+                        stmt_capacity *= 2;
+                        case_node->data.case_stmt.statements = realloc(
+                            case_node->data.case_stmt.statements,
+                            stmt_capacity * sizeof(ASTNode*)
+                        );
+                    }
+                    
+                    case_node->data.case_stmt.statements[case_node->data.case_stmt.statement_count++] = 
+                        parse_statement(parser);
+                }
+                
+                // Add case to switch
+                if (node->data.switch_stmt.case_count >= case_capacity) {
+                    case_capacity *= 2;
+                    node->data.switch_stmt.cases = realloc(
+                        node->data.switch_stmt.cases,
+                        case_capacity * sizeof(ASTNode*)
+                    );
+                }
+                node->data.switch_stmt.cases[node->data.switch_stmt.case_count++] = case_node;
+                
+            } else if (parser->current_token->type == TOKEN_KEYWORD_DEFAULT) {
+                int default_line = parser->current_token->line;
+                int default_column = parser->current_token->column;
+                parser_advance(parser);
+                parser_expect(parser, TOKEN_COLON);
+                
+                // Create default node
+                ASTNode *default_node = create_ast_node(AST_DEFAULT_STMT, default_line, default_column);
+                default_node->data.default_stmt.statements = NULL;
+                default_node->data.default_stmt.statement_count = 0;
+                
+                // Parse statements
+                int stmt_capacity = 10;
+                default_node->data.default_stmt.statements = malloc(stmt_capacity * sizeof(ASTNode*));
+                
+                while (parser->current_token->type != TOKEN_KEYWORD_CASE &&
+                       parser->current_token->type != TOKEN_KEYWORD_DEFAULT &&
+                       parser->current_token->type != TOKEN_RBRACE &&
+                       parser->current_token->type != TOKEN_EOF) {
+                    
+                    if (default_node->data.default_stmt.statement_count >= stmt_capacity) {
+                        stmt_capacity *= 2;
+                        default_node->data.default_stmt.statements = realloc(
+                            default_node->data.default_stmt.statements,
+                            stmt_capacity * sizeof(ASTNode*)
+                        );
+                    }
+                    
+                    default_node->data.default_stmt.statements[default_node->data.default_stmt.statement_count++] = 
+                        parse_statement(parser);
+                }
+                
+                node->data.switch_stmt.default_case = default_node;
+                
+            } else {
+                LOG_ERROR("Expected 'case' or 'default' in switch statement at %d:%d",
+                         parser->current_token->line, parser->current_token->column);
+                exit(1);
+            }
+        }
+        
+        parser_expect(parser, TOKEN_RBRACE);
+        LOG_TRACE("Parsed switch statement with %d cases", node->data.switch_stmt.case_count);
         return node;
     }
     
@@ -582,24 +908,87 @@ static ASTNode *parse_function(Parser *parser) {
     return node;
 }
 
+static bool is_function_declaration(Parser *parser) {
+    // Simplified approach: try to parse as function first, if it fails, parse as variable
+    // This is based on the observation that functions have '(' after the identifier
+    // while variables have ';' or '=' after the identifier
+    
+    // We'll implement this by attempting to look for specific patterns
+    // For a proper implementation, we'd need better lookahead infrastructure
+    
+    // Simple heuristic: if line contains '(' before ';', it's likely a function
+    // For now, let's default to the previous behavior and fix this incrementally
+    
+    return true;  // Start by defaulting to function parsing
+}
+
+static ASTNode *parse_global_variable(Parser *parser) {
+    // Parse global variable declaration (similar to local but at global scope)
+    char *base_type = strdup(parser->current_token->type == TOKEN_KEYWORD_INT ? "int" : "char");
+    parser_advance(parser);
+    
+    // Check for pointer type
+    int pointer_count = 0;
+    while (parser->current_token->type == TOKEN_STAR) {
+        pointer_count++;
+        parser_advance(parser);
+    }
+    
+    // Build the complete type string
+    char type_name[256];
+    strcpy(type_name, base_type);
+    for (int i = 0; i < pointer_count; i++) {
+        strcat(type_name, "*");
+    }
+    free(base_type);
+    
+    Token *name_token = parser->current_token;
+    char *var_name = strdup(name_token->text);
+    int var_line = name_token->line;
+    int var_column = name_token->column;
+    parser_expect(parser, TOKEN_IDENTIFIER);
+    
+    ASTNode *initializer = NULL;
+    if (parser->current_token->type == TOKEN_ASSIGN) {
+        parser_advance(parser); // consume '='
+        initializer = parse_expression(parser);
+    }
+    
+    parser_expect(parser, TOKEN_SEMICOLON);
+    
+    ASTNode *var_decl = create_ast_node(AST_VAR_DECL, var_line, var_column);
+    var_decl->data.var_decl.type = strdup(type_name);
+    var_decl->data.var_decl.name = var_name;
+    var_decl->data.var_decl.initializer = initializer;
+    var_decl->data.var_decl.array_size = NULL;
+    
+    return var_decl;
+}
+
 ASTNode *parser_parse(Parser *parser) {
     ASTNode *program = create_ast_node(AST_PROGRAM, 1, 1);
     
-    int capacity = 8;
-    program->data.program.functions = malloc(capacity * sizeof(ASTNode*));
+    int func_capacity = 8;
+    int var_capacity = 8;
+    program->data.program.functions = malloc(func_capacity * sizeof(ASTNode*));
     program->data.program.function_count = 0;
+    program->data.program.global_vars = malloc(var_capacity * sizeof(ASTNode*));
+    program->data.program.global_var_count = 0;
     
     while (parser->current_token->type != TOKEN_EOF) {
-        if (program->data.program.function_count >= capacity) {
-            capacity *= 2;
+        // For now, revert to function-only parsing to fix the immediate issue
+        // We'll implement global variables in a follow-up step
+        if (program->data.program.function_count >= func_capacity) {
+            func_capacity *= 2;
             program->data.program.functions = realloc(program->data.program.functions,
-                                                     capacity * sizeof(ASTNode*));
+                                                     func_capacity * sizeof(ASTNode*));
         }
         program->data.program.functions[program->data.program.function_count++] = 
             parse_function(parser);
     }
     
-    LOG_INFO("Parsed program with %d functions", program->data.program.function_count);
+    LOG_INFO("Parsed program with %d functions and %d global variables", 
+             program->data.program.function_count, program->data.program.global_var_count);
     return program;
 }
 
@@ -612,6 +1001,10 @@ void ast_destroy(ASTNode *node) {
                 ast_destroy(node->data.program.functions[i]);
             }
             free(node->data.program.functions);
+            for (int i = 0; i < node->data.program.global_var_count; i++) {
+                ast_destroy(node->data.program.global_vars[i]);
+            }
+            free(node->data.program.global_vars);
             break;
         case AST_FUNCTION:
             free(node->data.function.name);
@@ -630,6 +1023,10 @@ void ast_destroy(ASTNode *node) {
             break;
         case AST_RETURN_STMT:
             ast_destroy(node->data.return_stmt.expression);
+            break;
+        case AST_BREAK_STMT:
+        case AST_CONTINUE_STMT:
+            // No dynamic memory to free
             break;
         case AST_EXPR_STMT:
             ast_destroy(node->data.expr_stmt.expression);
@@ -660,6 +1057,16 @@ void ast_destroy(ASTNode *node) {
             ast_destroy(node->data.while_stmt.condition);
             ast_destroy(node->data.while_stmt.body);
             break;
+        case AST_DO_WHILE_STMT:
+            ast_destroy(node->data.do_while_stmt.body);
+            ast_destroy(node->data.do_while_stmt.condition);
+            break;
+        case AST_FOR_STMT:
+            ast_destroy(node->data.for_stmt.init);
+            ast_destroy(node->data.for_stmt.condition);
+            ast_destroy(node->data.for_stmt.update);
+            ast_destroy(node->data.for_stmt.body);
+            break;
         case AST_FUNCTION_CALL:
             free(node->data.function_call.name);
             for (int i = 0; i < node->data.function_call.argument_count; i++) {
@@ -684,6 +1091,42 @@ void ast_destroy(ASTNode *node) {
         case AST_ADDRESS_OF:
         case AST_DEREFERENCE:
             ast_destroy(node->data.unary_op.operand);
+            break;
+        case AST_STRUCT_DECL:
+            free(node->data.struct_decl.name);
+            for (int i = 0; i < node->data.struct_decl.member_count; i++) {
+                ast_destroy(node->data.struct_decl.members[i]);
+            }
+            free(node->data.struct_decl.members);
+            break;
+        case AST_MEMBER_ACCESS:
+            ast_destroy(node->data.member_access.object);
+            free(node->data.member_access.member_name);
+            break;
+        case AST_SIZEOF:
+            free(node->data.sizeof_op.type_name);
+            ast_destroy(node->data.sizeof_op.expression);
+            break;
+        case AST_SWITCH_STMT:
+            ast_destroy(node->data.switch_stmt.expression);
+            for (int i = 0; i < node->data.switch_stmt.case_count; i++) {
+                ast_destroy(node->data.switch_stmt.cases[i]);
+            }
+            free(node->data.switch_stmt.cases);
+            ast_destroy(node->data.switch_stmt.default_case);
+            break;
+        case AST_CASE_STMT:
+            ast_destroy(node->data.case_stmt.value);
+            for (int i = 0; i < node->data.case_stmt.statement_count; i++) {
+                ast_destroy(node->data.case_stmt.statements[i]);
+            }
+            free(node->data.case_stmt.statements);
+            break;
+        case AST_DEFAULT_STMT:
+            for (int i = 0; i < node->data.default_stmt.statement_count; i++) {
+                ast_destroy(node->data.default_stmt.statements[i]);
+            }
+            free(node->data.default_stmt.statements);
             break;
         default:
             break;

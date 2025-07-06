@@ -20,6 +20,9 @@ typedef struct {
     SymbolTable *symtab;
     char *current_function_return_type;
     StringLiteral *string_literals;
+    // Loop control labels for break/continue
+    char *current_loop_end_label;
+    char *current_loop_continue_label;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);

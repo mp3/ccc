@@ -71,9 +71,18 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     if (strcmp(buffer, "if") == 0) type = TOKEN_KEYWORD_IF;
     else if (strcmp(buffer, "else") == 0) type = TOKEN_KEYWORD_ELSE;
     else if (strcmp(buffer, "while") == 0) type = TOKEN_KEYWORD_WHILE;
+    else if (strcmp(buffer, "do") == 0) type = TOKEN_KEYWORD_DO;
+    else if (strcmp(buffer, "for") == 0) type = TOKEN_KEYWORD_FOR;
+    else if (strcmp(buffer, "break") == 0) type = TOKEN_KEYWORD_BREAK;
+    else if (strcmp(buffer, "continue") == 0) type = TOKEN_KEYWORD_CONTINUE;
     else if (strcmp(buffer, "return") == 0) type = TOKEN_KEYWORD_RETURN;
     else if (strcmp(buffer, "int") == 0) type = TOKEN_KEYWORD_INT;
     else if (strcmp(buffer, "char") == 0) type = TOKEN_KEYWORD_CHAR;
+    else if (strcmp(buffer, "struct") == 0) type = TOKEN_KEYWORD_STRUCT;
+    else if (strcmp(buffer, "sizeof") == 0) type = TOKEN_KEYWORD_SIZEOF;
+    else if (strcmp(buffer, "switch") == 0) type = TOKEN_KEYWORD_SWITCH;
+    else if (strcmp(buffer, "case") == 0) type = TOKEN_KEYWORD_CASE;
+    else if (strcmp(buffer, "default") == 0) type = TOKEN_KEYWORD_DEFAULT;
     
     Token *token = create_token(type, buffer, start_line, start_column);
     LOG_TRACE("Lexed %s: %s", token_type_to_string(type), buffer);
@@ -243,6 +252,8 @@ Token *lexer_next_token(Lexer *lexer) {
         case '[': return create_token(TOKEN_LBRACKET, "[", line, column);
         case ']': return create_token(TOKEN_RBRACKET, "]", line, column);
         case '&': return create_token(TOKEN_AMPERSAND, "&", line, column);
+        case '.': return create_token(TOKEN_DOT, ".", line, column);
+        case ':': return create_token(TOKEN_COLON, ":", line, column);
         case '=':
             if (lexer->current_char == '=') {
                 lexer_advance(lexer);
@@ -284,10 +295,11 @@ void token_destroy(Token *token) {
 const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
         "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
-        "IF", "ELSE", "WHILE", "RETURN", "INT", "CHAR",
+        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "STRUCT", "SIZEOF",
+        "SWITCH", "CASE", "DEFAULT", "COLON",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
-        "LBRACKET", "RBRACKET", "AMPERSAND", "UNKNOWN"
+        "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "UNKNOWN"
     };
     return names[type];
 }

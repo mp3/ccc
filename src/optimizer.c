@@ -147,6 +147,11 @@ ASTNode *optimize_constant_folding(Optimizer *opt, ASTNode *node) {
                 optimize_constant_folding(opt, node->data.return_stmt.expression);
             break;
             
+        case AST_BREAK_STMT:
+        case AST_CONTINUE_STMT:
+            // No expressions to optimize
+            break;
+            
         case AST_IF_STMT:
             node->data.if_stmt.condition = 
                 optimize_constant_folding(opt, node->data.if_stmt.condition);
@@ -163,6 +168,28 @@ ASTNode *optimize_constant_folding(Optimizer *opt, ASTNode *node) {
                 optimize_constant_folding(opt, node->data.while_stmt.condition);
             node->data.while_stmt.body = 
                 optimize_constant_folding(opt, node->data.while_stmt.body);
+            break;
+        case AST_DO_WHILE_STMT:
+            node->data.do_while_stmt.body = 
+                optimize_constant_folding(opt, node->data.do_while_stmt.body);
+            node->data.do_while_stmt.condition = 
+                optimize_constant_folding(opt, node->data.do_while_stmt.condition);
+            break;
+        case AST_FOR_STMT:
+            if (node->data.for_stmt.init) {
+                node->data.for_stmt.init = 
+                    optimize_constant_folding(opt, node->data.for_stmt.init);
+            }
+            if (node->data.for_stmt.condition) {
+                node->data.for_stmt.condition = 
+                    optimize_constant_folding(opt, node->data.for_stmt.condition);
+            }
+            if (node->data.for_stmt.update) {
+                node->data.for_stmt.update = 
+                    optimize_constant_folding(opt, node->data.for_stmt.update);
+            }
+            node->data.for_stmt.body = 
+                optimize_constant_folding(opt, node->data.for_stmt.body);
             break;
             
         case AST_COMPOUND_STMT:
@@ -193,6 +220,43 @@ ASTNode *optimize_constant_folding(Optimizer *opt, ASTNode *node) {
             for (int i = 0; i < node->data.function_call.argument_count; i++) {
                 node->data.function_call.arguments[i] = 
                     optimize_constant_folding(opt, node->data.function_call.arguments[i]);
+            }
+            break;
+            
+        case AST_SIZEOF:
+            // sizeof is already a compile-time constant in codegen
+            // but we can optimize any expression inside sizeof(expression)
+            if (node->data.sizeof_op.expression) {
+                node->data.sizeof_op.expression = 
+                    optimize_constant_folding(opt, node->data.sizeof_op.expression);
+            }
+            break;
+            
+        case AST_SWITCH_STMT:
+            node->data.switch_stmt.expression = 
+                optimize_constant_folding(opt, node->data.switch_stmt.expression);
+            for (int i = 0; i < node->data.switch_stmt.case_count; i++) {
+                node->data.switch_stmt.cases[i] = 
+                    optimize_constant_folding(opt, node->data.switch_stmt.cases[i]);
+            }
+            if (node->data.switch_stmt.default_case) {
+                node->data.switch_stmt.default_case = 
+                    optimize_constant_folding(opt, node->data.switch_stmt.default_case);
+            }
+            break;
+            
+        case AST_CASE_STMT:
+            // Case value must remain constant, but optimize statements
+            for (int i = 0; i < node->data.case_stmt.statement_count; i++) {
+                node->data.case_stmt.statements[i] = 
+                    optimize_constant_folding(opt, node->data.case_stmt.statements[i]);
+            }
+            break;
+            
+        case AST_DEFAULT_STMT:
+            for (int i = 0; i < node->data.default_stmt.statement_count; i++) {
+                node->data.default_stmt.statements[i] = 
+                    optimize_constant_folding(opt, node->data.default_stmt.statements[i]);
             }
             break;
             
@@ -315,6 +379,53 @@ static ASTNode *eliminate_dead_while(Optimizer *opt, ASTNode *node) {
     return node;
 }
 
+static ASTNode *eliminate_dead_for(Optimizer *opt, ASTNode *node) {
+    // Optimize components first
+    if (node->data.for_stmt.init) {
+        node->data.for_stmt.init = 
+            optimize_dead_code_elimination(opt, node->data.for_stmt.init);
+    }
+    
+    if (node->data.for_stmt.condition) {
+        node->data.for_stmt.condition = 
+            optimize_dead_code_elimination(opt, node->data.for_stmt.condition);
+        
+        // Check if condition is constant false
+        if (node->data.for_stmt.condition->type == AST_INT_LITERAL &&
+            node->data.for_stmt.condition->data.int_literal.value == 0) {
+            
+            LOG_DEBUG("Eliminating for loop with constant false condition");
+            opt->optimizations_performed++;
+            
+            // For loop never executes - return just the init statement if present
+            if (node->data.for_stmt.init) {
+                return node->data.for_stmt.init;
+            } else {
+                // Return empty compound statement
+                ASTNode *empty = malloc(sizeof(ASTNode));
+                empty->type = AST_COMPOUND_STMT;
+                empty->line = node->line;
+                empty->column = node->column;
+                empty->data.compound.statements = NULL;
+                empty->data.compound.statement_count = 0;
+                ast_destroy(node);
+                return empty;
+            }
+        }
+    }
+    
+    // Optimize update and body
+    if (node->data.for_stmt.update) {
+        node->data.for_stmt.update = 
+            optimize_dead_code_elimination(opt, node->data.for_stmt.update);
+    }
+    
+    node->data.for_stmt.body = 
+        optimize_dead_code_elimination(opt, node->data.for_stmt.body);
+    
+    return node;
+}
+
 // Main dead code elimination optimization
 ASTNode *optimize_dead_code_elimination(Optimizer *opt, ASTNode *node) {
     if (!node || !opt->enable_dead_code_elimination) {
@@ -327,6 +438,52 @@ ASTNode *optimize_dead_code_elimination(Optimizer *opt, ASTNode *node) {
             
         case AST_WHILE_STMT:
             return eliminate_dead_while(opt, node);
+        case AST_DO_WHILE_STMT:
+            // Optimize body first (it always executes at least once)
+            node->data.do_while_stmt.body = 
+                optimize_dead_code_elimination(opt, node->data.do_while_stmt.body);
+            
+            // Then optimize condition
+            node->data.do_while_stmt.condition = 
+                optimize_dead_code_elimination(opt, node->data.do_while_stmt.condition);
+            
+            // Note: We can't eliminate do-while based on condition being false
+            // because the body executes at least once
+            break;
+        case AST_FOR_STMT:
+            return eliminate_dead_for(opt, node);
+            
+        case AST_SWITCH_STMT:
+            // Optimize switch expression first
+            node->data.switch_stmt.expression = 
+                optimize_dead_code_elimination(opt, node->data.switch_stmt.expression);
+            
+            // Optimize case statements
+            for (int i = 0; i < node->data.switch_stmt.case_count; i++) {
+                node->data.switch_stmt.cases[i] = 
+                    optimize_dead_code_elimination(opt, node->data.switch_stmt.cases[i]);
+            }
+            
+            // Optimize default case
+            if (node->data.switch_stmt.default_case) {
+                node->data.switch_stmt.default_case = 
+                    optimize_dead_code_elimination(opt, node->data.switch_stmt.default_case);
+            }
+            break;
+            
+        case AST_CASE_STMT:
+            for (int i = 0; i < node->data.case_stmt.statement_count; i++) {
+                node->data.case_stmt.statements[i] = 
+                    optimize_dead_code_elimination(opt, node->data.case_stmt.statements[i]);
+            }
+            break;
+            
+        case AST_DEFAULT_STMT:
+            for (int i = 0; i < node->data.default_stmt.statement_count; i++) {
+                node->data.default_stmt.statements[i] = 
+                    optimize_dead_code_elimination(opt, node->data.default_stmt.statements[i]);
+            }
+            break;
             
         case AST_COMPOUND_STMT:
             for (int i = 0; i < node->data.compound.statement_count; i++) {
@@ -358,6 +515,8 @@ ASTNode *optimize_dead_code_elimination(Optimizer *opt, ASTNode *node) {
             } else if (node->type == AST_RETURN_STMT) {
                 node->data.return_stmt.expression = 
                     optimize_dead_code_elimination(opt, node->data.return_stmt.expression);
+            } else if (node->type == AST_BREAK_STMT || node->type == AST_CONTINUE_STMT) {
+                // No sub-expressions to optimize
             } else if (node->type == AST_EXPR_STMT) {
                 node->data.expr_stmt.expression = 
                     optimize_dead_code_elimination(opt, node->data.expr_stmt.expression);

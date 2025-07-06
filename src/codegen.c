@@ -13,6 +13,8 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->symtab = NULL;
     gen->current_function_return_type = NULL;
     gen->string_literals = NULL;
+    gen->current_loop_end_label = NULL;
+    gen->current_loop_continue_label = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -45,6 +47,18 @@ static char *codegen_next_label(CodeGenerator *gen, const char *prefix) {
     char *label = malloc(64);
     snprintf(label, 64, "%s%d", prefix, gen->label_counter++);
     return label;
+}
+
+static bool is_global_variable(CodeGenerator *gen, const char *name) {
+    // Find the root symbol table (global scope)
+    SymbolTable *global_table = gen->symtab;
+    while (global_table->parent != NULL) {
+        global_table = global_table->parent;
+    }
+    
+    // Check if the variable exists in global scope
+    Symbol *global_sym = symtab_lookup_local(global_table, name);
+    return (global_sym != NULL);
 }
 
 static char *c_type_to_llvm_type(const char *c_type) {
@@ -168,10 +182,15 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             
             char *temp = codegen_next_temp(gen);
-            // For parameters, we always allocate and use .addr
-            // For regular variables, we use the name directly
             char *llvm_type = c_type_to_llvm_type(sym->data_type);
-            fprintf(gen->output, "  %s = load %s, %s* %%%s\n", temp, llvm_type, llvm_type, sym->name);
+            
+            if (is_global_variable(gen, expr->data.identifier.name)) {
+                // This is a global variable
+                fprintf(gen->output, "  %s = load %s, %s* @%s\n", temp, llvm_type, llvm_type, sym->name);
+            } else {
+                // This is a local variable
+                fprintf(gen->output, "  %s = load %s, %s* %%%s\n", temp, llvm_type, llvm_type, sym->name);
+            }
             return temp;
         }
         
@@ -184,7 +203,14 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             
             char *value = codegen_expression(gen, expr->data.assignment.value);
             char *llvm_type = c_type_to_llvm_type(sym->data_type);
-            fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+            
+            if (is_global_variable(gen, expr->data.assignment.name)) {
+                // This is a global variable assignment
+                fprintf(gen->output, "  store %s %s, %s* @%s\n", llvm_type, value, llvm_type, sym->name);
+            } else {
+                // This is a local variable assignment
+                fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+            }
             return value;
         }
         
@@ -246,10 +272,92 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             char *right = codegen_expression(gen, expr->data.binary_op.right);
             char *result = codegen_next_temp(gen);
             
+            // Check for pointer arithmetic
+            bool left_is_pointer = false;
+            bool right_is_pointer = false;
+            const char *left_type = "i32";
+            const char *right_type = "i32";
+            const char *pointed_type = "i32";
+            
+            // Determine if operands are pointers by checking their AST nodes
+            if (expr->data.binary_op.left->type == AST_IDENTIFIER) {
+                Symbol *left_sym = symtab_lookup(gen->symtab, expr->data.binary_op.left->data.identifier.name);
+                if (left_sym && strstr(left_sym->data_type, "*")) {
+                    left_is_pointer = true;
+                    left_type = c_type_to_llvm_type(left_sym->data_type);
+                    // Extract pointed-to type (remove one level of pointer)
+                    if (strstr(left_sym->data_type, "int*")) {
+                        pointed_type = "i32";
+                    } else if (strstr(left_sym->data_type, "char*")) {
+                        pointed_type = "i8";
+                    }
+                }
+            }
+            
+            if (expr->data.binary_op.right->type == AST_IDENTIFIER) {
+                Symbol *right_sym = symtab_lookup(gen->symtab, expr->data.binary_op.right->data.identifier.name);
+                if (right_sym && strstr(right_sym->data_type, "*")) {
+                    right_is_pointer = true;
+                    right_type = c_type_to_llvm_type(right_sym->data_type);
+                }
+            }
+            
             const char *op;
             switch (expr->data.binary_op.op) {
-                case TOKEN_PLUS: op = "add"; break;
-                case TOKEN_MINUS: op = "sub"; break;
+                case TOKEN_PLUS:
+                    if (left_is_pointer && !right_is_pointer) {
+                        // Pointer + integer: use getelementptr
+                        fprintf(gen->output, "  %s = getelementptr %s, %s %s, i32 %s\n", 
+                                result, pointed_type, left_type, left, right);
+                        free(left);
+                        free(right);
+                        return result;
+                    } else if (!left_is_pointer && right_is_pointer) {
+                        // Integer + pointer: use getelementptr with swapped operands
+                        fprintf(gen->output, "  %s = getelementptr %s, %s %s, i32 %s\n", 
+                                result, pointed_type, right_type, right, left);
+                        free(left);
+                        free(right);
+                        return result;
+                    }
+                    op = "add"; 
+                    break;
+                case TOKEN_MINUS:
+                    if (left_is_pointer && !right_is_pointer) {
+                        // Pointer - integer: use getelementptr with negative offset
+                        char *neg_right = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = sub i32 0, %s\n", neg_right, right);
+                        fprintf(gen->output, "  %s = getelementptr %s, %s %s, i32 %s\n", 
+                                result, pointed_type, left_type, left, neg_right);
+                        free(left);
+                        free(right);
+                        free(neg_right);
+                        return result;
+                    } else if (left_is_pointer && right_is_pointer) {
+                        // Pointer - pointer: calculate difference in elements
+                        char *left_int = codegen_next_temp(gen);
+                        char *right_int = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = ptrtoint %s %s to i64\n", left_int, left_type, left);
+                        fprintf(gen->output, "  %s = ptrtoint %s %s to i64\n", right_int, right_type, right);
+                        char *diff = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = sub i64 %s, %s\n", diff, left_int, right_int);
+                        
+                        // Divide by element size to get element count
+                        int element_size = strcmp(pointed_type, "i8") == 0 ? 1 : 4;
+                        char *div_result = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = sdiv i64 %s, %d\n", div_result, diff, element_size);
+                        fprintf(gen->output, "  %s = trunc i64 %s to i32\n", result, div_result);
+                        
+                        free(left);
+                        free(right);
+                        free(left_int);
+                        free(right_int);
+                        free(diff);
+                        free(div_result);
+                        return result;
+                    }
+                    op = "sub"; 
+                    break;
                 case TOKEN_STAR: op = "mul"; break;
                 case TOKEN_SLASH: op = "sdiv"; break;
                 case TOKEN_EQ:
@@ -294,18 +402,46 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
         
         case AST_FUNCTION_CALL: {
             Symbol *func_sym = symtab_lookup(gen->symtab, expr->data.function_call.name);
-            if (!func_sym || func_sym->type != SYM_FUNCTION) {
+            
+            // Check for built-in/external functions
+            const char *func_name = expr->data.function_call.name;
+            bool is_external = false;
+            const char *return_type = "i32";
+            const char *param_types[10]; // max 10 params for built-ins
+            int expected_params = 0;
+            
+            if (strcmp(func_name, "putchar") == 0) {
+                is_external = true;
+                return_type = "i32";
+                param_types[0] = "i32";
+                expected_params = 1;
+            } else if (strcmp(func_name, "getchar") == 0) {
+                is_external = true;
+                return_type = "i32";
+                expected_params = 0;
+            } else if (!func_sym || func_sym->type != SYM_FUNCTION) {
                 LOG_ERROR("Undefined function: %s", expr->data.function_call.name);
                 exit(1);
             }
             
-            // Check argument count
-            if (expr->data.function_call.argument_count != func_sym->param_count) {
-                LOG_ERROR("Function '%s' expects %d arguments, got %d",
-                         expr->data.function_call.name,
-                         func_sym->param_count,
-                         expr->data.function_call.argument_count);
-                exit(1);
+            // Use function symbol if not external
+            if (!is_external) {
+                // Check argument count
+                if (expr->data.function_call.argument_count != func_sym->param_count) {
+                    LOG_ERROR("Function '%s' expects %d arguments, got %d",
+                             expr->data.function_call.name,
+                             func_sym->param_count,
+                             expr->data.function_call.argument_count);
+                    exit(1);
+                }
+            } else {
+                // Check argument count for external functions
+                if (expr->data.function_call.argument_count != expected_params) {
+                    LOG_ERROR("Function '%s' expects %d arguments, got %d",
+                             func_name, expected_params,
+                             expr->data.function_call.argument_count);
+                    exit(1);
+                }
             }
             
             // Evaluate arguments
@@ -316,10 +452,14 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             
             // Generate function call
             char *result = codegen_next_temp(gen);
-            fprintf(gen->output, "  %s = call i32 @%s(", result, expr->data.function_call.name);
+            fprintf(gen->output, "  %s = call %s @%s(", result, return_type, func_name);
             for (int i = 0; i < expr->data.function_call.argument_count; i++) {
                 if (i > 0) fprintf(gen->output, ", ");
-                fprintf(gen->output, "i32 %s", arg_values[i]);
+                if (is_external) {
+                    fprintf(gen->output, "%s %s", param_types[i], arg_values[i]);
+                } else {
+                    fprintf(gen->output, "i32 %s", arg_values[i]);
+                }
             }
             fprintf(gen->output, ")\n");
             
@@ -437,6 +577,103 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             return temp;
         }
         
+        case AST_MEMBER_ACCESS: {
+            // Member access: struct.member
+            if (expr->data.member_access.object->type != AST_IDENTIFIER) {
+                LOG_ERROR("Member access must be on an identifier");
+                exit(1);
+            }
+            
+            const char *object_name = expr->data.member_access.object->data.identifier.name;
+            const char *member_name = expr->data.member_access.member_name;
+            
+            Symbol *object_sym = symtab_lookup(gen->symtab, object_name);
+            if (!object_sym) {
+                LOG_ERROR("Undefined variable: %s", object_name);
+                exit(1);
+            }
+            
+            // For now, assume struct member access - in a full implementation 
+            // we'd need to resolve the struct type and find the member offset
+            char *temp = codegen_next_temp(gen);
+            
+            // Simple implementation: assume member is at a fixed offset
+            // In a real implementation, we'd lookup the struct definition
+            // and calculate the actual member offset
+            fprintf(gen->output, "  %s = getelementptr %%struct.%s, %%struct.%s* %%%s, i32 0, i32 0\\n",
+                    temp, "unknown", "unknown", object_name);
+            fprintf(gen->output, "  %s = load i32, i32* %s\\n", temp, temp);
+            
+            LOG_TRACE("Generated member access: %s.%s", object_name, member_name);
+            return temp;
+        }
+        
+        case AST_SIZEOF: {
+            // sizeof is a compile-time operator - return a constant
+            int size = 0;
+            
+            if (expr->data.sizeof_op.type_name) {
+                // sizeof(type)
+                const char *type_name = expr->data.sizeof_op.type_name;
+                if (strcmp(type_name, "int") == 0) {
+                    size = 4;
+                } else if (strcmp(type_name, "char") == 0) {
+                    size = 1;
+                } else if (strstr(type_name, "*")) {
+                    // Any pointer type
+                    size = 8;  // 64-bit pointers
+                } else {
+                    LOG_ERROR("Unknown type in sizeof: %s", type_name);
+                    exit(1);
+                }
+            } else if (expr->data.sizeof_op.expression) {
+                // sizeof(expression) - determine type of expression
+                ASTNode *inner_expr = expr->data.sizeof_op.expression;
+                
+                if (inner_expr->type == AST_IDENTIFIER) {
+                    Symbol *sym = symtab_lookup(gen->symtab, inner_expr->data.identifier.name);
+                    if (!sym) {
+                        LOG_ERROR("Undefined variable in sizeof: %s", inner_expr->data.identifier.name);
+                        exit(1);
+                    }
+                    
+                    if (sym->is_array) {
+                        // Array size = element_size * array_size
+                        int element_size = strcmp(sym->data_type, "char") == 0 ? 1 : 4;
+                        size = element_size * sym->array_size;
+                    } else if (strcmp(sym->data_type, "int") == 0) {
+                        size = 4;
+                    } else if (strcmp(sym->data_type, "char") == 0) {
+                        size = 1;
+                    } else if (strstr(sym->data_type, "*")) {
+                        size = 8;  // Pointer
+                    }
+                } else if (inner_expr->type == AST_INT_LITERAL) {
+                    size = 4;  // int literal
+                } else if (inner_expr->type == AST_CHAR_LITERAL) {
+                    size = 1;  // char literal
+                } else if (inner_expr->type == AST_STRING_LITERAL) {
+                    size = strlen(inner_expr->data.string_literal.value) + 1;  // +1 for null terminator
+                } else if (inner_expr->type == AST_ARRAY_ACCESS) {
+                    // Array access returns the element type
+                    // We'd need to analyze the array type
+                    size = 4;  // Assume int for now
+                } else if (inner_expr->type == AST_DEREFERENCE) {
+                    // Dereference returns the pointed-to type
+                    size = 4;  // Assume int for now
+                } else if (inner_expr->type == AST_ADDRESS_OF) {
+                    size = 8;  // Address-of returns a pointer
+                } else {
+                    size = 4;  // Default to int size
+                }
+            }
+            
+            char *temp = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = add i32 0, %d\n", temp, size);
+            LOG_TRACE("Generated sizeof: %d", size);
+            return temp;
+        }
+        
         default:
             LOG_ERROR("Unknown expression type in codegen: %d", expr->type);
             exit(1);
@@ -509,6 +746,141 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             break;
         }
         
+        case AST_BREAK_STMT: {
+            if (!gen->current_loop_end_label) {
+                LOG_ERROR("break statement outside of loop");
+                exit(1);
+            }
+            fprintf(gen->output, "  br label %%%s\n", gen->current_loop_end_label);
+            break;
+        }
+        
+        case AST_CONTINUE_STMT: {
+            if (!gen->current_loop_continue_label) {
+                LOG_ERROR("continue statement outside of loop");
+                exit(1);
+            }
+            fprintf(gen->output, "  br label %%%s\n", gen->current_loop_continue_label);
+            break;
+        }
+        
+        case AST_SWITCH_STMT: {
+            // Evaluate switch expression
+            char *switch_value = codegen_expression(gen, stmt->data.switch_stmt.expression);
+            
+            // If the switch expression is a char, we need to extend it to i32
+            ASTNode *switch_expr = stmt->data.switch_stmt.expression;
+            if (switch_expr->type == AST_IDENTIFIER) {
+                Symbol *sym = symtab_lookup(gen->symtab, switch_expr->data.identifier.name);
+                if (sym && strcmp(sym->data_type, "char") == 0) {
+                    char *extended = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = sext i8 %s to i32\n", extended, switch_value);
+                    free(switch_value);
+                    switch_value = extended;
+                }
+            } else if (switch_expr->type == AST_CHAR_LITERAL) {
+                // Char literals are already handled as i32 in codegen
+            }
+            
+            // Generate labels for each case and the end
+            char *end_label = codegen_next_label(gen, "switch.end.");
+            char **case_labels = malloc(stmt->data.switch_stmt.case_count * sizeof(char*));
+            for (int i = 0; i < stmt->data.switch_stmt.case_count; i++) {
+                case_labels[i] = codegen_next_label(gen, "switch.case.");
+            }
+            char *default_label = stmt->data.switch_stmt.default_case ? 
+                                 codegen_next_label(gen, "switch.default.") : end_label;
+            
+            // Save current loop end label and set it for break statements
+            char *saved_end_label = gen->current_loop_end_label;
+            gen->current_loop_end_label = end_label;
+            
+            // Generate comparison chain
+            for (int i = 0; i < stmt->data.switch_stmt.case_count; i++) {
+                ASTNode *case_node = stmt->data.switch_stmt.cases[i];
+                
+                // Case value must be a constant
+                if (case_node->data.case_stmt.value->type != AST_INT_LITERAL &&
+                    case_node->data.case_stmt.value->type != AST_CHAR_LITERAL) {
+                    LOG_ERROR("Case value must be a constant");
+                    exit(1);
+                }
+                
+                int case_val;
+                if (case_node->data.case_stmt.value->type == AST_INT_LITERAL) {
+                    case_val = case_node->data.case_stmt.value->data.int_literal.value;
+                } else {
+                    case_val = case_node->data.case_stmt.value->data.char_literal.value;
+                }
+                
+                char *cmp_result = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = icmp eq i32 %s, %d\n", cmp_result, switch_value, case_val);
+                
+                char *next_label = (i < stmt->data.switch_stmt.case_count - 1) ? 
+                                  codegen_next_label(gen, "switch.next.") : default_label;
+                fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                       cmp_result, case_labels[i], next_label);
+                
+                if (i < stmt->data.switch_stmt.case_count - 1) {
+                    fprintf(gen->output, "\n%s:\n", next_label);
+                    free(next_label);
+                }
+                
+                free(cmp_result);
+            }
+            
+            // If no cases matched, jump to default or end
+            if (stmt->data.switch_stmt.case_count == 0) {
+                fprintf(gen->output, "  br label %%%s\n", default_label);
+            }
+            
+            // Generate case blocks
+            for (int i = 0; i < stmt->data.switch_stmt.case_count; i++) {
+                fprintf(gen->output, "\n%s:\n", case_labels[i]);
+                ASTNode *case_node = stmt->data.switch_stmt.cases[i];
+                
+                // Generate statements for this case
+                for (int j = 0; j < case_node->data.case_stmt.statement_count; j++) {
+                    codegen_statement(gen, case_node->data.case_stmt.statements[j]);
+                }
+                
+                // Fall through to next case (or end if no break)
+                if (i < stmt->data.switch_stmt.case_count - 1) {
+                    fprintf(gen->output, "  br label %%%s\n", case_labels[i + 1]);
+                } else if (stmt->data.switch_stmt.default_case) {
+                    fprintf(gen->output, "  br label %%%s\n", default_label);
+                } else {
+                    fprintf(gen->output, "  br label %%%s\n", end_label);
+                }
+                
+                free(case_labels[i]);
+            }
+            
+            // Generate default block if present
+            if (stmt->data.switch_stmt.default_case) {
+                fprintf(gen->output, "\n%s:\n", default_label);
+                ASTNode *default_node = stmt->data.switch_stmt.default_case;
+                
+                for (int i = 0; i < default_node->data.default_stmt.statement_count; i++) {
+                    codegen_statement(gen, default_node->data.default_stmt.statements[i]);
+                }
+                
+                fprintf(gen->output, "  br label %%%s\n", end_label);
+                free(default_label);
+            }
+            
+            // End label
+            fprintf(gen->output, "\n%s:\n", end_label);
+            
+            // Restore outer loop end label
+            gen->current_loop_end_label = saved_end_label;
+            
+            free(switch_value);
+            free(case_labels);
+            free(end_label);
+            break;
+        }
+        
         case AST_COMPOUND_STMT: {
             // Create new scope
             SymbolTable *old_symtab = gen->symtab;
@@ -572,6 +944,50 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             break;
         }
         
+        case AST_DO_WHILE_STMT: {
+            char *body_label = codegen_next_label(gen, "do.body.");
+            char *cond_label = codegen_next_label(gen, "do.cond.");
+            char *end_label = codegen_next_label(gen, "do.end.");
+            
+            // Jump to body first (do-while executes body at least once)
+            fprintf(gen->output, "  br label %%%s\n", body_label);
+            
+            // Body block
+            fprintf(gen->output, "\n%s:\n", body_label);
+            
+            // Save outer loop labels and set current ones
+            char *saved_end_label = gen->current_loop_end_label;
+            char *saved_continue_label = gen->current_loop_continue_label;
+            gen->current_loop_end_label = end_label;
+            gen->current_loop_continue_label = cond_label;
+            
+            codegen_statement(gen, stmt->data.do_while_stmt.body);
+            
+            // Restore outer loop labels
+            gen->current_loop_end_label = saved_end_label;
+            gen->current_loop_continue_label = saved_continue_label;
+            
+            fprintf(gen->output, "  br label %%%s\n", cond_label);
+            
+            // Condition block
+            fprintf(gen->output, "\n%s:\n", cond_label);
+            char *cond_value = codegen_expression(gen, stmt->data.do_while_stmt.condition);
+            char *cond_bool = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+            fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                   cond_bool, body_label, end_label);
+            
+            // End label
+            fprintf(gen->output, "\n%s:\n", end_label);
+            
+            free(cond_value);
+            free(cond_bool);
+            free(body_label);
+            free(cond_label);
+            free(end_label);
+            break;
+        }
+        
         case AST_WHILE_STMT: {
             char *cond_label = codegen_next_label(gen, "while.cond.");
             char *body_label = codegen_next_label(gen, "while.body.");
@@ -590,7 +1006,19 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             
             // Body block
             fprintf(gen->output, "\n%s:\n", body_label);
+            
+            // Save outer loop labels and set current ones
+            char *saved_end_label = gen->current_loop_end_label;
+            char *saved_continue_label = gen->current_loop_continue_label;
+            gen->current_loop_end_label = end_label;
+            gen->current_loop_continue_label = cond_label;
+            
             codegen_statement(gen, stmt->data.while_stmt.body);
+            
+            // Restore outer loop labels
+            gen->current_loop_end_label = saved_end_label;
+            gen->current_loop_continue_label = saved_continue_label;
+            
             fprintf(gen->output, "  br label %%%s\n", cond_label);
             
             // End label
@@ -601,6 +1029,115 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             free(cond_label);
             free(body_label);
             free(end_label);
+            break;
+        }
+        
+        case AST_FOR_STMT: {
+            // For loop is equivalent to:
+            // init;
+            // while (condition) {
+            //     body;
+            //     update;
+            // }
+            
+            char *cond_label = codegen_next_label(gen, "for.cond.");
+            char *body_label = codegen_next_label(gen, "for.body.");
+            char *update_label = codegen_next_label(gen, "for.update.");
+            char *end_label = codegen_next_label(gen, "for.end.");
+            
+            // Generate init statement if present
+            if (stmt->data.for_stmt.init) {
+                if (stmt->data.for_stmt.init->type == AST_VAR_DECL) {
+                    codegen_statement(gen, stmt->data.for_stmt.init);
+                } else {
+                    // It's an expression, evaluate and discard result
+                    char *init_val = codegen_expression(gen, stmt->data.for_stmt.init);
+                    free(init_val);
+                }
+            }
+            
+            // Jump to condition check
+            fprintf(gen->output, "  br label %%%s\n", cond_label);
+            
+            // Condition block
+            fprintf(gen->output, "\n%s:\n", cond_label);
+            if (stmt->data.for_stmt.condition) {
+                char *cond_value = codegen_expression(gen, stmt->data.for_stmt.condition);
+                char *cond_bool = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+                fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                       cond_bool, body_label, end_label);
+                free(cond_value);
+                free(cond_bool);
+            } else {
+                // No condition means infinite loop
+                fprintf(gen->output, "  br label %%%s\n", body_label);
+            }
+            
+            // Body block
+            fprintf(gen->output, "\n%s:\n", body_label);
+            
+            // Save outer loop labels and set current ones
+            char *saved_end_label = gen->current_loop_end_label;
+            char *saved_continue_label = gen->current_loop_continue_label;
+            gen->current_loop_end_label = end_label;
+            gen->current_loop_continue_label = update_label;
+            
+            codegen_statement(gen, stmt->data.for_stmt.body);
+            
+            // Restore outer loop labels
+            gen->current_loop_end_label = saved_end_label;
+            gen->current_loop_continue_label = saved_continue_label;
+            
+            fprintf(gen->output, "  br label %%%s\n", update_label);
+            
+            // Update block
+            fprintf(gen->output, "\n%s:\n", update_label);
+            if (stmt->data.for_stmt.update) {
+                char *update_val = codegen_expression(gen, stmt->data.for_stmt.update);
+                free(update_val);
+            }
+            fprintf(gen->output, "  br label %%%s\n", cond_label);
+            
+            // End label
+            fprintf(gen->output, "\n%s:\n", end_label);
+            
+            free(cond_label);
+            free(body_label);
+            free(update_label);
+            free(end_label);
+            break;
+        }
+        
+        case AST_STRUCT_DECL: {
+            // Register struct in symbol table for later use
+            Symbol **member_symbols = malloc(stmt->data.struct_decl.member_count * sizeof(Symbol*));
+            
+            for (int i = 0; i < stmt->data.struct_decl.member_count; i++) {
+                ASTNode *member = stmt->data.struct_decl.members[i];
+                Symbol *mem_sym = malloc(sizeof(Symbol));
+                mem_sym->name = strdup(member->data.var_decl.name);
+                mem_sym->type = SYM_VARIABLE;
+                mem_sym->data_type = strdup(member->data.var_decl.type);
+                mem_sym->is_param = false;
+                mem_sym->is_array = false;
+                mem_sym->array_size = 0;
+                member_symbols[i] = mem_sym;
+            }
+            
+            Symbol *struct_sym = symtab_insert_struct(gen->symtab, stmt->data.struct_decl.name, 
+                                                     member_symbols, stmt->data.struct_decl.member_count);
+            if (!struct_sym) {
+                LOG_ERROR("Failed to declare struct: %s", stmt->data.struct_decl.name);
+                exit(1);
+            }
+            
+            // Generate LLVM struct type declaration
+            fprintf(gen->output, "  ; struct %s definition (members: %d)\n", 
+                    stmt->data.struct_decl.name, stmt->data.struct_decl.member_count);
+            
+            free(member_symbols);
+            LOG_DEBUG("Generated struct declaration: %s", stmt->data.struct_decl.name);
             break;
         }
             
@@ -677,10 +1214,56 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     fprintf(gen->output, "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
     fprintf(gen->output, "target triple = \"x86_64-unknown-linux-gnu\"\n\n");
     
+    // Declare external functions
+    fprintf(gen->output, "declare i32 @putchar(i32)\n");
+    fprintf(gen->output, "declare i32 @getchar()\n\n");
+    
     // Create global symbol table
     gen->symtab = symtab_create(NULL);
     
-    // First pass: register all functions
+    // First pass: generate global variables
+    for (int i = 0; i < ast->data.program.global_var_count; i++) {
+        ASTNode *var = ast->data.program.global_vars[i];
+        
+        // Register global variable in symbol table
+        Symbol *sym = symtab_insert(gen->symtab, var->data.var_decl.name, 
+                                   SYM_VARIABLE, var->data.var_decl.type);
+        if (!sym) {
+            LOG_ERROR("Failed to declare global variable: %s", var->data.var_decl.name);
+            exit(1);
+        }
+        
+        // Generate global variable declaration
+        char *llvm_type = c_type_to_llvm_type(var->data.var_decl.type);
+        
+        if (var->data.var_decl.initializer) {
+            // Global variable with initializer
+            // For now, only support constant initializers
+            if (var->data.var_decl.initializer->type == AST_INT_LITERAL) {
+                fprintf(gen->output, "@%s = global %s %d\n", 
+                        var->data.var_decl.name, llvm_type, 
+                        var->data.var_decl.initializer->data.int_literal.value);
+            } else if (var->data.var_decl.initializer->type == AST_CHAR_LITERAL) {
+                fprintf(gen->output, "@%s = global %s %d\n", 
+                        var->data.var_decl.name, llvm_type, 
+                        (int)var->data.var_decl.initializer->data.char_literal.value);
+            } else {
+                LOG_ERROR("Global variable initializer must be a constant");
+                exit(1);
+            }
+        } else {
+            // Global variable without initializer (zero-initialized)
+            fprintf(gen->output, "@%s = global %s 0\n", var->data.var_decl.name, llvm_type);
+        }
+        
+        LOG_DEBUG("Generated global variable: %s", var->data.var_decl.name);
+    }
+    
+    if (ast->data.program.global_var_count > 0) {
+        fprintf(gen->output, "\n");
+    }
+    
+    // Second pass: register all functions
     for (int i = 0; i < ast->data.program.function_count; i++) {
         ASTNode *func = ast->data.program.functions[i];
         

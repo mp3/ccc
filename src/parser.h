@@ -10,6 +10,10 @@ typedef enum {
     AST_RETURN_STMT,
     AST_IF_STMT,
     AST_WHILE_STMT,
+    AST_DO_WHILE_STMT,
+    AST_FOR_STMT,
+    AST_BREAK_STMT,
+    AST_CONTINUE_STMT,
     AST_EXPR_STMT,
     AST_BINARY_OP,
     AST_UNARY_OP,
@@ -23,7 +27,13 @@ typedef enum {
     AST_PARAM_DECL,
     AST_ARRAY_ACCESS,
     AST_ADDRESS_OF,
-    AST_DEREFERENCE
+    AST_DEREFERENCE,
+    AST_STRUCT_DECL,
+    AST_MEMBER_ACCESS,
+    AST_SIZEOF,
+    AST_SWITCH_STMT,
+    AST_CASE_STMT,
+    AST_DEFAULT_STMT
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -34,6 +44,8 @@ typedef struct ASTNode {
         struct {
             struct ASTNode **functions;
             int function_count;
+            struct ASTNode **global_vars;
+            int global_var_count;
         } program;
         struct {
             char *name;
@@ -58,6 +70,16 @@ typedef struct ASTNode {
             struct ASTNode *condition;
             struct ASTNode *body;
         } while_stmt;
+        struct {
+            struct ASTNode *body;
+            struct ASTNode *condition;
+        } do_while_stmt;
+        struct {
+            struct ASTNode *init;       // Can be NULL
+            struct ASTNode *condition;  // Can be NULL
+            struct ASTNode *update;     // Can be NULL
+            struct ASTNode *body;
+        } for_stmt;
         struct {
             struct ASTNode *expression;
         } expr_stmt;
@@ -105,6 +127,34 @@ typedef struct ASTNode {
             struct ASTNode *array;
             struct ASTNode *index;
         } array_access;
+        struct {
+            char *name;
+            struct ASTNode **members;
+            int member_count;
+        } struct_decl;
+        struct {
+            struct ASTNode *object;
+            char *member_name;
+        } member_access;
+        struct {
+            char *type_name;               // For sizeof(type) - e.g., "int", "char*"
+            struct ASTNode *expression;    // For sizeof(expression) - mutually exclusive with type_name
+        } sizeof_op;
+        struct {
+            struct ASTNode *expression;    // Expression to switch on
+            struct ASTNode **cases;        // Array of case statements
+            int case_count;
+            struct ASTNode *default_case;  // Optional default case
+        } switch_stmt;
+        struct {
+            struct ASTNode *value;         // Case value (must be constant)
+            struct ASTNode **statements;   // Statements for this case
+            int statement_count;
+        } case_stmt;
+        struct {
+            struct ASTNode **statements;   // Statements for default case
+            int statement_count;
+        } default_stmt;
     } data;
 } ASTNode;
 
