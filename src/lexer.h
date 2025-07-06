@@ -25,6 +25,9 @@ typedef enum {
     TOKEN_KEYWORD_CASE,
     TOKEN_KEYWORD_DEFAULT,
     TOKEN_COLON,
+    TOKEN_AND,     // &&
+    TOKEN_OR,      // ||
+    TOKEN_NOT,     // !
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_STAR,

@@ -117,6 +117,19 @@ static ASTNode *parse_primary(Parser *parser) {
         return node;
     }
     
+    // Handle logical NOT operator
+    if (token->type == TOKEN_NOT) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        ASTNode *operand = parse_primary(parser);
+        ASTNode *node = create_ast_node(AST_UNARY_OP, line, column);
+        node->data.unary_op.op = TOKEN_NOT;
+        node->data.unary_op.operand = operand;
+        LOG_TRACE("Parsed logical NOT operator");
+        return node;
+    }
+    
     // Handle sizeof operator
     if (token->type == TOKEN_KEYWORD_SIZEOF) {
         int line = token->line;
@@ -349,8 +362,50 @@ static ASTNode *parse_comparison(Parser *parser) {
     return left;
 }
 
-static ASTNode *parse_assignment(Parser *parser) {
+static ASTNode *parse_logical_and(Parser *parser) {
     ASTNode *left = parse_comparison(parser);
+    
+    while (parser->current_token->type == TOKEN_AND) {
+        Token *op_token = parser->current_token;
+        TokenType op_type = op_token->type;
+        int op_line = op_token->line;
+        int op_column = op_token->column;
+        parser_advance(parser);
+        ASTNode *right = parse_comparison(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
+        node->data.binary_op.op = op_type;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
+static ASTNode *parse_logical_or(Parser *parser) {
+    ASTNode *left = parse_logical_and(parser);
+    
+    while (parser->current_token->type == TOKEN_OR) {
+        Token *op_token = parser->current_token;
+        TokenType op_type = op_token->type;
+        int op_line = op_token->line;
+        int op_column = op_token->column;
+        parser_advance(parser);
+        ASTNode *right = parse_logical_and(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
+        node->data.binary_op.op = op_type;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
+static ASTNode *parse_assignment(Parser *parser) {
+    ASTNode *left = parse_logical_or(parser);
     
     if (parser->current_token->type == TOKEN_ASSIGN) {
         if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS && left->type != AST_DEREFERENCE) {

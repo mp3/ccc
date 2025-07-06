@@ -251,7 +251,12 @@ Token *lexer_next_token(Lexer *lexer) {
         case ',': return create_token(TOKEN_COMMA, ",", line, column);
         case '[': return create_token(TOKEN_LBRACKET, "[", line, column);
         case ']': return create_token(TOKEN_RBRACKET, "]", line, column);
-        case '&': return create_token(TOKEN_AMPERSAND, "&", line, column);
+        case '&':
+            if (lexer->current_char == '&') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_AND, "&&", line, column);
+            }
+            return create_token(TOKEN_AMPERSAND, "&", line, column);
         case '.': return create_token(TOKEN_DOT, ".", line, column);
         case ':': return create_token(TOKEN_COLON, ":", line, column);
         case '=':
@@ -265,7 +270,7 @@ Token *lexer_next_token(Lexer *lexer) {
                 lexer_advance(lexer);
                 return create_token(TOKEN_NE, "!=", line, column);
             }
-            break;
+            return create_token(TOKEN_NOT, "!", line, column);
         case '<':
             if (lexer->current_char == '=') {
                 lexer_advance(lexer);
@@ -278,6 +283,12 @@ Token *lexer_next_token(Lexer *lexer) {
                 return create_token(TOKEN_GE, ">=", line, column);
             }
             return create_token(TOKEN_GT, ">", line, column);
+        case '|':
+            if (lexer->current_char == '|') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_OR, "||", line, column);
+            }
+            break;
     }
     
     char unknown[2] = {ch, '\0'};
@@ -296,7 +307,7 @@ const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
         "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
         "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "STRUCT", "SIZEOF",
-        "SWITCH", "CASE", "DEFAULT", "COLON",
+        "SWITCH", "CASE", "DEFAULT", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "UNKNOWN"

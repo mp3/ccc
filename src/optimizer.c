@@ -94,6 +94,12 @@ static ASTNode *fold_binary_op(Optimizer *opt, ASTNode *node) {
             case TOKEN_GE:
                 result = (left_val >= right_val) ? 1 : 0;
                 break;
+            case TOKEN_AND:
+                result = (left_val && right_val) ? 1 : 0;
+                break;
+            case TOKEN_OR:
+                result = (left_val || right_val) ? 1 : 0;
+                break;
             default:
                 can_fold = false;
                 break;
@@ -129,6 +135,31 @@ ASTNode *optimize_constant_folding(Optimizer *opt, ASTNode *node) {
     switch (node->type) {
         case AST_BINARY_OP:
             return fold_binary_op(opt, node);
+            
+        case AST_UNARY_OP:
+            // Optimize the operand first
+            node->data.unary_op.operand = 
+                optimize_constant_folding(opt, node->data.unary_op.operand);
+            
+            // If operand is constant and operator is NOT, fold it
+            if (node->data.unary_op.op == TOKEN_NOT && 
+                is_constant(node->data.unary_op.operand)) {
+                int operand_val = node->data.unary_op.operand->data.int_literal.value;
+                int result = !operand_val ? 1 : 0;
+                
+                LOG_DEBUG("Constant folding: !%d = %d", operand_val, result);
+                
+                // Create new constant node
+                ASTNode *folded = create_int_literal(result, node->line, node->column);
+                
+                // Clean up old nodes
+                ast_destroy(node->data.unary_op.operand);
+                free(node);
+                
+                opt->optimizations_performed++;
+                return folded;
+            }
+            break;
             
         case AST_VAR_DECL:
             if (node->data.var_decl.initializer) {

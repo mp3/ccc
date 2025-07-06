@@ -268,6 +268,94 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             }
             
+            // For logical operators, we need special handling for short-circuit evaluation
+            if (expr->data.binary_op.op == TOKEN_AND || expr->data.binary_op.op == TOKEN_OR) {
+                char *left = codegen_expression(gen, expr->data.binary_op.left);
+                // Right side will be evaluated conditionally inside the if blocks below
+                char *result = codegen_next_temp(gen);
+                
+                if (expr->data.binary_op.op == TOKEN_AND) {
+                    // For &&, if left is false, result is false (don't evaluate right)
+                    char *left_bool = codegen_next_temp(gen);
+                    char *check_label = codegen_next_label(gen, "and.check.");
+                    char *false_label = codegen_next_label(gen, "and.false.");
+                    char *end_label = codegen_next_label(gen, "and.end.");
+                    
+                    // Check if left is zero
+                    fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", left_bool, left);
+                    fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                            left_bool, check_label, false_label);
+                    
+                    // Check right side (only if left was true)
+                    fprintf(gen->output, "\n%s:\n", check_label);
+                    char *right = codegen_expression(gen, expr->data.binary_op.right);
+                    char *right_bool = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", right_bool, right);
+                    char *right_int = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = zext i1 %s to i32\n", right_int, right_bool);
+                    fprintf(gen->output, "  br label %%%s\n", end_label);
+                    
+                    // False branch
+                    fprintf(gen->output, "\n%s:\n", false_label);
+                    fprintf(gen->output, "  br label %%%s\n", end_label);
+                    
+                    // End - phi node to get result
+                    fprintf(gen->output, "\n%s:\n", end_label);
+                    fprintf(gen->output, "  %s = phi i32 [ 0, %%%s ], [ %s, %%%s ]\n",
+                            result, false_label, right_int, check_label);
+                    
+                    free(left);
+                    free(right);
+                    free(left_bool);
+                    free(right_bool);
+                    free(right_int);
+                    free(check_label);
+                    free(false_label);
+                    free(end_label);
+                    return result;
+                } else { // TOKEN_OR
+                    // For ||, if left is true, result is true (don't evaluate right)
+                    char *left_bool = codegen_next_temp(gen);
+                    char *check_label = codegen_next_label(gen, "or.check.");
+                    char *true_label = codegen_next_label(gen, "or.true.");
+                    char *end_label = codegen_next_label(gen, "or.end.");
+                    
+                    // Check if left is non-zero
+                    fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", left_bool, left);
+                    fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                            left_bool, true_label, check_label);
+                    
+                    // Check right side (only if left was false)
+                    fprintf(gen->output, "\n%s:\n", check_label);
+                    char *right = codegen_expression(gen, expr->data.binary_op.right);
+                    char *right_bool = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", right_bool, right);
+                    char *right_int = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = zext i1 %s to i32\n", right_int, right_bool);
+                    fprintf(gen->output, "  br label %%%s\n", end_label);
+                    
+                    // True branch
+                    fprintf(gen->output, "\n%s:\n", true_label);
+                    fprintf(gen->output, "  br label %%%s\n", end_label);
+                    
+                    // End - phi node to get result
+                    fprintf(gen->output, "\n%s:\n", end_label);
+                    fprintf(gen->output, "  %s = phi i32 [ 1, %%%s ], [ %s, %%%s ]\n",
+                            result, true_label, right_int, check_label);
+                    
+                    free(left);
+                    free(right);
+                    free(left_bool);
+                    free(right_bool);
+                    free(right_int);
+                    free(check_label);
+                    free(true_label);
+                    free(end_label);
+                    return result;
+                }
+            }
+            
+            // For other operators, evaluate both operands normally
             char *left = codegen_expression(gen, expr->data.binary_op.left);
             char *right = codegen_expression(gen, expr->data.binary_op.right);
             char *result = codegen_next_temp(gen);
@@ -575,6 +663,27 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             
             free(ptr);
             return temp;
+        }
+        
+        case AST_UNARY_OP: {
+            // Handle unary operators (currently just logical NOT)
+            if (expr->data.unary_op.op == TOKEN_NOT) {
+                char *operand = codegen_expression(gen, expr->data.unary_op.operand);
+                char *temp = codegen_next_temp(gen);
+                char *result = codegen_next_temp(gen);
+                
+                // Compare operand with 0 (logical NOT)
+                fprintf(gen->output, "  %s = icmp eq i32 %s, 0\n", temp, operand);
+                // Convert i1 to i32 (0 or 1)
+                fprintf(gen->output, "  %s = zext i1 %s to i32\n", result, temp);
+                
+                free(operand);
+                free(temp);
+                return result;
+            } else {
+                LOG_ERROR("Unknown unary operator: %d", expr->data.unary_op.op);
+                exit(1);
+            }
         }
         
         case AST_MEMBER_ACCESS: {
