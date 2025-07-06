@@ -9,12 +9,16 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->output = output;
     gen->temp_counter = 0;
     gen->label_counter = 0;
+    gen->symtab = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
 
 void codegen_destroy(CodeGenerator *gen) {
     if (gen) {
+        if (gen->symtab) {
+            symtab_destroy(gen->symtab);
+        }
         free(gen);
     }
 }
@@ -31,6 +35,30 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             char *temp = codegen_next_temp(gen);
             fprintf(gen->output, "  %s = add i32 0, %d\n", temp, expr->data.int_literal.value);
             return temp;
+        }
+        
+        case AST_IDENTIFIER: {
+            Symbol *sym = symtab_lookup(gen->symtab, expr->data.identifier.name);
+            if (!sym) {
+                LOG_ERROR("Undefined variable: %s", expr->data.identifier.name);
+                exit(1);
+            }
+            
+            char *temp = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = load i32, i32* %%%s\n", temp, sym->name);
+            return temp;
+        }
+        
+        case AST_ASSIGNMENT: {
+            Symbol *sym = symtab_lookup(gen->symtab, expr->data.assignment.name);
+            if (!sym) {
+                LOG_ERROR("Undefined variable: %s", expr->data.assignment.name);
+                exit(1);
+            }
+            
+            char *value = codegen_expression(gen, expr->data.assignment.value);
+            fprintf(gen->output, "  store i32 %s, i32* %%%s\n", value, sym->name);
+            return value;
         }
         
         case AST_BINARY_OP: {
@@ -65,6 +93,26 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
 
 static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
     switch (stmt->type) {
+        case AST_VAR_DECL: {
+            Symbol *sym = symtab_insert(gen->symtab, stmt->data.var_decl.name, 
+                                       SYM_VARIABLE, stmt->data.var_decl.type);
+            if (!sym) {
+                LOG_ERROR("Failed to declare variable: %s", stmt->data.var_decl.name);
+                exit(1);
+            }
+            
+            // Allocate stack space for the variable
+            fprintf(gen->output, "  %%%s = alloca i32\n", sym->name);
+            
+            // Initialize if needed
+            if (stmt->data.var_decl.initializer) {
+                char *value = codegen_expression(gen, stmt->data.var_decl.initializer);
+                fprintf(gen->output, "  store i32 %s, i32* %%%s\n", value, sym->name);
+                free(value);
+            }
+            break;
+        }
+        
         case AST_RETURN_STMT: {
             char *value = codegen_expression(gen, stmt->data.return_stmt.expression);
             fprintf(gen->output, "  ret i32 %s\n", value);
@@ -72,11 +120,20 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             break;
         }
         
-        case AST_COMPOUND_STMT:
+        case AST_COMPOUND_STMT: {
+            // Create new scope
+            SymbolTable *old_symtab = gen->symtab;
+            gen->symtab = symtab_create(old_symtab);
+            
             for (int i = 0; i < stmt->data.compound.statement_count; i++) {
                 codegen_statement(gen, stmt->data.compound.statements[i]);
             }
+            
+            // Restore old scope
+            symtab_destroy(gen->symtab);
+            gen->symtab = old_symtab;
             break;
+        }
             
         case AST_EXPR_STMT:
             free(codegen_expression(gen, stmt->data.expr_stmt.expression));
@@ -93,11 +150,21 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     fprintf(gen->output, "entry:\n");
     
     gen->temp_counter = 0;  // Reset temp counter for each function
+    
+    // Create function scope
+    SymbolTable *old_symtab = gen->symtab;
+    gen->symtab = symtab_create(old_symtab);
+    
+    // Generate function body
     codegen_statement(gen, func->data.function.body);
     
     // Add unreachable in case no return statement
     fprintf(gen->output, "  unreachable\n");
     fprintf(gen->output, "}\n\n");
+    
+    // Restore global scope
+    symtab_destroy(gen->symtab);
+    gen->symtab = old_symtab;
     
     LOG_DEBUG("Generated code for function: %s", func->data.function.name);
 }

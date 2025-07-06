@@ -32,6 +32,8 @@ typedef struct ASTNode {
             char *name;
             char *return_type;
             struct ASTNode *body;
+            struct ASTNode **params;
+            int param_count;
         } function;
         struct {
             struct ASTNode **statements;

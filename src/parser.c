@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "logger.h"
+#include "symtab.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -155,8 +156,33 @@ static ASTNode *parse_comparison(Parser *parser) {
     return left;
 }
 
+static ASTNode *parse_assignment(Parser *parser) {
+    ASTNode *left = parse_comparison(parser);
+    
+    if (parser->current_token->type == TOKEN_ASSIGN) {
+        if (left->type != AST_IDENTIFIER) {
+            LOG_ERROR("Invalid assignment target at %d:%d", 
+                     left->line, left->column);
+            exit(1);
+        }
+        
+        Token *op_token = parser->current_token;
+        parser_advance(parser);
+        ASTNode *right = parse_assignment(parser);  // Right associative
+        
+        ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
+        node->data.assignment.name = strdup(left->data.identifier.name);
+        node->data.assignment.value = right;
+        
+        ast_destroy(left);  // We copied the name, so destroy the identifier node
+        return node;
+    }
+    
+    return left;
+}
+
 static ASTNode *parse_expression(Parser *parser) {
-    return parse_comparison(parser);
+    return parse_assignment(parser);
 }
 
 static ASTNode *parse_compound_statement(Parser *parser) {
@@ -187,6 +213,33 @@ static ASTNode *parse_compound_statement(Parser *parser) {
 
 static ASTNode *parse_statement(Parser *parser) {
     Token *token = parser->current_token;
+    
+    // Variable declaration
+    if (token->type == TOKEN_KEYWORD_INT) {
+        parser_advance(parser);
+        
+        Token *name_token = parser->current_token;
+        char *var_name = strdup(name_token->text);
+        int var_line = name_token->line;
+        int var_column = name_token->column;
+        parser_expect(parser, TOKEN_IDENTIFIER);
+        
+        ASTNode *node = create_ast_node(AST_VAR_DECL, var_line, var_column);
+        node->data.var_decl.type = strdup("int");
+        node->data.var_decl.name = var_name;
+        
+        // Optional initializer
+        if (parser->current_token->type == TOKEN_ASSIGN) {
+            parser_advance(parser);
+            node->data.var_decl.initializer = parse_expression(parser);
+        } else {
+            node->data.var_decl.initializer = NULL;
+        }
+        
+        parser_expect(parser, TOKEN_SEMICOLON);
+        LOG_TRACE("Parsed variable declaration: %s", node->data.var_decl.name);
+        return node;
+    }
     
     if (token->type == TOKEN_KEYWORD_RETURN) {
         parser_advance(parser);
@@ -282,6 +335,15 @@ void ast_destroy(ASTNode *node) {
         case AST_IDENTIFIER:
             free(node->data.identifier.name);
             break;
+        case AST_ASSIGNMENT:
+            free(node->data.assignment.name);
+            ast_destroy(node->data.assignment.value);
+            break;
+        case AST_VAR_DECL:
+            free(node->data.var_decl.type);
+            free(node->data.var_decl.name);
+            ast_destroy(node->data.var_decl.initializer);
+            break;
         default:
             break;
     }
@@ -326,6 +388,23 @@ void ast_print(ASTNode *node, int indent) {
             break;
         case AST_IDENTIFIER:
             printf("Identifier: %s\n", node->data.identifier.name);
+            break;
+        case AST_ASSIGNMENT:
+            printf("Assignment: %s =\n", node->data.assignment.name);
+            ast_print(node->data.assignment.value, indent + 1);
+            break;
+        case AST_VAR_DECL:
+            printf("Variable Declaration: %s %s\n", 
+                   node->data.var_decl.type, node->data.var_decl.name);
+            if (node->data.var_decl.initializer) {
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("Initializer:\n");
+                ast_print(node->data.var_decl.initializer, indent + 2);
+            }
+            break;
+        case AST_EXPR_STMT:
+            printf("Expression Statement\n");
+            ast_print(node->data.expr_stmt.expression, indent + 1);
             break;
         default:
             printf("Unknown node type: %d\n", node->type);

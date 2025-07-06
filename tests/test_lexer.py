@@ -65,3 +65,35 @@ class TestLexer:
         
         os.unlink(c_file)
         os.unlink(output_file)
+    
+    def test_variables(self):
+        """Test variable declarations and usage."""
+        c_file = create_temp_c_file("int main() { int x = 5; int y = 10; return x + y; }")
+        output_file = tempfile.mktemp(suffix='.ll')
+        
+        result = compile_file(c_file, output_file)
+        
+        assert result.returncode == 0, f"Compilation failed: {result.stderr}"
+        assert os.path.exists(output_file), "Output file was not created"
+        
+        with open(output_file, 'r') as f:
+            content = f.read()
+            assert 'alloca i32' in content
+            assert 'store i32' in content
+            assert 'load i32' in content
+        
+        os.unlink(c_file)
+        os.unlink(output_file)
+    
+    def test_assignments(self):
+        """Test variable assignments."""
+        c_file = create_temp_c_file("int main() { int x; x = 42; return x; }")
+        output_file = tempfile.mktemp(suffix='.ll')
+        
+        result = compile_file(c_file, output_file)
+        
+        assert result.returncode == 0, f"Compilation failed: {result.stderr}"
+        assert os.path.exists(output_file), "Output file was not created"
+        
+        os.unlink(c_file)
+        os.unlink(output_file)

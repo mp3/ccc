@@ -16,6 +16,9 @@ A minimal C89 subset compiler that generates LLVM IR.
 - Functions (only `int main()` for now)
 - Return statements
 - Proper operator precedence
+- Variable declarations with optional initialization
+- Variable assignments
+- Expression statements
 
 ## Building
 
@@ -40,7 +43,10 @@ clang output.o -o output
 
 ```c
 int main() {
-    return 2 + 3 * 4 - 1;
+    int x = 10;
+    int y = 20;
+    int sum = x + y;
+    return sum;
 }
 ```
 
@@ -61,7 +67,7 @@ ccc/
 
 ## Next Steps
 
-- [ ] Variables and assignments
+- [x] Variables and assignments
 - [ ] Control flow (if/while)
 - [ ] Comparison operators
 - [ ] Function parameters and local variables

@@ -2,12 +2,14 @@
 #define CODEGEN_H
 
 #include "parser.h"
+#include "symtab.h"
 #include <stdio.h>
 
 typedef struct {
     FILE *output;
     int temp_counter;
     int label_counter;
+    SymbolTable *symtab;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);
