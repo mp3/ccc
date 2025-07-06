@@ -132,6 +132,20 @@ static ASTNode *parse_primary(Parser *parser) {
             node->data.function_call.argument_count = arg_count;
             LOG_TRACE("Parsed function call: %s with %d arguments", name, arg_count);
             return node;
+        } else if (parser->current_token->type == TOKEN_LBRACKET) {
+            // Array access
+            parser_advance(parser);
+            ASTNode *index = parse_expression(parser);
+            parser_expect(parser, TOKEN_RBRACKET);
+            
+            ASTNode *array_node = create_ast_node(AST_IDENTIFIER, line, column);
+            array_node->data.identifier.name = name;
+            
+            ASTNode *node = create_ast_node(AST_ARRAY_ACCESS, line, column);
+            node->data.array_access.array = array_node;
+            node->data.array_access.index = index;
+            LOG_TRACE("Parsed array access: %s[...]", name);
+            return node;
         } else {
             // Regular identifier
             ASTNode *node = create_ast_node(AST_IDENTIFIER, line, column);
@@ -222,7 +236,7 @@ static ASTNode *parse_assignment(Parser *parser) {
     ASTNode *left = parse_comparison(parser);
     
     if (parser->current_token->type == TOKEN_ASSIGN) {
-        if (left->type != AST_IDENTIFIER) {
+        if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS) {
             LOG_ERROR("Invalid assignment target at %d:%d", 
                      left->line, left->column);
             exit(1);
@@ -232,12 +246,24 @@ static ASTNode *parse_assignment(Parser *parser) {
         parser_advance(parser);
         ASTNode *right = parse_assignment(parser);  // Right associative
         
-        ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
-        node->data.assignment.name = strdup(left->data.identifier.name);
-        node->data.assignment.value = right;
-        
-        ast_destroy(left);  // We copied the name, so destroy the identifier node
-        return node;
+        if (left->type == AST_IDENTIFIER) {
+            ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
+            node->data.assignment.name = strdup(left->data.identifier.name);
+            node->data.assignment.value = right;
+            ast_destroy(left);  // We copied the name, so destroy the identifier node
+            return node;
+        } else {
+            // Array element assignment - keep the array access node as is
+            ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
+            node->data.assignment.name = NULL;  // Will need to handle this differently
+            node->data.assignment.value = right;
+            // For now, we'll return the array access assignment as a binary op
+            ASTNode *assign_op = create_ast_node(AST_BINARY_OP, op_token->line, op_token->column);
+            assign_op->data.binary_op.op = TOKEN_ASSIGN;
+            assign_op->data.binary_op.left = left;
+            assign_op->data.binary_op.right = right;
+            return assign_op;
+        }
     }
     
     return left;
@@ -290,6 +316,14 @@ static ASTNode *parse_statement(Parser *parser) {
         ASTNode *node = create_ast_node(AST_VAR_DECL, var_line, var_column);
         node->data.var_decl.type = type_name;
         node->data.var_decl.name = var_name;
+        node->data.var_decl.array_size = NULL;
+        
+        // Check for array declaration
+        if (parser->current_token->type == TOKEN_LBRACKET) {
+            parser_advance(parser);
+            node->data.var_decl.array_size = parse_expression(parser);
+            parser_expect(parser, TOKEN_RBRACKET);
+        }
         
         // Optional initializer
         if (parser->current_token->type == TOKEN_ASSIGN) {
@@ -300,7 +334,11 @@ static ASTNode *parse_statement(Parser *parser) {
         }
         
         parser_expect(parser, TOKEN_SEMICOLON);
-        LOG_TRACE("Parsed variable declaration: %s %s", type_name, node->data.var_decl.name);
+        if (node->data.var_decl.array_size) {
+            LOG_TRACE("Parsed array declaration: %s %s[...]", type_name, node->data.var_decl.name);
+        } else {
+            LOG_TRACE("Parsed variable declaration: %s %s", type_name, node->data.var_decl.name);
+        }
         return node;
     }
     
@@ -511,6 +549,7 @@ void ast_destroy(ASTNode *node) {
             free(node->data.var_decl.type);
             free(node->data.var_decl.name);
             ast_destroy(node->data.var_decl.initializer);
+            ast_destroy(node->data.var_decl.array_size);
             break;
         case AST_IF_STMT:
             ast_destroy(node->data.if_stmt.condition);
@@ -537,6 +576,10 @@ void ast_destroy(ASTNode *node) {
             break;
         case AST_STRING_LITERAL:
             free(node->data.string_literal.value);
+            break;
+        case AST_ARRAY_ACCESS:
+            ast_destroy(node->data.array_access.array);
+            ast_destroy(node->data.array_access.index);
             break;
         default:
             break;
@@ -598,8 +641,16 @@ void ast_print(ASTNode *node, int indent) {
             ast_print(node->data.assignment.value, indent + 1);
             break;
         case AST_VAR_DECL:
-            printf("Variable Declaration: %s %s\n", 
-                   node->data.var_decl.type, node->data.var_decl.name);
+            if (node->data.var_decl.array_size) {
+                printf("Array Declaration: %s %s[...]\n", 
+                       node->data.var_decl.type, node->data.var_decl.name);
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("Size:\n");
+                ast_print(node->data.var_decl.array_size, indent + 2);
+            } else {
+                printf("Variable Declaration: %s %s\n", 
+                       node->data.var_decl.type, node->data.var_decl.name);
+            }
             if (node->data.var_decl.initializer) {
                 for (int i = 0; i < indent + 1; i++) printf("  ");
                 printf("Initializer:\n");
@@ -648,6 +699,18 @@ void ast_print(ASTNode *node, int indent) {
             break;
         case AST_PARAM_DECL:
             printf("Parameter: %s %s\n", node->data.param_decl.type, node->data.param_decl.name);
+            break;
+        case AST_ARRAY_ACCESS:
+            printf("Array Access\n");
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Array:\n");
+            ast_print(node->data.array_access.array, indent + 2);
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Index:\n");
+            ast_print(node->data.array_access.index, indent + 2);
+            break;
+        case AST_CHAR_LITERAL:
+            printf("Char: '%c' (%d)\n", node->data.char_literal.value, node->data.char_literal.value);
             break;
         default:
             printf("Unknown node type: %d\n", node->type);

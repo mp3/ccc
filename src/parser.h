@@ -20,7 +20,8 @@ typedef enum {
     AST_ASSIGNMENT,
     AST_VAR_DECL,
     AST_FUNCTION_CALL,
-    AST_PARAM_DECL
+    AST_PARAM_DECL,
+    AST_ARRAY_ACCESS
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -87,6 +88,7 @@ typedef struct ASTNode {
             char *type;
             char *name;
             struct ASTNode *initializer;
+            struct ASTNode *array_size;  // NULL for non-arrays
         } var_decl;
         struct {
             char *name;
@@ -97,6 +99,10 @@ typedef struct ASTNode {
             char *type;
             char *name;
         } param_decl;
+        struct {
+            struct ASTNode *array;
+            struct ASTNode *index;
+        } array_access;
     } data;
 } ASTNode;
 

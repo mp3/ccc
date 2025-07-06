@@ -85,6 +85,48 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
         }
         
         case AST_BINARY_OP: {
+            // Handle array assignment specially
+            if (expr->data.binary_op.op == TOKEN_ASSIGN && 
+                expr->data.binary_op.left->type == AST_ARRAY_ACCESS) {
+                // Array element assignment
+                ASTNode *array_access = expr->data.binary_op.left;
+                
+                // Get array symbol
+                if (array_access->data.array_access.array->type != AST_IDENTIFIER) {
+                    LOG_ERROR("Array access must be on an identifier");
+                    exit(1);
+                }
+                
+                const char *array_name = array_access->data.array_access.array->data.identifier.name;
+                Symbol *sym = symtab_lookup(gen->symtab, array_name);
+                if (!sym) {
+                    LOG_ERROR("Undefined array: %s", array_name);
+                    exit(1);
+                }
+                
+                if (!sym->is_array) {
+                    LOG_ERROR("'%s' is not an array", array_name);
+                    exit(1);
+                }
+                
+                // Evaluate index and value
+                char *index = codegen_expression(gen, array_access->data.array_access.index);
+                char *value = codegen_expression(gen, expr->data.binary_op.right);
+                
+                // Generate getelementptr to get address of array element
+                char *addr = codegen_next_temp(gen);
+                const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                
+                // Store the value
+                fprintf(gen->output, "  store %s %s, %s* %s\n", llvm_type, value, llvm_type, addr);
+                
+                free(index);
+                free(addr);
+                return value;
+            }
+            
             char *left = codegen_expression(gen, expr->data.binary_op.left);
             char *right = codegen_expression(gen, expr->data.binary_op.right);
             char *result = codegen_next_temp(gen);
@@ -175,6 +217,43 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             return result;
         }
         
+        case AST_ARRAY_ACCESS: {
+            // Get array symbol
+            if (expr->data.array_access.array->type != AST_IDENTIFIER) {
+                LOG_ERROR("Array access must be on an identifier");
+                exit(1);
+            }
+            
+            const char *array_name = expr->data.array_access.array->data.identifier.name;
+            Symbol *sym = symtab_lookup(gen->symtab, array_name);
+            if (!sym) {
+                LOG_ERROR("Undefined array: %s", array_name);
+                exit(1);
+            }
+            
+            if (!sym->is_array) {
+                LOG_ERROR("'%s' is not an array", array_name);
+                exit(1);
+            }
+            
+            // Evaluate index
+            char *index = codegen_expression(gen, expr->data.array_access.index);
+            
+            // Generate getelementptr to get address of array element
+            char *addr = codegen_next_temp(gen);
+            const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                    addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+            
+            // Load the value
+            char *value = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = load %s, %s* %s\n", value, llvm_type, llvm_type, addr);
+            
+            free(index);
+            free(addr);
+            return value;
+        }
+        
         default:
             LOG_ERROR("Unknown expression type in codegen: %d", expr->type);
             exit(1);
@@ -184,22 +263,44 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
 static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
     switch (stmt->type) {
         case AST_VAR_DECL: {
-            Symbol *sym = symtab_insert(gen->symtab, stmt->data.var_decl.name, 
-                                       SYM_VARIABLE, stmt->data.var_decl.type);
-            if (!sym) {
-                LOG_ERROR("Failed to declare variable: %s", stmt->data.var_decl.name);
-                exit(1);
-            }
-            
-            // Allocate stack space for the variable
-            const char *llvm_type = strcmp(stmt->data.var_decl.type, "char") == 0 ? "i8" : "i32";
-            fprintf(gen->output, "  %%%s = alloca %s\n", sym->name, llvm_type);
-            
-            // Initialize if needed
-            if (stmt->data.var_decl.initializer) {
-                char *value = codegen_expression(gen, stmt->data.var_decl.initializer);
-                fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
-                free(value);
+            Symbol *sym;
+            if (stmt->data.var_decl.array_size) {
+                // Array declaration
+                // First evaluate the array size (must be a constant for now)
+                if (stmt->data.var_decl.array_size->type != AST_INT_LITERAL) {
+                    LOG_ERROR("Array size must be a constant integer");
+                    exit(1);
+                }
+                int size = stmt->data.var_decl.array_size->data.int_literal.value;
+                sym = symtab_insert_array(gen->symtab, stmt->data.var_decl.name, 
+                                         stmt->data.var_decl.type, size);
+                if (!sym) {
+                    LOG_ERROR("Failed to declare array: %s", stmt->data.var_decl.name);
+                    exit(1);
+                }
+                
+                // Allocate stack space for the array
+                const char *llvm_type = strcmp(stmt->data.var_decl.type, "char") == 0 ? "i8" : "i32";
+                fprintf(gen->output, "  %%%s = alloca [%d x %s]\n", sym->name, size, llvm_type);
+            } else {
+                // Regular variable
+                sym = symtab_insert(gen->symtab, stmt->data.var_decl.name, 
+                                   SYM_VARIABLE, stmt->data.var_decl.type);
+                if (!sym) {
+                    LOG_ERROR("Failed to declare variable: %s", stmt->data.var_decl.name);
+                    exit(1);
+                }
+                
+                // Allocate stack space for the variable
+                const char *llvm_type = strcmp(stmt->data.var_decl.type, "char") == 0 ? "i8" : "i32";
+                fprintf(gen->output, "  %%%s = alloca %s\n", sym->name, llvm_type);
+                
+                // Initialize if needed
+                if (stmt->data.var_decl.initializer) {
+                    char *value = codegen_expression(gen, stmt->data.var_decl.initializer);
+                    fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+                    free(value);
+                }
             }
             break;
         }

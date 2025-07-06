@@ -32,6 +32,8 @@ typedef enum {
     TOKEN_LE,
     TOKEN_GE,
     TOKEN_COMMA,
+    TOKEN_LBRACKET,  // [
+    TOKEN_RBRACKET,  // ]
     TOKEN_UNKNOWN
 } TokenType;
 

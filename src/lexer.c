@@ -240,6 +240,8 @@ Token *lexer_next_token(Lexer *lexer) {
         case '}': return create_token(TOKEN_RBRACE, "}", line, column);
         case ';': return create_token(TOKEN_SEMICOLON, ";", line, column);
         case ',': return create_token(TOKEN_COMMA, ",", line, column);
+        case '[': return create_token(TOKEN_LBRACKET, "[", line, column);
+        case ']': return create_token(TOKEN_RBRACKET, "]", line, column);
         case '=':
             if (lexer->current_char == '=') {
                 lexer_advance(lexer);
@@ -283,7 +285,8 @@ const char *token_type_to_string(TokenType type) {
         "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
         "IF", "ELSE", "WHILE", "RETURN", "INT", "CHAR",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
-        "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", "UNKNOWN"
+        "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
+        "LBRACKET", "RBRACKET", "UNKNOWN"
     };
     return names[type];
 }

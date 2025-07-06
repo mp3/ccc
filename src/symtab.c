@@ -47,6 +47,8 @@ Symbol *symtab_insert(SymbolTable *table, const char *name, SymbolType type, con
     sym->type = type;
     sym->data_type = strdup(data_type);
     sym->is_param = false;
+    sym->is_array = false;
+    sym->array_size = 0;
     sym->param_types = NULL;
     sym->param_names = NULL;
     sym->param_count = 0;
@@ -79,6 +81,39 @@ Symbol *symtab_lookup_local(SymbolTable *table, const char *name) {
     return NULL;
 }
 
+Symbol *symtab_insert_array(SymbolTable *table, const char *name, const char *data_type, int size) {
+    // Check if already exists in local scope
+    if (symtab_lookup_local(table, name)) {
+        LOG_ERROR("Symbol '%s' already defined in this scope", name);
+        return NULL;
+    }
+    
+    Symbol *sym = malloc(sizeof(Symbol));
+    sym->name = strdup(name);
+    sym->type = SYM_VARIABLE;
+    sym->data_type = strdup(data_type);
+    sym->is_param = false;
+    sym->is_array = true;
+    sym->array_size = size;
+    sym->param_types = NULL;
+    sym->param_names = NULL;
+    sym->param_count = 0;
+    
+    // Allocate space on the stack for the array
+    // Each element is 4 bytes for int, 1 byte for char
+    int element_size = strcmp(data_type, "char") == 0 ? 1 : 4;
+    sym->offset = table->next_offset;
+    table->next_offset += size * element_size;
+    
+    // Insert at the beginning of the list
+    sym->next = table->symbols;
+    table->symbols = sym;
+    
+    LOG_DEBUG("Inserted array '%s' (type: %s[%d], offset: %d)", 
+              name, data_type, size, sym->offset);
+    return sym;
+}
+
 Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char *return_type,
                               char **param_types, char **param_names, int param_count) {
     // Check if already exists in local scope
@@ -92,6 +127,8 @@ Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char 
     sym->type = SYM_FUNCTION;
     sym->data_type = strdup(return_type);
     sym->is_param = false;
+    sym->is_array = false;
+    sym->array_size = 0;
     sym->offset = 0;
     
     // Copy parameter information
