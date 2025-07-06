@@ -21,7 +21,9 @@ typedef enum {
     AST_VAR_DECL,
     AST_FUNCTION_CALL,
     AST_PARAM_DECL,
-    AST_ARRAY_ACCESS
+    AST_ARRAY_ACCESS,
+    AST_ADDRESS_OF,
+    AST_DEREFERENCE
 } ASTNodeType;
 
 typedef struct ASTNode {

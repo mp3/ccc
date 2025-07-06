@@ -36,6 +36,41 @@ static char *codegen_next_label(CodeGenerator *gen, const char *prefix) {
     return label;
 }
 
+static char *c_type_to_llvm_type(const char *c_type) {
+    static char llvm_type[256];
+    
+    if (strcmp(c_type, "int") == 0) {
+        strcpy(llvm_type, "i32");
+    } else if (strcmp(c_type, "char") == 0) {
+        strcpy(llvm_type, "i8");
+    } else if (strcmp(c_type, "int*") == 0) {
+        strcpy(llvm_type, "i32*");
+    } else if (strcmp(c_type, "char*") == 0) {
+        strcpy(llvm_type, "i8*");
+    } else if (strcmp(c_type, "int**") == 0) {
+        strcpy(llvm_type, "i32**");
+    } else if (strcmp(c_type, "char**") == 0) {
+        strcpy(llvm_type, "i8**");
+    } else {
+        // Generic pointer handling for multiple levels
+        strcpy(llvm_type, c_type);
+        // Replace int with i32 and char with i8
+        char *pos = strstr(llvm_type, "int");
+        if (pos) {
+            memmove(pos + 3, pos + 3, strlen(pos + 3) + 1);
+            memcpy(pos, "i32", 3);
+        } else {
+            pos = strstr(llvm_type, "char");
+            if (pos) {
+                memmove(pos + 2, pos + 4, strlen(pos + 4) + 1);
+                memcpy(pos, "i8", 2);
+            }
+        }
+    }
+    
+    return llvm_type;
+}
+
 static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
     switch (expr->type) {
         case AST_INT_LITERAL: {
@@ -66,7 +101,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             char *temp = codegen_next_temp(gen);
             // For parameters, we always allocate and use .addr
             // For regular variables, we use the name directly
-            const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+            char *llvm_type = c_type_to_llvm_type(sym->data_type);
             fprintf(gen->output, "  %s = load %s, %s* %%%s\n", temp, llvm_type, llvm_type, sym->name);
             return temp;
         }
@@ -79,15 +114,15 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             
             char *value = codegen_expression(gen, expr->data.assignment.value);
-            const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+            char *llvm_type = c_type_to_llvm_type(sym->data_type);
             fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
             return value;
         }
         
         case AST_BINARY_OP: {
-            // Handle array assignment specially
-            if (expr->data.binary_op.op == TOKEN_ASSIGN && 
-                expr->data.binary_op.left->type == AST_ARRAY_ACCESS) {
+            // Handle assignment to array element or dereference
+            if (expr->data.binary_op.op == TOKEN_ASSIGN) {
+                if (expr->data.binary_op.left->type == AST_ARRAY_ACCESS) {
                 // Array element assignment
                 ASTNode *array_access = expr->data.binary_op.left;
                 
@@ -125,6 +160,17 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 free(index);
                 free(addr);
                 return value;
+            } else if (expr->data.binary_op.left->type == AST_DEREFERENCE) {
+                // Dereference assignment (*p = value)
+                char *ptr = codegen_expression(gen, expr->data.binary_op.left->data.unary_op.operand);
+                char *value = codegen_expression(gen, expr->data.binary_op.right);
+                
+                // Store through pointer (assume i32 for now)
+                fprintf(gen->output, "  store i32 %s, i32* %s\n", value, ptr);
+                
+                free(ptr);
+                return value;
+            }
             }
             
             char *left = codegen_expression(gen, expr->data.binary_op.left);
@@ -254,6 +300,63 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             return value;
         }
         
+        case AST_ADDRESS_OF: {
+            // Address-of operator - return pointer to the operand
+            if (expr->data.unary_op.operand->type == AST_IDENTIFIER) {
+                Symbol *sym = symtab_lookup(gen->symtab, expr->data.unary_op.operand->data.identifier.name);
+                if (!sym) {
+                    LOG_ERROR("Undefined variable: %s", expr->data.unary_op.operand->data.identifier.name);
+                    exit(1);
+                }
+                // Just return the address (which is the variable name in LLVM)
+                char *result = malloc(256);
+                snprintf(result, 256, "%%%s", sym->name);
+                return result;
+            } else if (expr->data.unary_op.operand->type == AST_ARRAY_ACCESS) {
+                // Address of array element
+                ASTNode *array_access = expr->data.unary_op.operand;
+                if (array_access->data.array_access.array->type != AST_IDENTIFIER) {
+                    LOG_ERROR("Array access must be on an identifier");
+                    exit(1);
+                }
+                
+                const char *array_name = array_access->data.array_access.array->data.identifier.name;
+                Symbol *sym = symtab_lookup(gen->symtab, array_name);
+                if (!sym) {
+                    LOG_ERROR("Undefined array: %s", array_name);
+                    exit(1);
+                }
+                
+                // Evaluate index
+                char *index = codegen_expression(gen, array_access->data.array_access.index);
+                
+                // Generate getelementptr to get address of array element
+                char *addr = codegen_next_temp(gen);
+                const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                
+                free(index);
+                return addr;
+            } else {
+                LOG_ERROR("Cannot take address of expression");
+                exit(1);
+            }
+        }
+        
+        case AST_DEREFERENCE: {
+            // Dereference operator - load value from pointer
+            char *ptr = codegen_expression(gen, expr->data.unary_op.operand);
+            char *temp = codegen_next_temp(gen);
+            
+            // We need to determine the type being pointed to
+            // For now, assume i32 (this needs proper type tracking)
+            fprintf(gen->output, "  %s = load i32, i32* %s\n", temp, ptr);
+            
+            free(ptr);
+            return temp;
+        }
+        
         default:
             LOG_ERROR("Unknown expression type in codegen: %d", expr->type);
             exit(1);
@@ -280,8 +383,8 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 }
                 
                 // Allocate stack space for the array
-                const char *llvm_type = strcmp(stmt->data.var_decl.type, "char") == 0 ? "i8" : "i32";
-                fprintf(gen->output, "  %%%s = alloca [%d x %s]\n", sym->name, size, llvm_type);
+                char *base_llvm_type = c_type_to_llvm_type(stmt->data.var_decl.type);
+                fprintf(gen->output, "  %%%s = alloca [%d x %s]\n", sym->name, size, base_llvm_type);
             } else {
                 // Regular variable
                 sym = symtab_insert(gen->symtab, stmt->data.var_decl.name, 
@@ -292,7 +395,7 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 }
                 
                 // Allocate stack space for the variable
-                const char *llvm_type = strcmp(stmt->data.var_decl.type, "char") == 0 ? "i8" : "i32";
+                char *llvm_type = c_type_to_llvm_type(stmt->data.var_decl.type);
                 fprintf(gen->output, "  %%%s = alloca %s\n", sym->name, llvm_type);
                 
                 // Initialize if needed

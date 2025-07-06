@@ -63,6 +63,32 @@ static ASTNode *parse_statement(Parser *parser);
 static ASTNode *parse_primary(Parser *parser) {
     Token *token = parser->current_token;
     
+    // Handle address-of operator
+    if (token->type == TOKEN_AMPERSAND) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        ASTNode *operand = parse_primary(parser);
+        ASTNode *node = create_ast_node(AST_ADDRESS_OF, line, column);
+        node->data.unary_op.op = TOKEN_AMPERSAND;
+        node->data.unary_op.operand = operand;
+        LOG_TRACE("Parsed address-of operator");
+        return node;
+    }
+    
+    // Handle dereference operator
+    if (token->type == TOKEN_STAR) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        ASTNode *operand = parse_primary(parser);
+        ASTNode *node = create_ast_node(AST_DEREFERENCE, line, column);
+        node->data.unary_op.op = TOKEN_STAR;
+        node->data.unary_op.operand = operand;
+        LOG_TRACE("Parsed dereference operator");
+        return node;
+    }
+    
     if (token->type == TOKEN_INT_LITERAL) {
         ASTNode *node = create_ast_node(AST_INT_LITERAL, token->line, token->column);
         node->data.int_literal.value = token->value.int_value;
@@ -236,7 +262,7 @@ static ASTNode *parse_assignment(Parser *parser) {
     ASTNode *left = parse_comparison(parser);
     
     if (parser->current_token->type == TOKEN_ASSIGN) {
-        if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS) {
+        if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS && left->type != AST_DEREFERENCE) {
             LOG_ERROR("Invalid assignment target at %d:%d", 
                      left->line, left->column);
             exit(1);
@@ -253,11 +279,8 @@ static ASTNode *parse_assignment(Parser *parser) {
             ast_destroy(left);  // We copied the name, so destroy the identifier node
             return node;
         } else {
-            // Array element assignment - keep the array access node as is
-            ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
-            node->data.assignment.name = NULL;  // Will need to handle this differently
-            node->data.assignment.value = right;
-            // For now, we'll return the array access assignment as a binary op
+            // Array element assignment or pointer dereference assignment
+            // Keep as a binary op with TOKEN_ASSIGN
             ASTNode *assign_op = create_ast_node(AST_BINARY_OP, op_token->line, op_token->column);
             assign_op->data.binary_op.op = TOKEN_ASSIGN;
             assign_op->data.binary_op.left = left;
@@ -304,8 +327,22 @@ static ASTNode *parse_statement(Parser *parser) {
     
     // Variable declaration
     if (token->type == TOKEN_KEYWORD_INT || token->type == TOKEN_KEYWORD_CHAR) {
-        char *type_name = strdup(token->type == TOKEN_KEYWORD_INT ? "int" : "char");
+        char *base_type = strdup(token->type == TOKEN_KEYWORD_INT ? "int" : "char");
         parser_advance(parser);
+        
+        // Check for pointer type
+        int pointer_count = 0;
+        while (parser->current_token->type == TOKEN_STAR) {
+            pointer_count++;
+            parser_advance(parser);
+        }
+        
+        // Build the complete type string
+        char type_name[256];
+        strcpy(type_name, base_type);
+        for (int i = 0; i < pointer_count; i++) {
+            strcat(type_name, "*");
+        }
         
         Token *name_token = parser->current_token;
         char *var_name = strdup(name_token->text);
@@ -313,8 +350,10 @@ static ASTNode *parse_statement(Parser *parser) {
         int var_column = name_token->column;
         parser_expect(parser, TOKEN_IDENTIFIER);
         
+        free(base_type);
+        
         ASTNode *node = create_ast_node(AST_VAR_DECL, var_line, var_column);
-        node->data.var_decl.type = type_name;
+        node->data.var_decl.type = strdup(type_name);
         node->data.var_decl.name = var_name;
         node->data.var_decl.array_size = NULL;
         
@@ -403,18 +442,33 @@ static ASTNode *parse_statement(Parser *parser) {
 }
 
 static ASTNode *parse_parameter(Parser *parser) {
-    char *type_name = NULL;
+    char *base_type = NULL;
     if (parser->current_token->type == TOKEN_KEYWORD_INT) {
-        type_name = strdup("int");
+        base_type = strdup("int");
         parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
-        type_name = strdup("char");
+        base_type = strdup("char");
         parser_advance(parser);
     } else {
         LOG_ERROR("Expected type specifier but got %s", 
                   token_type_to_string(parser->current_token->type));
         exit(1);
     }
+    
+    // Check for pointer type
+    int pointer_count = 0;
+    while (parser->current_token->type == TOKEN_STAR) {
+        pointer_count++;
+        parser_advance(parser);
+    }
+    
+    // Build the complete type string
+    char type_name[256];
+    strcpy(type_name, base_type);
+    for (int i = 0; i < pointer_count; i++) {
+        strcat(type_name, "*");
+    }
+    free(base_type);
     
     Token *name_token = parser->current_token;
     char *param_name = strdup(name_token->text);
@@ -423,25 +477,40 @@ static ASTNode *parse_parameter(Parser *parser) {
     parser_expect(parser, TOKEN_IDENTIFIER);
     
     ASTNode *param = create_ast_node(AST_PARAM_DECL, param_line, param_column);
-    param->data.param_decl.type = type_name;
+    param->data.param_decl.type = strdup(type_name);
     param->data.param_decl.name = param_name;
     
     return param;
 }
 
 static ASTNode *parse_function(Parser *parser) {
-    char *return_type = NULL;
+    char *base_type = NULL;
     if (parser->current_token->type == TOKEN_KEYWORD_INT) {
-        return_type = strdup("int");
+        base_type = strdup("int");
         parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
-        return_type = strdup("char");
+        base_type = strdup("char");
         parser_advance(parser);
     } else {
         LOG_ERROR("Expected return type but got %s", 
                   token_type_to_string(parser->current_token->type));
         exit(1);
     }
+    
+    // Check for pointer return type
+    int pointer_count = 0;
+    while (parser->current_token->type == TOKEN_STAR) {
+        pointer_count++;
+        parser_advance(parser);
+    }
+    
+    // Build the complete return type string
+    char return_type[256];
+    strcpy(return_type, base_type);
+    for (int i = 0; i < pointer_count; i++) {
+        strcat(return_type, "*");
+    }
+    free(base_type);
     
     Token *name_token = parser->current_token;
     char *func_name = strdup(name_token->text);  // Save the name before advancing
@@ -473,7 +542,7 @@ static ASTNode *parse_function(Parser *parser) {
     
     ASTNode *node = create_ast_node(AST_FUNCTION, func_line, func_column);
     node->data.function.name = func_name;
-    node->data.function.return_type = return_type;
+    node->data.function.return_type = strdup(return_type);
     node->data.function.params = params;
     node->data.function.param_count = param_count;
     node->data.function.body = parse_compound_statement(parser);
@@ -580,6 +649,10 @@ void ast_destroy(ASTNode *node) {
         case AST_ARRAY_ACCESS:
             ast_destroy(node->data.array_access.array);
             ast_destroy(node->data.array_access.index);
+            break;
+        case AST_ADDRESS_OF:
+        case AST_DEREFERENCE:
+            ast_destroy(node->data.unary_op.operand);
             break;
         default:
             break;
@@ -711,6 +784,14 @@ void ast_print(ASTNode *node, int indent) {
             break;
         case AST_CHAR_LITERAL:
             printf("Char: '%c' (%d)\n", node->data.char_literal.value, node->data.char_literal.value);
+            break;
+        case AST_ADDRESS_OF:
+            printf("Address Of (&)\n");
+            ast_print(node->data.unary_op.operand, indent + 1);
+            break;
+        case AST_DEREFERENCE:
+            printf("Dereference (*)\n");
+            ast_print(node->data.unary_op.operand, indent + 1);
             break;
         default:
             printf("Unknown node type: %d\n", node->type);

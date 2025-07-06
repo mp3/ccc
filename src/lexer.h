@@ -34,6 +34,7 @@ typedef enum {
     TOKEN_COMMA,
     TOKEN_LBRACKET,  // [
     TOKEN_RBRACKET,  // ]
+    TOKEN_AMPERSAND, // &
     TOKEN_UNKNOWN
 } TokenType;
 
