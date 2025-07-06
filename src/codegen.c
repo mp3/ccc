@@ -448,6 +448,11 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     break;
                 case TOKEN_STAR: op = "mul"; break;
                 case TOKEN_SLASH: op = "sdiv"; break;
+                case TOKEN_AMPERSAND: op = "and"; break;
+                case TOKEN_PIPE: op = "or"; break;
+                case TOKEN_CARET: op = "xor"; break;
+                case TOKEN_LSHIFT: op = "shl"; break;
+                case TOKEN_RSHIFT: op = "ashr"; break;  // arithmetic shift right for signed integers
                 case TOKEN_EQ:
                 case TOKEN_NE:
                 case TOKEN_LT:
@@ -666,7 +671,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
         }
         
         case AST_UNARY_OP: {
-            // Handle unary operators (currently just logical NOT)
+            // Handle unary operators
             if (expr->data.unary_op.op == TOKEN_NOT) {
                 char *operand = codegen_expression(gen, expr->data.unary_op.operand);
                 char *temp = codegen_next_temp(gen);
@@ -679,6 +684,15 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 
                 free(operand);
                 free(temp);
+                return result;
+            } else if (expr->data.unary_op.op == TOKEN_TILDE) {
+                char *operand = codegen_expression(gen, expr->data.unary_op.operand);
+                char *result = codegen_next_temp(gen);
+                
+                // Bitwise NOT - xor with -1 (all bits set)
+                fprintf(gen->output, "  %s = xor i32 %s, -1\n", result, operand);
+                
+                free(operand);
                 return result;
             } else {
                 LOG_ERROR("Unknown unary operator: %d", expr->data.unary_op.op);

@@ -17,7 +17,7 @@ void print_usage(const char *program_name) {
 }
 
 int main(int argc, char **argv) {
-    log_init("ccc.log", LOG_DEBUG);
+    log_init("ccc.log", LOG_TRACE);
     LOG_INFO("ccc compiler starting");
     
     // Parse command line arguments

@@ -90,6 +90,10 @@ static ASTNode *parse_statement(Parser *parser);
 
 static ASTNode *parse_primary(Parser *parser) {
     Token *token = parser->current_token;
+    LOG_TRACE("parse_primary called with token: %s at %d:%d", 
+              token_type_to_string(token->type),
+              token->line,
+              token->column);
     
     // Handle address-of operator
     if (token->type == TOKEN_AMPERSAND) {
@@ -127,6 +131,19 @@ static ASTNode *parse_primary(Parser *parser) {
         node->data.unary_op.op = TOKEN_NOT;
         node->data.unary_op.operand = operand;
         LOG_TRACE("Parsed logical NOT operator");
+        return node;
+    }
+    
+    // Handle bitwise NOT operator
+    if (token->type == TOKEN_TILDE) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        ASTNode *operand = parse_primary(parser);
+        ASTNode *node = create_ast_node(AST_UNARY_OP, line, column);
+        node->data.unary_op.op = TOKEN_TILDE;
+        node->data.unary_op.operand = operand;
+        LOG_TRACE("Parsed bitwise NOT operator");
         return node;
     }
     
@@ -171,6 +188,19 @@ static ASTNode *parse_primary(Parser *parser) {
         
         parser_expect(parser, TOKEN_RPAREN);
         LOG_TRACE("Parsed sizeof operator");
+        return node;
+    }
+    
+    // Handle negative numbers
+    if (token->type == TOKEN_MINUS && parser->peek_token->type == TOKEN_INT_LITERAL) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser); // consume '-'
+        int value = -(parser->current_token->value.int_value);
+        parser_advance(parser); // consume number
+        ASTNode *node = create_ast_node(AST_INT_LITERAL, line, column);
+        node->data.int_literal.value = value;
+        LOG_TRACE("Parsed negative int literal: %d", node->data.int_literal.value);
         return node;
     }
     
@@ -297,6 +327,7 @@ static ASTNode *parse_primary(Parser *parser) {
 }
 
 static ASTNode *parse_multiplicative(Parser *parser) {
+    LOG_TRACE("parse_multiplicative called");
     ASTNode *left = parse_primary(parser);
     
     while (parser->current_token->type == TOKEN_STAR ||
@@ -340,11 +371,11 @@ static ASTNode *parse_additive(Parser *parser) {
     return left;
 }
 
-static ASTNode *parse_comparison(Parser *parser) {
+static ASTNode *parse_shift(Parser *parser) {
     ASTNode *left = parse_additive(parser);
     
-    while (parser->current_token->type >= TOKEN_EQ &&
-           parser->current_token->type <= TOKEN_GE) {
+    while (parser->current_token->type == TOKEN_LSHIFT ||
+           parser->current_token->type == TOKEN_RSHIFT) {
         Token *op_token = parser->current_token;
         TokenType op_type = op_token->type;
         int op_line = op_token->line;
@@ -362,8 +393,99 @@ static ASTNode *parse_comparison(Parser *parser) {
     return left;
 }
 
-static ASTNode *parse_logical_and(Parser *parser) {
+static ASTNode *parse_comparison(Parser *parser) {
+    ASTNode *left = parse_shift(parser);
+    
+    while (parser->current_token->type >= TOKEN_EQ &&
+           parser->current_token->type <= TOKEN_GE) {
+        Token *op_token = parser->current_token;
+        TokenType op_type = op_token->type;
+        int op_line = op_token->line;
+        int op_column = op_token->column;
+        parser_advance(parser);
+        ASTNode *right = parse_shift(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
+        node->data.binary_op.op = op_type;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
+static ASTNode *parse_bitwise_or(Parser *parser);
+static ASTNode *parse_bitwise_xor(Parser *parser);
+static ASTNode *parse_bitwise_and(Parser *parser);
+
+static ASTNode *parse_bitwise_and(Parser *parser) {
+    LOG_TRACE("parse_bitwise_and called, current token: %s",
+              token_type_to_string(parser->current_token->type));
     ASTNode *left = parse_comparison(parser);
+    
+    while (parser->current_token->type == TOKEN_AMPERSAND) {
+        Token *op_token = parser->current_token;
+        TokenType op_type = op_token->type;
+        int op_line = op_token->line;
+        int op_column = op_token->column;
+        parser_advance(parser);
+        ASTNode *right = parse_comparison(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
+        node->data.binary_op.op = op_type;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
+static ASTNode *parse_bitwise_xor(Parser *parser) {
+    ASTNode *left = parse_bitwise_and(parser);
+    
+    while (parser->current_token->type == TOKEN_CARET) {
+        Token *op_token = parser->current_token;
+        TokenType op_type = op_token->type;
+        int op_line = op_token->line;
+        int op_column = op_token->column;
+        parser_advance(parser);
+        ASTNode *right = parse_bitwise_and(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
+        node->data.binary_op.op = op_type;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
+static ASTNode *parse_bitwise_or(Parser *parser) {
+    ASTNode *left = parse_bitwise_xor(parser);
+    
+    while (parser->current_token->type == TOKEN_PIPE) {
+        Token *op_token = parser->current_token;
+        TokenType op_type = op_token->type;
+        int op_line = op_token->line;
+        int op_column = op_token->column;
+        parser_advance(parser);
+        ASTNode *right = parse_bitwise_xor(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
+        node->data.binary_op.op = op_type;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
+static ASTNode *parse_logical_and(Parser *parser) {
+    ASTNode *left = parse_bitwise_or(parser);
     
     while (parser->current_token->type == TOKEN_AND) {
         Token *op_token = parser->current_token;
@@ -371,7 +493,7 @@ static ASTNode *parse_logical_and(Parser *parser) {
         int op_line = op_token->line;
         int op_column = op_token->column;
         parser_advance(parser);
-        ASTNode *right = parse_comparison(parser);
+        ASTNode *right = parse_bitwise_or(parser);
         
         ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
         node->data.binary_op.op = op_type;
@@ -439,6 +561,8 @@ static ASTNode *parse_assignment(Parser *parser) {
 }
 
 static ASTNode *parse_expression(Parser *parser) {
+    LOG_TRACE("parse_expression called, current token: %s",
+              token_type_to_string(parser->current_token->type));
     return parse_assignment(parser);
 }
 
@@ -470,6 +594,10 @@ static ASTNode *parse_compound_statement(Parser *parser) {
 
 static ASTNode *parse_statement(Parser *parser) {
     Token *token = parser->current_token;
+    LOG_TRACE("parse_statement called with token: %s at %d:%d", 
+              token_type_to_string(token->type),
+              token->line,
+              token->column);
     
     // Struct declaration
     if (token->type == TOKEN_KEYWORD_STRUCT) {
@@ -849,6 +977,10 @@ static ASTNode *parse_statement(Parser *parser) {
     // Expression statement
     ASTNode *node = create_ast_node(AST_EXPR_STMT, token->line, token->column);
     node->data.expr_stmt.expression = parse_expression(parser);
+    LOG_TRACE("After parsing expression statement, current token: %s at %d:%d", 
+              token_type_to_string(parser->current_token->type),
+              parser->current_token->line,
+              parser->current_token->column);
     parser_expect(parser, TOKEN_SEMICOLON);
     return node;
 }

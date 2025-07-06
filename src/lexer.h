@@ -47,8 +47,13 @@ typedef enum {
     TOKEN_COMMA,
     TOKEN_LBRACKET,  // [
     TOKEN_RBRACKET,  // ]
-    TOKEN_AMPERSAND, // &
+    TOKEN_AMPERSAND, // & (both address-of and bitwise AND)
     TOKEN_DOT,       // .
+    TOKEN_PIPE,      // |
+    TOKEN_CARET,     // ^
+    TOKEN_TILDE,     // ~
+    TOKEN_LSHIFT,    // <<
+    TOKEN_RSHIFT,    // >>
     TOKEN_UNKNOWN
 } TokenType;
 

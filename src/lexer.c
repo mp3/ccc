@@ -275,12 +275,18 @@ Token *lexer_next_token(Lexer *lexer) {
             if (lexer->current_char == '=') {
                 lexer_advance(lexer);
                 return create_token(TOKEN_LE, "<=", line, column);
+            } else if (lexer->current_char == '<') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_LSHIFT, "<<", line, column);
             }
             return create_token(TOKEN_LT, "<", line, column);
         case '>':
             if (lexer->current_char == '=') {
                 lexer_advance(lexer);
                 return create_token(TOKEN_GE, ">=", line, column);
+            } else if (lexer->current_char == '>') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_RSHIFT, ">>", line, column);
             }
             return create_token(TOKEN_GT, ">", line, column);
         case '|':
@@ -288,7 +294,11 @@ Token *lexer_next_token(Lexer *lexer) {
                 lexer_advance(lexer);
                 return create_token(TOKEN_OR, "||", line, column);
             }
-            break;
+            return create_token(TOKEN_PIPE, "|", line, column);
+        case '^':
+            return create_token(TOKEN_CARET, "^", line, column);
+        case '~':
+            return create_token(TOKEN_TILDE, "~", line, column);
     }
     
     char unknown[2] = {ch, '\0'};
@@ -310,7 +320,8 @@ const char *token_type_to_string(TokenType type) {
         "SWITCH", "CASE", "DEFAULT", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
-        "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "UNKNOWN"
+        "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 
+        "LSHIFT", "RSHIFT", "UNKNOWN"
     };
     return names[type];
 }
