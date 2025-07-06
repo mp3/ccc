@@ -1,0 +1,38 @@
+# Build outputs
+ccc
+*.o
+*.ll
+*.s
+*.out
+*.exe
+
+# Debug files
+*.dSYM/
+*.pdb
+
+# Test artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependency directories
+node_modules/
+venv/
+.env
+
+# Build directories
+build/
+dist/
