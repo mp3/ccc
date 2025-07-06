@@ -694,6 +694,75 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 
                 free(operand);
                 return result;
+            } else if (expr->data.unary_op.op == TOKEN_INCREMENT || 
+                      expr->data.unary_op.op == TOKEN_DECREMENT) {
+                // Handle ++/-- operators
+                ASTNode *operand_node = expr->data.unary_op.operand;
+                char *addr = NULL;
+                const char *llvm_type = "i32";
+                
+                // Get the address of the operand
+                if (operand_node->type == AST_IDENTIFIER) {
+                    Symbol *sym = symtab_lookup(gen->symtab, operand_node->data.identifier.name);
+                    if (!sym) {
+                        LOG_ERROR("Undefined variable: %s", operand_node->data.identifier.name);
+                        exit(1);
+                    }
+                    addr = malloc(strlen(sym->name) + 3);
+                    sprintf(addr, "%%%s", sym->name);
+                    llvm_type = c_type_to_llvm_type(sym->data_type);
+                } else if (operand_node->type == AST_DEREFERENCE) {
+                    // *p++ or ++*p
+                    addr = codegen_expression(gen, operand_node->data.unary_op.operand);
+                } else if (operand_node->type == AST_ARRAY_ACCESS) {
+                    // arr[i]++ or ++arr[i]
+                    ASTNode *array_node = operand_node->data.array_access.array;
+                    if (array_node->type != AST_IDENTIFIER) {
+                        LOG_ERROR("Array access must be on an identifier");
+                        exit(1);
+                    }
+                    Symbol *sym = symtab_lookup(gen->symtab, array_node->data.identifier.name);
+                    if (!sym || !sym->is_array) {
+                        LOG_ERROR("Invalid array: %s", array_node->data.identifier.name);
+                        exit(1);
+                    }
+                    char *index = codegen_expression(gen, operand_node->data.array_access.index);
+                    addr = codegen_next_temp(gen);
+                    llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+                    fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                            addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                    free(index);
+                } else {
+                    LOG_ERROR("Invalid operand for increment/decrement operator");
+                    exit(1);
+                }
+                
+                // Load current value
+                char *old_value = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = load %s, %s* %s\n", old_value, llvm_type, llvm_type, addr);
+                
+                // Compute new value
+                char *new_value = codegen_next_temp(gen);
+                const char *op = (expr->data.unary_op.op == TOKEN_INCREMENT) ? "add" : "sub";
+                fprintf(gen->output, "  %s = %s %s %s, 1\n", new_value, op, llvm_type, old_value);
+                
+                // Store new value
+                fprintf(gen->output, "  store %s %s, %s* %s\n", llvm_type, new_value, llvm_type, addr);
+                
+                // Return old value for postfix, new value for prefix
+                char *result = expr->data.unary_op.is_prefix ? strdup(new_value) : strdup(old_value);
+                
+                if (operand_node->type == AST_IDENTIFIER) {
+                    free(addr);
+                } else if (operand_node->type == AST_ARRAY_ACCESS) {
+                    free(addr);
+                } else if (operand_node->type == AST_DEREFERENCE) {
+                    free(addr);
+                }
+                free(old_value);
+                free(new_value);
+                
+                return result;
             } else {
                 LOG_ERROR("Unknown unary operator: %d", expr->data.unary_op.op);
                 exit(1);

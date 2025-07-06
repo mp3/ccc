@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "lexer.h"
+#include <stdbool.h>
 
 typedef enum {
     AST_PROGRAM,
@@ -91,6 +92,7 @@ typedef struct ASTNode {
         struct {
             TokenType op;
             struct ASTNode *operand;
+            bool is_prefix;  // true for prefix ++/--; false for postfix ++/--
         } unary_op;
         struct {
             int value;
@@ -169,5 +171,6 @@ void parser_destroy(Parser *parser);
 ASTNode *parser_parse(Parser *parser);
 void ast_destroy(ASTNode *node);
 void ast_print(ASTNode *node, int indent);
+ASTNode *ast_clone(ASTNode *node);
 
 #endif

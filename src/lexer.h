@@ -54,6 +54,12 @@ typedef enum {
     TOKEN_TILDE,     // ~
     TOKEN_LSHIFT,    // <<
     TOKEN_RSHIFT,    // >>
+    TOKEN_PLUS_ASSIGN,  // +=
+    TOKEN_MINUS_ASSIGN, // -=
+    TOKEN_STAR_ASSIGN,  // *=
+    TOKEN_SLASH_ASSIGN, // /=
+    TOKEN_INCREMENT,    // ++
+    TOKEN_DECREMENT,    // --
     TOKEN_UNKNOWN
 } TokenType;
 

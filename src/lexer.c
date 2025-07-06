@@ -239,10 +239,36 @@ Token *lexer_next_token(Lexer *lexer) {
     lexer_advance(lexer);
     
     switch (ch) {
-        case '+': return create_token(TOKEN_PLUS, "+", line, column);
-        case '-': return create_token(TOKEN_MINUS, "-", line, column);
-        case '*': return create_token(TOKEN_STAR, "*", line, column);
-        case '/': return create_token(TOKEN_SLASH, "/", line, column);
+        case '+':
+            if (lexer->current_char == '=') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_PLUS_ASSIGN, "+=", line, column);
+            } else if (lexer->current_char == '+') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_INCREMENT, "++", line, column);
+            }
+            return create_token(TOKEN_PLUS, "+", line, column);
+        case '-':
+            if (lexer->current_char == '=') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_MINUS_ASSIGN, "-=", line, column);
+            } else if (lexer->current_char == '-') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_DECREMENT, "--", line, column);
+            }
+            return create_token(TOKEN_MINUS, "-", line, column);
+        case '*':
+            if (lexer->current_char == '=') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_STAR_ASSIGN, "*=", line, column);
+            }
+            return create_token(TOKEN_STAR, "*", line, column);
+        case '/':
+            if (lexer->current_char == '=') {
+                lexer_advance(lexer);
+                return create_token(TOKEN_SLASH_ASSIGN, "/=", line, column);
+            }
+            return create_token(TOKEN_SLASH, "/", line, column);
         case '(': return create_token(TOKEN_LPAREN, "(", line, column);
         case ')': return create_token(TOKEN_RPAREN, ")", line, column);
         case '{': return create_token(TOKEN_LBRACE, "{", line, column);
@@ -321,7 +347,8 @@ const char *token_type_to_string(TokenType type) {
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 
-        "LSHIFT", "RSHIFT", "UNKNOWN"
+        "LSHIFT", "RSHIFT", "PLUS_ASSIGN", "MINUS_ASSIGN", "STAR_ASSIGN", "SLASH_ASSIGN", 
+        "INCREMENT", "DECREMENT", "UNKNOWN"
     };
     return names[type];
 }

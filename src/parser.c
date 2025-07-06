@@ -85,6 +85,7 @@ void parser_destroy(Parser *parser) {
 }
 
 static ASTNode *parse_primary(Parser *parser);
+static ASTNode *parse_postfix(Parser *parser);
 static ASTNode *parse_expression(Parser *parser);
 static ASTNode *parse_statement(Parser *parser);
 
@@ -144,6 +145,34 @@ static ASTNode *parse_primary(Parser *parser) {
         node->data.unary_op.op = TOKEN_TILDE;
         node->data.unary_op.operand = operand;
         LOG_TRACE("Parsed bitwise NOT operator");
+        return node;
+    }
+    
+    // Handle prefix increment operator
+    if (token->type == TOKEN_INCREMENT) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        ASTNode *operand = parse_postfix(parser);
+        ASTNode *node = create_ast_node(AST_UNARY_OP, line, column);
+        node->data.unary_op.op = TOKEN_INCREMENT;
+        node->data.unary_op.operand = operand;
+        node->data.unary_op.is_prefix = true;
+        LOG_TRACE("Parsed prefix increment operator");
+        return node;
+    }
+    
+    // Handle prefix decrement operator
+    if (token->type == TOKEN_DECREMENT) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser);
+        ASTNode *operand = parse_postfix(parser);
+        ASTNode *node = create_ast_node(AST_UNARY_OP, line, column);
+        node->data.unary_op.op = TOKEN_DECREMENT;
+        node->data.unary_op.operand = operand;
+        node->data.unary_op.is_prefix = true;
+        LOG_TRACE("Parsed prefix decrement operator");
         return node;
     }
     
@@ -326,9 +355,37 @@ static ASTNode *parse_primary(Parser *parser) {
     exit(1);
 }
 
+static ASTNode *parse_postfix(Parser *parser) {
+    ASTNode *expr = parse_primary(parser);
+    
+    // Handle postfix operators
+    while (true) {
+        if (parser->current_token->type == TOKEN_INCREMENT || 
+            parser->current_token->type == TOKEN_DECREMENT) {
+            Token *op_token = parser->current_token;
+            TokenType op_type = op_token->type;
+            int op_line = op_token->line;
+            int op_column = op_token->column;
+            parser_advance(parser);
+            
+            ASTNode *node = create_ast_node(AST_UNARY_OP, op_line, op_column);
+            node->data.unary_op.op = op_type;
+            node->data.unary_op.operand = expr;
+            node->data.unary_op.is_prefix = false;  // postfix
+            LOG_TRACE("Parsed postfix %s operator", 
+                     op_type == TOKEN_INCREMENT ? "increment" : "decrement");
+            expr = node;
+        } else {
+            break;
+        }
+    }
+    
+    return expr;
+}
+
 static ASTNode *parse_multiplicative(Parser *parser) {
     LOG_TRACE("parse_multiplicative called");
-    ASTNode *left = parse_primary(parser);
+    ASTNode *left = parse_postfix(parser);
     
     while (parser->current_token->type == TOKEN_STAR ||
            parser->current_token->type == TOKEN_SLASH) {
@@ -337,7 +394,7 @@ static ASTNode *parse_multiplicative(Parser *parser) {
         int op_line = op_token->line;
         int op_column = op_token->column;
         parser_advance(parser);
-        ASTNode *right = parse_primary(parser);
+        ASTNode *right = parse_postfix(parser);
         
         ASTNode *node = create_ast_node(AST_BINARY_OP, op_line, op_column);
         node->data.binary_op.op = op_type;
@@ -526,10 +583,18 @@ static ASTNode *parse_logical_or(Parser *parser) {
     return left;
 }
 
+// Forward declaration for ast_clone (defined at end of file)
+
 static ASTNode *parse_assignment(Parser *parser) {
     ASTNode *left = parse_logical_or(parser);
     
-    if (parser->current_token->type == TOKEN_ASSIGN) {
+    TokenType op_type = parser->current_token->type;
+    if (op_type == TOKEN_ASSIGN || 
+        op_type == TOKEN_PLUS_ASSIGN ||
+        op_type == TOKEN_MINUS_ASSIGN ||
+        op_type == TOKEN_STAR_ASSIGN ||
+        op_type == TOKEN_SLASH_ASSIGN) {
+        
         if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS && left->type != AST_DEREFERENCE) {
             LOG_ERROR("Invalid assignment target at %d:%d", 
                      left->line, left->column);
@@ -539,6 +604,28 @@ static ASTNode *parse_assignment(Parser *parser) {
         Token *op_token = parser->current_token;
         parser_advance(parser);
         ASTNode *right = parse_assignment(parser);  // Right associative
+        
+        // For compound assignments, expand to: a = a op b
+        if (op_type != TOKEN_ASSIGN) {
+            // Create the binary operation
+            ASTNode *binary_op = create_ast_node(AST_BINARY_OP, op_token->line, op_token->column);
+            
+            // Determine the base operator
+            TokenType base_op;
+            switch (op_type) {
+                case TOKEN_PLUS_ASSIGN: base_op = TOKEN_PLUS; break;
+                case TOKEN_MINUS_ASSIGN: base_op = TOKEN_MINUS; break;
+                case TOKEN_STAR_ASSIGN: base_op = TOKEN_STAR; break;
+                case TOKEN_SLASH_ASSIGN: base_op = TOKEN_SLASH; break;
+                default: base_op = TOKEN_UNKNOWN; // Should never happen
+            }
+            
+            binary_op->data.binary_op.op = base_op;
+            // We need to clone the left side for the operation
+            binary_op->data.binary_op.left = ast_clone(left);
+            binary_op->data.binary_op.right = right;
+            right = binary_op;
+        }
         
         if (left->type == AST_IDENTIFIER) {
             ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
@@ -1457,4 +1544,41 @@ void ast_print(ASTNode *node, int indent) {
         default:
             printf("Unknown node type: %d\n", node->type);
     }
+}
+
+// Clone an AST node (deep copy)
+ASTNode *ast_clone(ASTNode *node) {
+    if (!node) return NULL;
+    
+    ASTNode *clone = create_ast_node(node->type, node->line, node->column);
+    
+    switch (node->type) {
+        case AST_IDENTIFIER:
+            clone->data.identifier.name = strdup(node->data.identifier.name);
+            break;
+        case AST_ARRAY_ACCESS:
+            clone->data.array_access.array = ast_clone(node->data.array_access.array);
+            clone->data.array_access.index = ast_clone(node->data.array_access.index);
+            break;
+        case AST_DEREFERENCE:
+            clone->data.unary_op.operand = ast_clone(node->data.unary_op.operand);
+            break;
+        case AST_UNARY_OP:
+            clone->data.unary_op.op = node->data.unary_op.op;
+            clone->data.unary_op.operand = ast_clone(node->data.unary_op.operand);
+            clone->data.unary_op.is_prefix = node->data.unary_op.is_prefix;
+            break;
+        case AST_INT_LITERAL:
+            clone->data.int_literal.value = node->data.int_literal.value;
+            break;
+        case AST_MEMBER_ACCESS:
+            clone->data.member_access.object = ast_clone(node->data.member_access.object);
+            clone->data.member_access.member_name = strdup(node->data.member_access.member_name);
+            break;
+        default:
+            LOG_ERROR("ast_clone not implemented for node type: %d", node->type);
+            exit(1);
+    }
+    
+    return clone;
 }
