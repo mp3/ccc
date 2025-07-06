@@ -10,6 +10,7 @@ typedef struct {
     int temp_counter;
     int label_counter;
     SymbolTable *symtab;
+    char *current_function_return_type;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);

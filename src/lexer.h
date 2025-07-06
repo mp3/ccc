@@ -6,12 +6,15 @@
 typedef enum {
     TOKEN_EOF,
     TOKEN_INT_LITERAL,
+    TOKEN_CHAR_LITERAL,
+    TOKEN_STRING_LITERAL,
     TOKEN_IDENTIFIER,
     TOKEN_KEYWORD_IF,
     TOKEN_KEYWORD_ELSE,
     TOKEN_KEYWORD_WHILE,
     TOKEN_KEYWORD_RETURN,
     TOKEN_KEYWORD_INT,
+    TOKEN_KEYWORD_CHAR,
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_STAR,
@@ -39,6 +42,7 @@ typedef struct {
     int column;
     union {
         int int_value;
+        char char_value;
     } value;
 } Token;
 

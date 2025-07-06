@@ -1,27 +1,64 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "logger.h"
 #include "lexer.h"
 #include "parser.h"
 #include "codegen.h"
+#include "optimizer.h"
 
 void print_usage(const char *program_name) {
-    fprintf(stderr, "Usage: %s <input.c> -o <output.ll>\n", program_name);
+    fprintf(stderr, "Usage: %s [options] <input.c> -o <output.ll>\n", program_name);
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -O0    Disable optimizations\n");
+    fprintf(stderr, "  -O1    Enable optimizations (default)\n");
+    fprintf(stderr, "  -O2    Enable all optimizations\n");
 }
 
 int main(int argc, char **argv) {
     log_init("ccc.log", LOG_DEBUG);
     LOG_INFO("ccc compiler starting");
     
-    if (argc < 4 || strcmp(argv[2], "-o") != 0) {
+    // Parse command line arguments
+    bool optimize = true;  // Default to -O1
+    int opt_level = 1;
+    const char *input_file = NULL;
+    const char *output_file = NULL;
+    
+    int i = 1;
+    while (i < argc) {
+        if (strcmp(argv[i], "-O0") == 0) {
+            optimize = false;
+            opt_level = 0;
+            i++;
+        } else if (strcmp(argv[i], "-O1") == 0) {
+            optimize = true;
+            opt_level = 1;
+            i++;
+        } else if (strcmp(argv[i], "-O2") == 0) {
+            optimize = true;
+            opt_level = 2;
+            i++;
+        } else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
+            output_file = argv[i + 1];
+            i += 2;
+        } else if (!input_file && argv[i][0] != '-') {
+            input_file = argv[i];
+            i++;
+        } else {
+            fprintf(stderr, "Unknown option: %s\n", argv[i]);
+            print_usage(argv[0]);
+            log_cleanup();
+            return 1;
+        }
+    }
+    
+    if (!input_file || !output_file) {
         print_usage(argv[0]);
         log_cleanup();
         return 1;
     }
-    
-    const char *input_file = argv[1];
-    const char *output_file = argv[3];
     
     LOG_INFO("Compiling %s to %s", input_file, output_file);
     
@@ -38,6 +75,27 @@ int main(int argc, char **argv) {
     // Create parser and parse
     Parser *parser = parser_create(lexer);
     ASTNode *ast = parser_parse(parser);
+    
+    // Apply optimizations if enabled
+    if (optimize) {
+        LOG_INFO("Applying optimizations (level %d)", opt_level);
+        Optimizer *optimizer = optimizer_create();
+        
+        // Configure optimization levels
+        if (opt_level == 0) {
+            optimizer->enable_constant_folding = false;
+            optimizer->enable_dead_code_elimination = false;
+        } else if (opt_level == 1) {
+            optimizer->enable_constant_folding = true;
+            optimizer->enable_dead_code_elimination = false;
+        } else { // opt_level >= 2
+            optimizer->enable_constant_folding = true;
+            optimizer->enable_dead_code_elimination = true;
+        }
+        
+        ast = optimizer_optimize(optimizer, ast);
+        optimizer_destroy(optimizer);
+    }
     
     // Open output file
     FILE *output = fopen(output_file, "w");

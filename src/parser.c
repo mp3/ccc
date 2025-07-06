@@ -71,6 +71,31 @@ static ASTNode *parse_primary(Parser *parser) {
         return node;
     }
     
+    if (token->type == TOKEN_CHAR_LITERAL) {
+        ASTNode *node = create_ast_node(AST_CHAR_LITERAL, token->line, token->column);
+        node->data.char_literal.value = token->value.char_value;
+        parser_advance(parser);
+        LOG_TRACE("Parsed char literal: '%c'", node->data.char_literal.value);
+        return node;
+    }
+    
+    if (token->type == TOKEN_STRING_LITERAL) {
+        ASTNode *node = create_ast_node(AST_STRING_LITERAL, token->line, token->column);
+        // Remove quotes from the string
+        char *str = strdup(token->text);
+        int len = strlen(str);
+        if (len >= 2 && str[0] == '"' && str[len-1] == '"') {
+            str[len-1] = '\0';
+            node->data.string_literal.value = strdup(str + 1);
+            free(str);
+        } else {
+            node->data.string_literal.value = str;
+        }
+        parser_advance(parser);
+        LOG_TRACE("Parsed string literal: \"%s\"", node->data.string_literal.value);
+        return node;
+    }
+    
     if (token->type == TOKEN_IDENTIFIER) {
         char *name = strdup(token->text);
         int line = token->line;
@@ -252,7 +277,8 @@ static ASTNode *parse_statement(Parser *parser) {
     Token *token = parser->current_token;
     
     // Variable declaration
-    if (token->type == TOKEN_KEYWORD_INT) {
+    if (token->type == TOKEN_KEYWORD_INT || token->type == TOKEN_KEYWORD_CHAR) {
+        char *type_name = strdup(token->type == TOKEN_KEYWORD_INT ? "int" : "char");
         parser_advance(parser);
         
         Token *name_token = parser->current_token;
@@ -262,7 +288,7 @@ static ASTNode *parse_statement(Parser *parser) {
         parser_expect(parser, TOKEN_IDENTIFIER);
         
         ASTNode *node = create_ast_node(AST_VAR_DECL, var_line, var_column);
-        node->data.var_decl.type = strdup("int");
+        node->data.var_decl.type = type_name;
         node->data.var_decl.name = var_name;
         
         // Optional initializer
@@ -274,7 +300,7 @@ static ASTNode *parse_statement(Parser *parser) {
         }
         
         parser_expect(parser, TOKEN_SEMICOLON);
-        LOG_TRACE("Parsed variable declaration: %s", node->data.var_decl.name);
+        LOG_TRACE("Parsed variable declaration: %s %s", type_name, node->data.var_decl.name);
         return node;
     }
     
@@ -339,7 +365,18 @@ static ASTNode *parse_statement(Parser *parser) {
 }
 
 static ASTNode *parse_parameter(Parser *parser) {
-    parser_expect(parser, TOKEN_KEYWORD_INT);
+    char *type_name = NULL;
+    if (parser->current_token->type == TOKEN_KEYWORD_INT) {
+        type_name = strdup("int");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+        type_name = strdup("char");
+        parser_advance(parser);
+    } else {
+        LOG_ERROR("Expected type specifier but got %s", 
+                  token_type_to_string(parser->current_token->type));
+        exit(1);
+    }
     
     Token *name_token = parser->current_token;
     char *param_name = strdup(name_token->text);
@@ -348,14 +385,25 @@ static ASTNode *parse_parameter(Parser *parser) {
     parser_expect(parser, TOKEN_IDENTIFIER);
     
     ASTNode *param = create_ast_node(AST_PARAM_DECL, param_line, param_column);
-    param->data.param_decl.type = strdup("int");
+    param->data.param_decl.type = type_name;
     param->data.param_decl.name = param_name;
     
     return param;
 }
 
 static ASTNode *parse_function(Parser *parser) {
-    parser_expect(parser, TOKEN_KEYWORD_INT);
+    char *return_type = NULL;
+    if (parser->current_token->type == TOKEN_KEYWORD_INT) {
+        return_type = strdup("int");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+        return_type = strdup("char");
+        parser_advance(parser);
+    } else {
+        LOG_ERROR("Expected return type but got %s", 
+                  token_type_to_string(parser->current_token->type));
+        exit(1);
+    }
     
     Token *name_token = parser->current_token;
     char *func_name = strdup(name_token->text);  // Save the name before advancing
@@ -387,7 +435,7 @@ static ASTNode *parse_function(Parser *parser) {
     
     ASTNode *node = create_ast_node(AST_FUNCTION, func_line, func_column);
     node->data.function.name = func_name;
-    node->data.function.return_type = strdup("int");
+    node->data.function.return_type = return_type;
     node->data.function.params = params;
     node->data.function.param_count = param_count;
     node->data.function.body = parse_compound_statement(parser);
@@ -483,6 +531,12 @@ void ast_destroy(ASTNode *node) {
         case AST_PARAM_DECL:
             free(node->data.param_decl.type);
             free(node->data.param_decl.name);
+            break;
+        case AST_CHAR_LITERAL:
+            // No dynamic memory to free
+            break;
+        case AST_STRING_LITERAL:
+            free(node->data.string_literal.value);
             break;
         default:
             break;

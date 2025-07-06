@@ -73,10 +73,102 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     else if (strcmp(buffer, "while") == 0) type = TOKEN_KEYWORD_WHILE;
     else if (strcmp(buffer, "return") == 0) type = TOKEN_KEYWORD_RETURN;
     else if (strcmp(buffer, "int") == 0) type = TOKEN_KEYWORD_INT;
+    else if (strcmp(buffer, "char") == 0) type = TOKEN_KEYWORD_CHAR;
     
     Token *token = create_token(type, buffer, start_line, start_column);
     LOG_TRACE("Lexed %s: %s", token_type_to_string(type), buffer);
     return token;
+}
+
+static Token *lexer_read_char_literal(Lexer *lexer) {
+    int start_line = lexer->line;
+    int start_column = lexer->column;
+    char buffer[4] = {'\'', '\0', '\0', '\0'};
+    
+    lexer_advance(lexer); // skip opening '
+    
+    if (lexer->current_char == '\\') {
+        // Handle escape sequences
+        lexer_advance(lexer);
+        char escaped;
+        switch (lexer->current_char) {
+            case 'n': escaped = '\n'; break;
+            case 't': escaped = '\t'; break;
+            case 'r': escaped = '\r'; break;
+            case '\\': escaped = '\\'; break;
+            case '\'': escaped = '\''; break;
+            case '0': escaped = '\0'; break;
+            default:
+                LOG_WARN("Unknown escape sequence: \\%c", lexer->current_char);
+                escaped = lexer->current_char;
+        }
+        buffer[1] = '\\';
+        buffer[2] = lexer->current_char;
+        lexer_advance(lexer);
+        
+        Token *token = create_token(TOKEN_CHAR_LITERAL, buffer, start_line, start_column);
+        token->value.char_value = escaped;
+        
+        if (lexer->current_char == '\'') {
+            lexer_advance(lexer);
+        } else {
+            LOG_WARN("Missing closing quote for character literal");
+        }
+        return token;
+    } else if (lexer->current_char != '\'' && lexer->current_char != '\n' && lexer->current_char != EOF) {
+        char ch = lexer->current_char;
+        buffer[1] = ch;
+        buffer[2] = '\'';
+        lexer_advance(lexer);
+        
+        Token *token = create_token(TOKEN_CHAR_LITERAL, buffer, start_line, start_column);
+        token->value.char_value = ch;
+        
+        if (lexer->current_char == '\'') {
+            lexer_advance(lexer);
+        } else {
+            LOG_WARN("Missing closing quote for character literal");
+        }
+        return token;
+    }
+    
+    LOG_WARN("Empty character literal");
+    return create_token(TOKEN_UNKNOWN, "'", start_line, start_column);
+}
+
+static Token *lexer_read_string_literal(Lexer *lexer) {
+    int start_line = lexer->line;
+    int start_column = lexer->column;
+    char buffer[1024];
+    int i = 0;
+    
+    buffer[i++] = '"';
+    lexer_advance(lexer); // skip opening "
+    
+    while (lexer->current_char != '"' && lexer->current_char != '\n' && 
+           lexer->current_char != EOF && i < 1022) {
+        if (lexer->current_char == '\\') {
+            buffer[i++] = '\\';
+            lexer_advance(lexer);
+            if (lexer->current_char != EOF && lexer->current_char != '\n') {
+                buffer[i++] = lexer->current_char;
+                lexer_advance(lexer);
+            }
+        } else {
+            buffer[i++] = lexer->current_char;
+            lexer_advance(lexer);
+        }
+    }
+    
+    if (lexer->current_char == '"') {
+        buffer[i++] = '"';
+        lexer_advance(lexer);
+    } else {
+        LOG_WARN("Unterminated string literal");
+    }
+    
+    buffer[i] = '\0';
+    return create_token(TOKEN_STRING_LITERAL, buffer, start_line, start_column);
 }
 
 Lexer *lexer_create(FILE *input, const char *filename) {
@@ -124,6 +216,14 @@ Token *lexer_next_token(Lexer *lexer) {
     
     if (isalpha(lexer->current_char) || lexer->current_char == '_') {
         return lexer_read_identifier(lexer);
+    }
+    
+    if (lexer->current_char == '\'') {
+        return lexer_read_char_literal(lexer);
+    }
+    
+    if (lexer->current_char == '"') {
+        return lexer_read_string_literal(lexer);
     }
     
     char ch = lexer->current_char;
@@ -180,7 +280,8 @@ void token_destroy(Token *token) {
 
 const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
-        "EOF", "INT_LITERAL", "IDENTIFIER", "IF", "ELSE", "WHILE", "RETURN", "INT",
+        "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
+        "IF", "ELSE", "WHILE", "RETURN", "INT", "CHAR",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", "UNKNOWN"
     };

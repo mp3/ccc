@@ -10,6 +10,7 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->temp_counter = 0;
     gen->label_counter = 0;
     gen->symtab = NULL;
+    gen->current_function_return_type = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -43,6 +44,18 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             return temp;
         }
         
+        case AST_CHAR_LITERAL: {
+            char *temp = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = add i8 0, %d\n", temp, (int)expr->data.char_literal.value);
+            return temp;
+        }
+        
+        case AST_STRING_LITERAL: {
+            // String literals will be handled later when we implement arrays
+            LOG_ERROR("String literals not yet implemented in codegen");
+            exit(1);
+        }
+        
         case AST_IDENTIFIER: {
             Symbol *sym = symtab_lookup(gen->symtab, expr->data.identifier.name);
             if (!sym) {
@@ -53,7 +66,8 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             char *temp = codegen_next_temp(gen);
             // For parameters, we always allocate and use .addr
             // For regular variables, we use the name directly
-            fprintf(gen->output, "  %s = load i32, i32* %%%s\n", temp, sym->name);
+            const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "  %s = load %s, %s* %%%s\n", temp, llvm_type, llvm_type, sym->name);
             return temp;
         }
         
@@ -65,7 +79,8 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             
             char *value = codegen_expression(gen, expr->data.assignment.value);
-            fprintf(gen->output, "  store i32 %s, i32* %%%s\n", value, sym->name);
+            const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
             return value;
         }
         
@@ -177,12 +192,13 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             }
             
             // Allocate stack space for the variable
-            fprintf(gen->output, "  %%%s = alloca i32\n", sym->name);
+            const char *llvm_type = strcmp(stmt->data.var_decl.type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "  %%%s = alloca %s\n", sym->name, llvm_type);
             
             // Initialize if needed
             if (stmt->data.var_decl.initializer) {
                 char *value = codegen_expression(gen, stmt->data.var_decl.initializer);
-                fprintf(gen->output, "  store i32 %s, i32* %%%s\n", value, sym->name);
+                fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
                 free(value);
             }
             break;
@@ -190,7 +206,8 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
         
         case AST_RETURN_STMT: {
             char *value = codegen_expression(gen, stmt->data.return_stmt.expression);
-            fprintf(gen->output, "  ret i32 %s\n", value);
+            const char *ret_llvm_type = strcmp(gen->current_function_return_type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "  ret %s %s\n", ret_llvm_type, value);
             free(value);
             break;
         }
@@ -297,11 +314,16 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
 }
 
 static void codegen_function(CodeGenerator *gen, ASTNode *func) {
+    // Set current function return type
+    gen->current_function_return_type = func->data.function.return_type;
+    
     // Generate function signature
-    fprintf(gen->output, "define i32 @%s(", func->data.function.name);
+    const char *ret_llvm_type = strcmp(func->data.function.return_type, "char") == 0 ? "i8" : "i32";
+    fprintf(gen->output, "define %s @%s(", ret_llvm_type, func->data.function.name);
     for (int i = 0; i < func->data.function.param_count; i++) {
         if (i > 0) fprintf(gen->output, ", ");
-        fprintf(gen->output, "i32 %%%s.param", func->data.function.params[i]->data.param_decl.name);
+        const char *param_llvm_type = strcmp(func->data.function.params[i]->data.param_decl.type, "char") == 0 ? "i8" : "i32";
+        fprintf(gen->output, "%s %%%s.param", param_llvm_type, func->data.function.params[i]->data.param_decl.name);
     }
     fprintf(gen->output, ") {\n");
     fprintf(gen->output, "entry:\n");
@@ -320,9 +342,10 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
         if (sym) {
             sym->is_param = true;
             // Allocate space for parameter and store the value
-            fprintf(gen->output, "  %%%s = alloca i32\n", param->data.param_decl.name);
-            fprintf(gen->output, "  store i32 %%%s.param, i32* %%%s\n", 
-                    param->data.param_decl.name, param->data.param_decl.name);
+            const char *param_llvm_type = strcmp(param->data.param_decl.type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "  %%%s = alloca %s\n", param->data.param_decl.name, param_llvm_type);
+            fprintf(gen->output, "  store %s %%%s.param, %s* %%%s\n", 
+                    param_llvm_type, param->data.param_decl.name, param_llvm_type, param->data.param_decl.name);
         }
     }
     
@@ -331,7 +354,11 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     
     // Only add unreachable if the last instruction wasn't a terminator
     // This is a simple heuristic - in production you'd track this properly
-    fprintf(gen->output, "  ret i32 0  ; default return\n");
+    if (strcmp(ret_llvm_type, "i8") == 0) {
+        fprintf(gen->output, "  ret i8 0  ; default return\n");
+    } else {
+        fprintf(gen->output, "  ret i32 0  ; default return\n");
+    }
     fprintf(gen->output, "}\n\n");
     
     // Restore global scope
