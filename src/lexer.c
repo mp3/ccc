@@ -69,6 +69,7 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     
     TokenType type = TOKEN_IDENTIFIER;
     if (strcmp(buffer, "if") == 0) type = TOKEN_KEYWORD_IF;
+    else if (strcmp(buffer, "else") == 0) type = TOKEN_KEYWORD_ELSE;
     else if (strcmp(buffer, "while") == 0) type = TOKEN_KEYWORD_WHILE;
     else if (strcmp(buffer, "return") == 0) type = TOKEN_KEYWORD_RETURN;
     else if (strcmp(buffer, "int") == 0) type = TOKEN_KEYWORD_INT;
@@ -179,7 +180,7 @@ void token_destroy(Token *token) {
 
 const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
-        "EOF", "INT_LITERAL", "IDENTIFIER", "IF", "WHILE", "RETURN", "INT",
+        "EOF", "INT_LITERAL", "IDENTIFIER", "IF", "ELSE", "WHILE", "RETURN", "INT",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", "UNKNOWN"
     };

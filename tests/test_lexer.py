@@ -97,3 +97,40 @@ class TestLexer:
         
         os.unlink(c_file)
         os.unlink(output_file)
+    
+    def test_if_statement(self):
+        """Test if statements."""
+        c_file = create_temp_c_file("int main() { int x = 5; if (x > 0) { return 1; } else { return 0; } }")
+        output_file = tempfile.mktemp(suffix='.ll')
+        
+        result = compile_file(c_file, output_file)
+        
+        assert result.returncode == 0, f"Compilation failed: {result.stderr}"
+        assert os.path.exists(output_file), "Output file was not created"
+        
+        with open(output_file, 'r') as f:
+            content = f.read()
+            assert 'icmp' in content
+            assert 'br i1' in content
+            assert 'if.then' in content or 'then' in content
+        
+        os.unlink(c_file)
+        os.unlink(output_file)
+    
+    def test_while_loop(self):
+        """Test while loops."""
+        c_file = create_temp_c_file("int main() { int i = 0; int sum = 0; while (i < 10) { sum = sum + i; i = i + 1; } return sum; }")
+        output_file = tempfile.mktemp(suffix='.ll')
+        
+        result = compile_file(c_file, output_file)
+        
+        assert result.returncode == 0, f"Compilation failed: {result.stderr}"
+        assert os.path.exists(output_file), "Output file was not created"
+        
+        with open(output_file, 'r') as f:
+            content = f.read()
+            assert 'while.cond' in content or 'cond' in content
+            assert 'while.body' in content or 'body' in content
+            
+        os.unlink(c_file)
+        os.unlink(output_file)

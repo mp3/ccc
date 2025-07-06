@@ -13,12 +13,15 @@ A minimal C89 subset compiler that generates LLVM IR.
 
 - Integer literals
 - Arithmetic operators: `+`, `-`, `*`, `/`
+- Comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
 - Functions (only `int main()` for now)
 - Return statements
 - Proper operator precedence
 - Variable declarations with optional initialization
 - Variable assignments
 - Expression statements
+- If statements with optional else clause
+- While loops
 
 ## Building
 
@@ -43,10 +46,20 @@ clang output.o -o output
 
 ```c
 int main() {
-    int x = 10;
-    int y = 20;
-    int sum = x + y;
-    return sum;
+    int n = 5;
+    int factorial = 1;
+    int i = 1;
+    
+    while (i <= n) {
+        factorial = factorial * i;
+        i = i + 1;
+    }
+    
+    if (factorial == 120) {
+        return 1;  // Success
+    } else {
+        return 0;  // Failure
+    }
 }
 ```
 
@@ -68,8 +81,8 @@ ccc/
 ## Next Steps
 
 - [x] Variables and assignments
-- [ ] Control flow (if/while)
-- [ ] Comparison operators
+- [x] Control flow (if/while)
+- [x] Comparison operators
 - [ ] Function parameters and local variables
 - [ ] Simple optimizations
 - [ ] Self-hosting capability

@@ -241,6 +241,46 @@ static ASTNode *parse_statement(Parser *parser) {
         return node;
     }
     
+    if (token->type == TOKEN_KEYWORD_IF) {
+        parser_advance(parser);
+        parser_expect(parser, TOKEN_LPAREN);
+        
+        ASTNode *condition = parse_expression(parser);
+        parser_expect(parser, TOKEN_RPAREN);
+        
+        ASTNode *then_stmt = parse_statement(parser);
+        ASTNode *else_stmt = NULL;
+        
+        // Check for else clause
+        if (parser->current_token->type == TOKEN_KEYWORD_ELSE) {
+            parser_advance(parser);
+            else_stmt = parse_statement(parser);
+        }
+        
+        ASTNode *node = create_ast_node(AST_IF_STMT, token->line, token->column);
+        node->data.if_stmt.condition = condition;
+        node->data.if_stmt.then_stmt = then_stmt;
+        node->data.if_stmt.else_stmt = else_stmt;
+        LOG_TRACE("Parsed if statement");
+        return node;
+    }
+    
+    if (token->type == TOKEN_KEYWORD_WHILE) {
+        parser_advance(parser);
+        parser_expect(parser, TOKEN_LPAREN);
+        
+        ASTNode *condition = parse_expression(parser);
+        parser_expect(parser, TOKEN_RPAREN);
+        
+        ASTNode *body = parse_statement(parser);
+        
+        ASTNode *node = create_ast_node(AST_WHILE_STMT, token->line, token->column);
+        node->data.while_stmt.condition = condition;
+        node->data.while_stmt.body = body;
+        LOG_TRACE("Parsed while statement");
+        return node;
+    }
+    
     if (token->type == TOKEN_KEYWORD_RETURN) {
         parser_advance(parser);
         ASTNode *node = create_ast_node(AST_RETURN_STMT, token->line, token->column);
@@ -344,6 +384,15 @@ void ast_destroy(ASTNode *node) {
             free(node->data.var_decl.name);
             ast_destroy(node->data.var_decl.initializer);
             break;
+        case AST_IF_STMT:
+            ast_destroy(node->data.if_stmt.condition);
+            ast_destroy(node->data.if_stmt.then_stmt);
+            ast_destroy(node->data.if_stmt.else_stmt);
+            break;
+        case AST_WHILE_STMT:
+            ast_destroy(node->data.while_stmt.condition);
+            ast_destroy(node->data.while_stmt.body);
+            break;
         default:
             break;
     }
@@ -405,6 +454,29 @@ void ast_print(ASTNode *node, int indent) {
         case AST_EXPR_STMT:
             printf("Expression Statement\n");
             ast_print(node->data.expr_stmt.expression, indent + 1);
+            break;
+        case AST_IF_STMT:
+            printf("If Statement\n");
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Condition:\n");
+            ast_print(node->data.if_stmt.condition, indent + 2);
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Then:\n");
+            ast_print(node->data.if_stmt.then_stmt, indent + 2);
+            if (node->data.if_stmt.else_stmt) {
+                for (int i = 0; i < indent + 1; i++) printf("  ");
+                printf("Else:\n");
+                ast_print(node->data.if_stmt.else_stmt, indent + 2);
+            }
+            break;
+        case AST_WHILE_STMT:
+            printf("While Statement\n");
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Condition:\n");
+            ast_print(node->data.while_stmt.condition, indent + 2);
+            for (int i = 0; i < indent + 1; i++) printf("  ");
+            printf("Body:\n");
+            ast_print(node->data.while_stmt.body, indent + 2);
             break;
         default:
             printf("Unknown node type: %d\n", node->type);

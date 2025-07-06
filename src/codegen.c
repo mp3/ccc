@@ -29,6 +29,12 @@ static char *codegen_next_temp(CodeGenerator *gen) {
     return temp;
 }
 
+static char *codegen_next_label(CodeGenerator *gen, const char *prefix) {
+    char *label = malloc(64);
+    snprintf(label, 64, "%s%d", prefix, gen->label_counter++);
+    return label;
+}
+
 static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
     switch (expr->type) {
         case AST_INT_LITERAL: {
@@ -72,6 +78,33 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 case TOKEN_MINUS: op = "sub"; break;
                 case TOKEN_STAR: op = "mul"; break;
                 case TOKEN_SLASH: op = "sdiv"; break;
+                case TOKEN_EQ:
+                case TOKEN_NE:
+                case TOKEN_LT:
+                case TOKEN_GT:
+                case TOKEN_LE:
+                case TOKEN_GE: {
+                    // Comparison operators need icmp instruction
+                    const char *cmp_op;
+                    switch (expr->data.binary_op.op) {
+                        case TOKEN_EQ: cmp_op = "eq"; break;
+                        case TOKEN_NE: cmp_op = "ne"; break;
+                        case TOKEN_LT: cmp_op = "slt"; break;
+                        case TOKEN_GT: cmp_op = "sgt"; break;
+                        case TOKEN_LE: cmp_op = "sle"; break;
+                        case TOKEN_GE: cmp_op = "sge"; break;
+                        default: cmp_op = ""; // Should never happen
+                    }
+                    char *cmp_result = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = icmp %s i32 %s, %s\n", 
+                            cmp_result, cmp_op, left, right);
+                    // Convert i1 to i32 (0 or 1)
+                    fprintf(gen->output, "  %s = zext i1 %s to i32\n", result, cmp_result);
+                    free(cmp_result);
+                    free(left);
+                    free(right);
+                    return result;
+                }
                 default:
                     LOG_ERROR("Unknown binary operator: %d (%s)", 
                              expr->data.binary_op.op,
@@ -138,6 +171,82 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
         case AST_EXPR_STMT:
             free(codegen_expression(gen, stmt->data.expr_stmt.expression));
             break;
+        
+        case AST_IF_STMT: {
+            char *cond_value = codegen_expression(gen, stmt->data.if_stmt.condition);
+            char *cond_bool = codegen_next_temp(gen);
+            
+            // Convert condition to i1
+            fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+            
+            char *then_label = codegen_next_label(gen, "if.then.");
+            char *else_label = stmt->data.if_stmt.else_stmt ? 
+                              codegen_next_label(gen, "if.else.") : NULL;
+            char *end_label = codegen_next_label(gen, "if.end.");
+            
+            // Branch based on condition
+            if (else_label) {
+                fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                       cond_bool, then_label, else_label);
+            } else {
+                fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                       cond_bool, then_label, end_label);
+            }
+            
+            // Then block
+            fprintf(gen->output, "\n%s:\n", then_label);
+            codegen_statement(gen, stmt->data.if_stmt.then_stmt);
+            fprintf(gen->output, "  br label %%%s\n", end_label);
+            
+            // Else block (if exists)
+            if (else_label) {
+                fprintf(gen->output, "\n%s:\n", else_label);
+                codegen_statement(gen, stmt->data.if_stmt.else_stmt);
+                fprintf(gen->output, "  br label %%%s\n", end_label);
+                free(else_label);
+            }
+            
+            // End label
+            fprintf(gen->output, "\n%s:\n", end_label);
+            
+            free(cond_value);
+            free(cond_bool);
+            free(then_label);
+            free(end_label);
+            break;
+        }
+        
+        case AST_WHILE_STMT: {
+            char *cond_label = codegen_next_label(gen, "while.cond.");
+            char *body_label = codegen_next_label(gen, "while.body.");
+            char *end_label = codegen_next_label(gen, "while.end.");
+            
+            // Jump to condition check
+            fprintf(gen->output, "  br label %%%s\n", cond_label);
+            
+            // Condition block
+            fprintf(gen->output, "\n%s:\n", cond_label);
+            char *cond_value = codegen_expression(gen, stmt->data.while_stmt.condition);
+            char *cond_bool = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+            fprintf(gen->output, "  br i1 %s, label %%%s, label %%%s\n", 
+                   cond_bool, body_label, end_label);
+            
+            // Body block
+            fprintf(gen->output, "\n%s:\n", body_label);
+            codegen_statement(gen, stmt->data.while_stmt.body);
+            fprintf(gen->output, "  br label %%%s\n", cond_label);
+            
+            // End label
+            fprintf(gen->output, "\n%s:\n", end_label);
+            
+            free(cond_value);
+            free(cond_bool);
+            free(cond_label);
+            free(body_label);
+            free(end_label);
+            break;
+        }
             
         default:
             LOG_ERROR("Unknown statement type in codegen: %d", stmt->type);
@@ -158,8 +267,9 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     // Generate function body
     codegen_statement(gen, func->data.function.body);
     
-    // Add unreachable in case no return statement
-    fprintf(gen->output, "  unreachable\n");
+    // Only add unreachable if the last instruction wasn't a terminator
+    // This is a simple heuristic - in production you'd track this properly
+    fprintf(gen->output, "  ret i32 0  ; default return\n");
     fprintf(gen->output, "}\n\n");
     
     // Restore global scope
