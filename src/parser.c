@@ -72,11 +72,48 @@ static ASTNode *parse_primary(Parser *parser) {
     }
     
     if (token->type == TOKEN_IDENTIFIER) {
-        ASTNode *node = create_ast_node(AST_IDENTIFIER, token->line, token->column);
-        node->data.identifier.name = strdup(token->text);
+        char *name = strdup(token->text);
+        int line = token->line;
+        int column = token->column;
         parser_advance(parser);
-        LOG_TRACE("Parsed identifier: %s", node->data.identifier.name);
-        return node;
+        
+        // Check if it's a function call
+        if (parser->current_token->type == TOKEN_LPAREN) {
+            parser_advance(parser);
+            
+            // Parse arguments
+            int arg_capacity = 4;
+            ASTNode **arguments = malloc(arg_capacity * sizeof(ASTNode*));
+            int arg_count = 0;
+            
+            if (parser->current_token->type != TOKEN_RPAREN) {
+                arguments[arg_count++] = parse_expression(parser);
+                
+                while (parser->current_token->type == TOKEN_COMMA) {
+                    parser_advance(parser);
+                    if (arg_count >= arg_capacity) {
+                        arg_capacity *= 2;
+                        arguments = realloc(arguments, arg_capacity * sizeof(ASTNode*));
+                    }
+                    arguments[arg_count++] = parse_expression(parser);
+                }
+            }
+            
+            parser_expect(parser, TOKEN_RPAREN);
+            
+            ASTNode *node = create_ast_node(AST_FUNCTION_CALL, line, column);
+            node->data.function_call.name = name;
+            node->data.function_call.arguments = arguments;
+            node->data.function_call.argument_count = arg_count;
+            LOG_TRACE("Parsed function call: %s with %d arguments", name, arg_count);
+            return node;
+        } else {
+            // Regular identifier
+            ASTNode *node = create_ast_node(AST_IDENTIFIER, line, column);
+            node->data.identifier.name = name;
+            LOG_TRACE("Parsed identifier: %s", name);
+            return node;
+        }
     }
     
     if (parser_match(parser, TOKEN_LPAREN)) {
@@ -301,22 +338,61 @@ static ASTNode *parse_statement(Parser *parser) {
     return node;
 }
 
+static ASTNode *parse_parameter(Parser *parser) {
+    parser_expect(parser, TOKEN_KEYWORD_INT);
+    
+    Token *name_token = parser->current_token;
+    char *param_name = strdup(name_token->text);
+    int param_line = name_token->line;
+    int param_column = name_token->column;
+    parser_expect(parser, TOKEN_IDENTIFIER);
+    
+    ASTNode *param = create_ast_node(AST_PARAM_DECL, param_line, param_column);
+    param->data.param_decl.type = strdup("int");
+    param->data.param_decl.name = param_name;
+    
+    return param;
+}
+
 static ASTNode *parse_function(Parser *parser) {
     parser_expect(parser, TOKEN_KEYWORD_INT);
     
     Token *name_token = parser->current_token;
     char *func_name = strdup(name_token->text);  // Save the name before advancing
+    int func_line = name_token->line;
+    int func_column = name_token->column;
     parser_expect(parser, TOKEN_IDENTIFIER);
     
     parser_expect(parser, TOKEN_LPAREN);
+    
+    // Parse parameters
+    int param_capacity = 4;
+    ASTNode **params = malloc(param_capacity * sizeof(ASTNode*));
+    int param_count = 0;
+    
+    if (parser->current_token->type != TOKEN_RPAREN) {
+        params[param_count++] = parse_parameter(parser);
+        
+        while (parser->current_token->type == TOKEN_COMMA) {
+            parser_advance(parser);
+            if (param_count >= param_capacity) {
+                param_capacity *= 2;
+                params = realloc(params, param_capacity * sizeof(ASTNode*));
+            }
+            params[param_count++] = parse_parameter(parser);
+        }
+    }
+    
     parser_expect(parser, TOKEN_RPAREN);
     
-    ASTNode *node = create_ast_node(AST_FUNCTION, name_token->line, name_token->column);
+    ASTNode *node = create_ast_node(AST_FUNCTION, func_line, func_column);
     node->data.function.name = func_name;
     node->data.function.return_type = strdup("int");
+    node->data.function.params = params;
+    node->data.function.param_count = param_count;
     node->data.function.body = parse_compound_statement(parser);
     
-    LOG_DEBUG("Parsed function: %s", node->data.function.name);
+    LOG_DEBUG("Parsed function: %s with %d parameters", node->data.function.name, param_count);
     return node;
 }
 
@@ -354,6 +430,10 @@ void ast_destroy(ASTNode *node) {
         case AST_FUNCTION:
             free(node->data.function.name);
             free(node->data.function.return_type);
+            for (int i = 0; i < node->data.function.param_count; i++) {
+                ast_destroy(node->data.function.params[i]);
+            }
+            free(node->data.function.params);
             ast_destroy(node->data.function.body);
             break;
         case AST_COMPOUND_STMT:
@@ -393,6 +473,17 @@ void ast_destroy(ASTNode *node) {
             ast_destroy(node->data.while_stmt.condition);
             ast_destroy(node->data.while_stmt.body);
             break;
+        case AST_FUNCTION_CALL:
+            free(node->data.function_call.name);
+            for (int i = 0; i < node->data.function_call.argument_count; i++) {
+                ast_destroy(node->data.function_call.arguments[i]);
+            }
+            free(node->data.function_call.arguments);
+            break;
+        case AST_PARAM_DECL:
+            free(node->data.param_decl.type);
+            free(node->data.param_decl.name);
+            break;
         default:
             break;
     }
@@ -413,8 +504,18 @@ void ast_print(ASTNode *node, int indent) {
             }
             break;
         case AST_FUNCTION:
-            printf("Function: %s returns %s\n", 
+            printf("Function: %s returns %s", 
                    node->data.function.name, node->data.function.return_type);
+            if (node->data.function.param_count > 0) {
+                printf(" (");
+                for (int i = 0; i < node->data.function.param_count; i++) {
+                    if (i > 0) printf(", ");
+                    printf("%s %s", node->data.function.params[i]->data.param_decl.type,
+                           node->data.function.params[i]->data.param_decl.name);
+                }
+                printf(")");
+            }
+            printf("\n");
             ast_print(node->data.function.body, indent + 1);
             break;
         case AST_COMPOUND_STMT:
@@ -477,6 +578,22 @@ void ast_print(ASTNode *node, int indent) {
             for (int i = 0; i < indent + 1; i++) printf("  ");
             printf("Body:\n");
             ast_print(node->data.while_stmt.body, indent + 2);
+            break;
+        case AST_FUNCTION_CALL:
+            printf("Function Call: %s(", node->data.function_call.name);
+            for (int i = 0; i < node->data.function_call.argument_count; i++) {
+                if (i > 0) printf(", ");
+                printf("arg%d", i);
+            }
+            printf(")\n");
+            for (int i = 0; i < node->data.function_call.argument_count; i++) {
+                for (int j = 0; j < indent + 1; j++) printf("  ");
+                printf("Arg %d:\n", i);
+                ast_print(node->data.function_call.arguments[i], indent + 2);
+            }
+            break;
+        case AST_PARAM_DECL:
+            printf("Parameter: %s %s\n", node->data.param_decl.type, node->data.param_decl.name);
             break;
         default:
             printf("Unknown node type: %d\n", node->type);

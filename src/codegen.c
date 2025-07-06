@@ -51,6 +51,8 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             
             char *temp = codegen_next_temp(gen);
+            // For parameters, we always allocate and use .addr
+            // For regular variables, we use the name directly
             fprintf(gen->output, "  %s = load i32, i32* %%%s\n", temp, sym->name);
             return temp;
         }
@@ -115,6 +117,46 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             fprintf(gen->output, "  %s = %s i32 %s, %s\n", result, op, left, right);
             free(left);
             free(right);
+            return result;
+        }
+        
+        case AST_FUNCTION_CALL: {
+            Symbol *func_sym = symtab_lookup(gen->symtab, expr->data.function_call.name);
+            if (!func_sym || func_sym->type != SYM_FUNCTION) {
+                LOG_ERROR("Undefined function: %s", expr->data.function_call.name);
+                exit(1);
+            }
+            
+            // Check argument count
+            if (expr->data.function_call.argument_count != func_sym->param_count) {
+                LOG_ERROR("Function '%s' expects %d arguments, got %d",
+                         expr->data.function_call.name,
+                         func_sym->param_count,
+                         expr->data.function_call.argument_count);
+                exit(1);
+            }
+            
+            // Evaluate arguments
+            char **arg_values = malloc(expr->data.function_call.argument_count * sizeof(char*));
+            for (int i = 0; i < expr->data.function_call.argument_count; i++) {
+                arg_values[i] = codegen_expression(gen, expr->data.function_call.arguments[i]);
+            }
+            
+            // Generate function call
+            char *result = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = call i32 @%s(", result, expr->data.function_call.name);
+            for (int i = 0; i < expr->data.function_call.argument_count; i++) {
+                if (i > 0) fprintf(gen->output, ", ");
+                fprintf(gen->output, "i32 %s", arg_values[i]);
+            }
+            fprintf(gen->output, ")\n");
+            
+            // Free argument values
+            for (int i = 0; i < expr->data.function_call.argument_count; i++) {
+                free(arg_values[i]);
+            }
+            free(arg_values);
+            
             return result;
         }
         
@@ -255,7 +297,13 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
 }
 
 static void codegen_function(CodeGenerator *gen, ASTNode *func) {
-    fprintf(gen->output, "define i32 @%s() {\n", func->data.function.name);
+    // Generate function signature
+    fprintf(gen->output, "define i32 @%s(", func->data.function.name);
+    for (int i = 0; i < func->data.function.param_count; i++) {
+        if (i > 0) fprintf(gen->output, ", ");
+        fprintf(gen->output, "i32 %%%s.param", func->data.function.params[i]->data.param_decl.name);
+    }
+    fprintf(gen->output, ") {\n");
     fprintf(gen->output, "entry:\n");
     
     gen->temp_counter = 0;  // Reset temp counter for each function
@@ -263,6 +311,20 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     // Create function scope
     SymbolTable *old_symtab = gen->symtab;
     gen->symtab = symtab_create(old_symtab);
+    
+    // Add parameters to symbol table
+    for (int i = 0; i < func->data.function.param_count; i++) {
+        ASTNode *param = func->data.function.params[i];
+        Symbol *sym = symtab_insert(gen->symtab, param->data.param_decl.name,
+                                   SYM_VARIABLE, param->data.param_decl.type);
+        if (sym) {
+            sym->is_param = true;
+            // Allocate space for parameter and store the value
+            fprintf(gen->output, "  %%%s = alloca i32\n", param->data.param_decl.name);
+            fprintf(gen->output, "  store i32 %%%s.param, i32* %%%s\n", 
+                    param->data.param_decl.name, param->data.param_decl.name);
+        }
+    }
     
     // Generate function body
     codegen_statement(gen, func->data.function.body);
@@ -291,10 +353,42 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     fprintf(gen->output, "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
     fprintf(gen->output, "target triple = \"x86_64-unknown-linux-gnu\"\n\n");
     
-    // Generate each function
+    // Create global symbol table
+    gen->symtab = symtab_create(NULL);
+    
+    // First pass: register all functions
+    for (int i = 0; i < ast->data.program.function_count; i++) {
+        ASTNode *func = ast->data.program.functions[i];
+        
+        // Extract parameter types and names
+        char **param_types = NULL;
+        char **param_names = NULL;
+        if (func->data.function.param_count > 0) {
+            param_types = malloc(func->data.function.param_count * sizeof(char*));
+            param_names = malloc(func->data.function.param_count * sizeof(char*));
+            for (int j = 0; j < func->data.function.param_count; j++) {
+                param_types[j] = func->data.function.params[j]->data.param_decl.type;
+                param_names[j] = func->data.function.params[j]->data.param_decl.name;
+            }
+        }
+        
+        symtab_insert_function(gen->symtab, func->data.function.name,
+                              func->data.function.return_type,
+                              param_types, param_names,
+                              func->data.function.param_count);
+        
+        free(param_types);
+        free(param_names);
+    }
+    
+    // Second pass: generate code for each function
     for (int i = 0; i < ast->data.program.function_count; i++) {
         codegen_function(gen, ast->data.program.functions[i]);
     }
+    
+    // Clean up global symbol table
+    symtab_destroy(gen->symtab);
+    gen->symtab = NULL;
     
     LOG_INFO("Code generation complete");
 }

@@ -16,7 +16,9 @@ typedef enum {
     AST_INT_LITERAL,
     AST_IDENTIFIER,
     AST_ASSIGNMENT,
-    AST_VAR_DECL
+    AST_VAR_DECL,
+    AST_FUNCTION_CALL,
+    AST_PARAM_DECL
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -78,6 +80,15 @@ typedef struct ASTNode {
             char *name;
             struct ASTNode *initializer;
         } var_decl;
+        struct {
+            char *name;
+            struct ASTNode **arguments;
+            int argument_count;
+        } function_call;
+        struct {
+            char *type;
+            char *name;
+        } param_decl;
     } data;
 } ASTNode;
 

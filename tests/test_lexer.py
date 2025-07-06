@@ -134,3 +134,38 @@ class TestLexer:
             
         os.unlink(c_file)
         os.unlink(output_file)
+    
+    def test_function_definition(self):
+        """Test function definitions with parameters."""
+        c_file = create_temp_c_file("int add(int a, int b) { return a + b; } int main() { return 0; }")
+        output_file = tempfile.mktemp(suffix='.ll')
+        
+        result = compile_file(c_file, output_file)
+        
+        assert result.returncode == 0, f"Compilation failed: {result.stderr}"
+        assert os.path.exists(output_file), "Output file was not created"
+        
+        with open(output_file, 'r') as f:
+            content = f.read()
+            assert 'define i32 @add(i32' in content
+            assert 'define i32 @main()' in content
+            
+        os.unlink(c_file)
+        os.unlink(output_file)
+    
+    def test_function_calls(self):
+        """Test function calls."""
+        c_file = create_temp_c_file("int square(int x) { return x * x; } int main() { return square(5); }")
+        output_file = tempfile.mktemp(suffix='.ll')
+        
+        result = compile_file(c_file, output_file)
+        
+        assert result.returncode == 0, f"Compilation failed: {result.stderr}"
+        assert os.path.exists(output_file), "Output file was not created"
+        
+        with open(output_file, 'r') as f:
+            content = f.read()
+            assert 'call i32 @square' in content
+            
+        os.unlink(c_file)
+        os.unlink(output_file)

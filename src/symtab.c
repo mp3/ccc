@@ -20,6 +20,14 @@ void symtab_destroy(SymbolTable *table) {
         Symbol *next = sym->next;
         free(sym->name);
         free(sym->data_type);
+        if (sym->type == SYM_FUNCTION) {
+            for (int i = 0; i < sym->param_count; i++) {
+                free(sym->param_types[i]);
+                free(sym->param_names[i]);
+            }
+            free(sym->param_types);
+            free(sym->param_names);
+        }
         free(sym);
         sym = next;
     }
@@ -38,6 +46,10 @@ Symbol *symtab_insert(SymbolTable *table, const char *name, SymbolType type, con
     sym->name = strdup(name);
     sym->type = type;
     sym->data_type = strdup(data_type);
+    sym->is_param = false;
+    sym->param_types = NULL;
+    sym->param_names = NULL;
+    sym->param_count = 0;
     
     if (type == SYM_VARIABLE) {
         // Allocate space on the stack (assuming 4 bytes for int)
@@ -65,6 +77,44 @@ Symbol *symtab_lookup_local(SymbolTable *table, const char *name) {
         sym = sym->next;
     }
     return NULL;
+}
+
+Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char *return_type,
+                              char **param_types, char **param_names, int param_count) {
+    // Check if already exists in local scope
+    if (symtab_lookup_local(table, name)) {
+        LOG_ERROR("Function '%s' already defined in this scope", name);
+        return NULL;
+    }
+    
+    Symbol *sym = malloc(sizeof(Symbol));
+    sym->name = strdup(name);
+    sym->type = SYM_FUNCTION;
+    sym->data_type = strdup(return_type);
+    sym->is_param = false;
+    sym->offset = 0;
+    
+    // Copy parameter information
+    sym->param_count = param_count;
+    if (param_count > 0) {
+        sym->param_types = malloc(param_count * sizeof(char*));
+        sym->param_names = malloc(param_count * sizeof(char*));
+        for (int i = 0; i < param_count; i++) {
+            sym->param_types[i] = strdup(param_types[i]);
+            sym->param_names[i] = strdup(param_names[i]);
+        }
+    } else {
+        sym->param_types = NULL;
+        sym->param_names = NULL;
+    }
+    
+    // Insert at the beginning of the list
+    sym->next = table->symbols;
+    table->symbols = sym;
+    
+    LOG_DEBUG("Inserted function '%s' (returns: %s, params: %d)", 
+              name, return_type, param_count);
+    return sym;
 }
 
 Symbol *symtab_lookup(SymbolTable *table, const char *name) {
