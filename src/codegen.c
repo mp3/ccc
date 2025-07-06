@@ -9,8 +9,10 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->output = output;
     gen->temp_counter = 0;
     gen->label_counter = 0;
+    gen->string_counter = 0;
     gen->symtab = NULL;
     gen->current_function_return_type = NULL;
+    gen->string_literals = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -19,6 +21,15 @@ void codegen_destroy(CodeGenerator *gen) {
     if (gen) {
         if (gen->symtab) {
             symtab_destroy(gen->symtab);
+        }
+        // Free string literals
+        StringLiteral *str = gen->string_literals;
+        while (str) {
+            StringLiteral *next = str->next;
+            free(str->label);
+            free(str->value);
+            free(str);
+            str = next;
         }
         free(gen);
     }
@@ -71,6 +82,50 @@ static char *c_type_to_llvm_type(const char *c_type) {
     return llvm_type;
 }
 
+static void emit_string_literals(CodeGenerator *gen) {
+    // Emit string literals in reverse order (so they appear in the order they were encountered)
+    StringLiteral *reversed = NULL;
+    StringLiteral *current = gen->string_literals;
+    while (current) {
+        StringLiteral *next = current->next;
+        current->next = reversed;
+        reversed = current;
+        current = next;
+    }
+    
+    // Now emit them
+    current = reversed;
+    while (current) {
+        fprintf(gen->output, "%s = private unnamed_addr constant [%d x i8] c\"",
+                current->label, current->length);
+        
+        // Emit string with escape sequences
+        const char *s = current->value;
+        while (*s) {
+            switch (*s) {
+                case '\n': fprintf(gen->output, "\\0A"); break;
+                case '\t': fprintf(gen->output, "\\09"); break;
+                case '\r': fprintf(gen->output, "\\0D"); break;
+                case '\\': fprintf(gen->output, "\\5C"); break;
+                case '"': fprintf(gen->output, "\\22"); break;
+                default:
+                    if (*s >= 32 && *s <= 126) {
+                        fputc(*s, gen->output);
+                    } else {
+                        fprintf(gen->output, "\\%02X", (unsigned char)*s);
+                    }
+            }
+            s++;
+        }
+        fprintf(gen->output, "\\00\"\n");  // null terminator
+        current = current->next;
+    }
+    
+    if (reversed) {
+        fprintf(gen->output, "\n");  // Extra newline after string literals
+    }
+}
+
 static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
     switch (expr->type) {
         case AST_INT_LITERAL: {
@@ -86,9 +141,23 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
         }
         
         case AST_STRING_LITERAL: {
-            // String literals will be handled later when we implement arrays
-            LOG_ERROR("String literals not yet implemented in codegen");
-            exit(1);
+            // Create a new string literal entry
+            StringLiteral *str_lit = malloc(sizeof(StringLiteral));
+            str_lit->label = malloc(32);
+            snprintf(str_lit->label, 32, "@.str.%d", gen->string_counter++);
+            str_lit->value = strdup(expr->data.string_literal.value);
+            str_lit->length = strlen(expr->data.string_literal.value) + 1;
+            
+            // Add to the list
+            str_lit->next = gen->string_literals;
+            gen->string_literals = str_lit;
+            
+            // Return a pointer to the first element
+            char *temp = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = getelementptr [%d x i8], [%d x i8]* %s, i32 0, i32 0\n",
+                    temp, str_lit->length, str_lit->length, str_lit->label);
+            
+            return temp;
         }
         
         case AST_IDENTIFIER: {
@@ -350,8 +419,19 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             char *temp = codegen_next_temp(gen);
             
             // We need to determine the type being pointed to
-            // For now, assume i32 (this needs proper type tracking)
-            fprintf(gen->output, "  %s = load i32, i32* %s\n", temp, ptr);
+            // Try to infer from the operand type
+            const char *ptr_type = "i32";  // default
+            const char *value_type = "i32";
+            
+            if (expr->data.unary_op.operand->type == AST_IDENTIFIER) {
+                Symbol *sym = symtab_lookup(gen->symtab, expr->data.unary_op.operand->data.identifier.name);
+                if (sym && strstr(sym->data_type, "char*")) {
+                    ptr_type = "i8";
+                    value_type = "i8";
+                }
+            }
+            
+            fprintf(gen->output, "  %s = load %s, %s* %s\n", temp, value_type, ptr_type, ptr);
             
             free(ptr);
             return temp;
@@ -410,7 +490,20 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
         
         case AST_RETURN_STMT: {
             char *value = codegen_expression(gen, stmt->data.return_stmt.expression);
-            const char *ret_llvm_type = strcmp(gen->current_function_return_type, "char") == 0 ? "i8" : "i32";
+            char *ret_llvm_type = c_type_to_llvm_type(gen->current_function_return_type);
+            
+            // If returning char as int, need to extend
+            if (strcmp(ret_llvm_type, "i32") == 0 && 
+                stmt->data.return_stmt.expression->type == AST_IDENTIFIER) {
+                Symbol *sym = symtab_lookup(gen->symtab, stmt->data.return_stmt.expression->data.identifier.name);
+                if (sym && strcmp(sym->data_type, "char") == 0) {
+                    char *extended = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = sext i8 %s to i32\n", extended, value);
+                    free(value);
+                    value = extended;
+                }
+            }
+            
             fprintf(gen->output, "  ret %s %s\n", ret_llvm_type, value);
             free(value);
             break;
@@ -616,6 +709,9 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     for (int i = 0; i < ast->data.program.function_count; i++) {
         codegen_function(gen, ast->data.program.functions[i]);
     }
+    
+    // Emit string literals at the end
+    emit_string_literals(gen);
     
     // Clean up global symbol table
     symtab_destroy(gen->symtab);

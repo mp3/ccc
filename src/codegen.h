@@ -5,12 +5,21 @@
 #include "symtab.h"
 #include <stdio.h>
 
+typedef struct StringLiteral {
+    char *label;
+    char *value;
+    int length;
+    struct StringLiteral *next;
+} StringLiteral;
+
 typedef struct {
     FILE *output;
     int temp_counter;
     int label_counter;
+    int string_counter;
     SymbolTable *symtab;
     char *current_function_return_type;
+    StringLiteral *string_literals;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);

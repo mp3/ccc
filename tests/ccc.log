@@ -264,3 +264,162 @@
 [Sun Jul  6 18:24:56 2025] [DEBUG] codegen.c:572 - Generated code for function: main
 [Sun Jul  6 18:24:56 2025] [INFO] codegen.c:624 - Code generation complete
 [Sun Jul  6 18:24:56 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp9lqj6vd5.c to test_string.ll
+[Sun Jul  6 18:37:34 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp9lqj6vd5.c
+[Sun Jul  6 18:37:34 2025] [DEBUG] parser.c:47 - Created parser
+[Sun Jul  6 18:37:34 2025] [DEBUG] parser.c:550 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:37:34 2025] [INFO] parser.c:571 - Parsed program with 1 functions
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:37:34 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:37:34 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:37:34 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:37:34 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000039540a0
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000039540c0
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:69 - Inserted symbol 'str' (type: char*, offset: 0)
+[Sun Jul  6 18:37:34 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:37:34 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp4ie3ubk1.c to test_multi_string.ll
+[Sun Jul  6 18:37:34 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp4ie3ubk1.c
+[Sun Jul  6 18:37:34 2025] [DEBUG] parser.c:47 - Created parser
+[Sun Jul  6 18:37:34 2025] [DEBUG] parser.c:550 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:37:34 2025] [INFO] parser.c:571 - Parsed program with 1 functions
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:37:34 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:37:34 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:37:34 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:37:34 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600001820160
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600001820180
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:69 - Inserted symbol 's1' (type: char*, offset: 0)
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:69 - Inserted symbol 's2' (type: char*, offset: 4)
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:69 - Inserted symbol 's3' (type: char*, offset: 8)
+[Sun Jul  6 18:37:34 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:37:34 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp6id7gso2.c to test_escape_string.ll
+[Sun Jul  6 18:37:34 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp6id7gso2.c
+[Sun Jul  6 18:37:34 2025] [DEBUG] parser.c:47 - Created parser
+[Sun Jul  6 18:37:34 2025] [DEBUG] parser.c:550 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:37:34 2025] [INFO] parser.c:571 - Parsed program with 1 functions
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:37:34 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:37:34 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:37:34 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:37:34 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600002308160
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600002308180
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:69 - Inserted symbol 's1' (type: char*, offset: 0)
+[Sun Jul  6 18:37:34 2025] [DEBUG] symtab.c:69 - Inserted symbol 's2' (type: char*, offset: 4)
+[Sun Jul  6 18:37:34 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:37:34 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:37:34 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpx58su29f.c to test_string.ll
+[Sun Jul  6 18:38:35 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpx58su29f.c
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:75 - Created parser
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:581 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:38:35 2025] [INFO] parser.c:602 - Parsed program with 1 functions
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:38:35 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000025c8000
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000025c8020
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 'str' (type: char*, offset: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:38:35 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpf5me_p_0.c to test_multi_string.ll
+[Sun Jul  6 18:38:35 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpf5me_p_0.c
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:75 - Created parser
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:581 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:38:35 2025] [INFO] parser.c:602 - Parsed program with 1 functions
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:38:35 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000018380a0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000018380c0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 's1' (type: char*, offset: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 's2' (type: char*, offset: 4)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 's3' (type: char*, offset: 8)
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:38:35 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpimjmifdt.c to test_escape_string.ll
+[Sun Jul  6 18:38:35 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpimjmifdt.c
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:75 - Created parser
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:581 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:38:35 2025] [INFO] parser.c:602 - Parsed program with 1 functions
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:38:35 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600003508160
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600003508180
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 's1' (type: char*, offset: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 's2' (type: char*, offset: 4)
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:38:35 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpp6czrvnn.c to test_string_deref.ll
+[Sun Jul  6 18:38:35 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmpp6czrvnn.c
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:75 - Created parser
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:581 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:38:35 2025] [INFO] parser.c:602 - Parsed program with 1 functions
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:38:35 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600002814160
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600002814180
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 'str' (type: char*, offset: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 'ch' (type: char, offset: 4)
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:38:35 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:124 - Compilation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:21 - ccc compiler starting
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:63 - Compiling /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp5nvfx9lt.c to test_empty_string.ll
+[Sun Jul  6 18:38:35 2025] [DEBUG] lexer.c:181 - Created lexer for file: /var/folders/6j/jhd9qwwx0kb8nwxjys9kq_p80000gp/T/tmp5nvfx9lt.c
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:75 - Created parser
+[Sun Jul  6 18:38:35 2025] [DEBUG] parser.c:581 - Parsed function: main with 0 parameters
+[Sun Jul  6 18:38:35 2025] [INFO] parser.c:602 - Parsed program with 1 functions
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Sun Jul  6 18:38:35 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:377 - Starting optimization pass
+[Sun Jul  6 18:38:35 2025] [INFO] optimizer.c:385 - Optimization complete: 0 optimizations performed
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:16 - Created code generator
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:153 - Inserted function 'main' (returns: int, params: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600002510160
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x600002510180
+[Sun Jul  6 18:38:35 2025] [DEBUG] symtab.c:69 - Inserted symbol 'empty' (type: char*, offset: 0)
+[Sun Jul  6 18:38:35 2025] [DEBUG] codegen.c:665 - Generated code for function: main
+[Sun Jul  6 18:38:35 2025] [INFO] codegen.c:720 - Code generation complete
+[Sun Jul  6 18:38:35 2025] [INFO] main.c:124 - Compilation complete

@@ -39,6 +39,34 @@ static ASTNode *create_ast_node(ASTNodeType type, int line, int column) {
     return node;
 }
 
+static char *process_escape_sequences(const char *str) {
+    char *result = malloc(strlen(str) + 1);
+    int i = 0, j = 0;
+    
+    while (str[i]) {
+        if (str[i] == '\\' && str[i+1]) {
+            i++; // skip backslash
+            switch (str[i]) {
+                case 'n': result[j++] = '\n'; break;
+                case 't': result[j++] = '\t'; break;
+                case 'r': result[j++] = '\r'; break;
+                case '\\': result[j++] = '\\'; break;
+                case '"': result[j++] = '"'; break;
+                case '\'': result[j++] = '\''; break;
+                case '0': result[j++] = '\0'; break;
+                default: 
+                    result[j++] = '\\';
+                    result[j++] = str[i];
+            }
+            i++;
+        } else {
+            result[j++] = str[i++];
+        }
+    }
+    result[j] = '\0';
+    return result;
+}
+
 Parser *parser_create(Lexer *lexer) {
     Parser *parser = malloc(sizeof(Parser));
     parser->lexer = lexer;
@@ -112,10 +140,13 @@ static ASTNode *parse_primary(Parser *parser) {
         int len = strlen(str);
         if (len >= 2 && str[0] == '"' && str[len-1] == '"') {
             str[len-1] = '\0';
-            node->data.string_literal.value = strdup(str + 1);
+            char *unquoted = str + 1;
+            // Process escape sequences
+            node->data.string_literal.value = process_escape_sequences(unquoted);
             free(str);
         } else {
-            node->data.string_literal.value = str;
+            node->data.string_literal.value = process_escape_sequences(str);
+            free(str);
         }
         parser_advance(parser);
         LOG_TRACE("Parsed string literal: \"%s\"", node->data.string_literal.value);
