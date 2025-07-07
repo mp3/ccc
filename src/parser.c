@@ -1299,6 +1299,96 @@ static bool is_function_declaration(Parser *parser) {
     return true;  // Start by defaulting to function parsing
 }
 
+static ASTNode *parse_enum(Parser *parser) {
+    LOG_TRACE("parse_enum called");
+    
+    int line = parser->current_token->line;
+    int column = parser->current_token->column;
+    
+    parser_expect(parser, TOKEN_KEYWORD_ENUM);
+    
+    // Get enum name (optional)
+    char *enum_name = NULL;
+    if (parser->current_token->type == TOKEN_IDENTIFIER) {
+        enum_name = strdup(parser->current_token->text);
+        parser_advance(parser);
+    }
+    
+    parser_expect(parser, TOKEN_LBRACE);
+    
+    // Parse enumerators
+    int capacity = 8;
+    char **names = malloc(capacity * sizeof(char*));
+    int *values = malloc(capacity * sizeof(int));
+    int count = 0;
+    int next_value = 0;
+    
+    while (parser->current_token->type != TOKEN_RBRACE && 
+           parser->current_token->type != TOKEN_EOF) {
+        
+        // Get enumerator name
+        if (parser->current_token->type != TOKEN_IDENTIFIER) {
+            LOG_ERROR("Expected identifier in enum at %d:%d",
+                      parser->current_token->line, parser->current_token->column);
+            exit(1);
+        }
+        
+        if (count >= capacity) {
+            capacity *= 2;
+            names = realloc(names, capacity * sizeof(char*));
+            values = realloc(values, capacity * sizeof(int));
+        }
+        
+        names[count] = strdup(parser->current_token->text);
+        parser_advance(parser);
+        
+        // Check for explicit value
+        if (parser->current_token->type == TOKEN_ASSIGN) {
+            parser_advance(parser);
+            
+            if (parser->current_token->type != TOKEN_INT_LITERAL) {
+                LOG_ERROR("Expected integer literal after = in enum at %d:%d",
+                          parser->current_token->line, parser->current_token->column);
+                exit(1);
+            }
+            
+            next_value = parser->current_token->value.int_value;
+            parser_advance(parser);
+        }
+        
+        values[count] = next_value;
+        next_value++;
+        count++;
+        
+        // Handle comma
+        if (parser->current_token->type == TOKEN_COMMA) {
+            parser_advance(parser);
+            // Allow trailing comma
+            if (parser->current_token->type == TOKEN_RBRACE) {
+                break;
+            }
+        } else if (parser->current_token->type != TOKEN_RBRACE) {
+            LOG_ERROR("Expected comma or } in enum at %d:%d",
+                      parser->current_token->line, parser->current_token->column);
+            exit(1);
+        }
+    }
+    
+    parser_expect(parser, TOKEN_RBRACE);
+    parser_expect(parser, TOKEN_SEMICOLON);
+    
+    // Create the enum node
+    ASTNode *node = create_ast_node(AST_ENUM_DECL, line, column);
+    node->data.enum_decl.name = enum_name;
+    node->data.enum_decl.enumerator_names = names;
+    node->data.enum_decl.enumerator_values = values;
+    node->data.enum_decl.enumerator_count = count;
+    
+    LOG_TRACE("Parsed enum: %s with %d enumerators", 
+              enum_name ? enum_name : "<anonymous>", count);
+    return node;
+}
+
 static ASTNode *parse_typedef(Parser *parser) {
     LOG_TRACE("parse_typedef called");
     
@@ -1416,12 +1506,15 @@ ASTNode *parser_parse(Parser *parser) {
     int func_capacity = 8;
     int var_capacity = 8;
     int typedef_capacity = 8;
+    int enum_capacity = 8;
     program->data.program.functions = malloc(func_capacity * sizeof(ASTNode*));
     program->data.program.function_count = 0;
     program->data.program.global_vars = malloc(var_capacity * sizeof(ASTNode*));
     program->data.program.global_var_count = 0;
     program->data.program.typedefs = malloc(typedef_capacity * sizeof(ASTNode*));
     program->data.program.typedef_count = 0;
+    program->data.program.enums = malloc(enum_capacity * sizeof(ASTNode*));
+    program->data.program.enum_count = 0;
     
     while (parser->current_token->type != TOKEN_EOF) {
         if (parser->current_token->type == TOKEN_KEYWORD_TYPEDEF) {
@@ -1433,6 +1526,15 @@ ASTNode *parser_parse(Parser *parser) {
             }
             program->data.program.typedefs[program->data.program.typedef_count++] = 
                 parse_typedef(parser);
+        } else if (parser->current_token->type == TOKEN_KEYWORD_ENUM) {
+            // Parse enum
+            if (program->data.program.enum_count >= enum_capacity) {
+                enum_capacity *= 2;
+                program->data.program.enums = realloc(program->data.program.enums,
+                                                      enum_capacity * sizeof(ASTNode*));
+            }
+            program->data.program.enums[program->data.program.enum_count++] = 
+                parse_enum(parser);
         } else {
             // Parse function (for now, we'll add global variables later)
             if (program->data.program.function_count >= func_capacity) {
@@ -1445,9 +1547,9 @@ ASTNode *parser_parse(Parser *parser) {
         }
     }
     
-    LOG_INFO("Parsed program with %d functions, %d global variables, and %d typedefs", 
+    LOG_INFO("Parsed program with %d functions, %d global variables, %d typedefs, and %d enums", 
              program->data.program.function_count, program->data.program.global_var_count,
-             program->data.program.typedef_count);
+             program->data.program.typedef_count, program->data.program.enum_count);
     return program;
 }
 
@@ -1468,6 +1570,10 @@ void ast_destroy(ASTNode *node) {
                 ast_destroy(node->data.program.typedefs[i]);
             }
             free(node->data.program.typedefs);
+            for (int i = 0; i < node->data.program.enum_count; i++) {
+                ast_destroy(node->data.program.enums[i]);
+            }
+            free(node->data.program.enums);
             break;
         case AST_FUNCTION:
             free(node->data.function.name);
@@ -1604,6 +1710,14 @@ void ast_destroy(ASTNode *node) {
             free(node->data.typedef_decl.name);
             free(node->data.typedef_decl.base_type);
             break;
+        case AST_ENUM_DECL:
+            free(node->data.enum_decl.name);
+            for (int i = 0; i < node->data.enum_decl.enumerator_count; i++) {
+                free(node->data.enum_decl.enumerator_names[i]);
+            }
+            free(node->data.enum_decl.enumerator_names);
+            free(node->data.enum_decl.enumerator_values);
+            break;
         default:
             break;
     }
@@ -1621,6 +1735,9 @@ void ast_print(ASTNode *node, int indent) {
             printf("Program\n");
             for (int i = 0; i < node->data.program.typedef_count; i++) {
                 ast_print(node->data.program.typedefs[i], indent + 1);
+            }
+            for (int i = 0; i < node->data.program.enum_count; i++) {
+                ast_print(node->data.program.enums[i], indent + 1);
             }
             for (int i = 0; i < node->data.program.function_count; i++) {
                 ast_print(node->data.program.functions[i], indent + 1);
@@ -1749,6 +1866,16 @@ void ast_print(ASTNode *node, int indent) {
         case AST_TYPEDEF_DECL:
             printf("Typedef: %s = %s\n", node->data.typedef_decl.name, node->data.typedef_decl.base_type);
             break;
+        case AST_ENUM_DECL:
+            printf("Enum: %s {\n", node->data.enum_decl.name ? node->data.enum_decl.name : "<anonymous>");
+            for (int i = 0; i < node->data.enum_decl.enumerator_count; i++) {
+                for (int j = 0; j < indent + 1; j++) printf("  ");
+                printf("%s = %d\n", node->data.enum_decl.enumerator_names[i], 
+                       node->data.enum_decl.enumerator_values[i]);
+            }
+            for (int i = 0; i < indent; i++) printf("  ");
+            printf("}\n");
+            break;
         default:
             printf("Unknown node type: %d\n", node->type);
     }
@@ -1795,6 +1922,16 @@ ASTNode *ast_clone(ASTNode *node) {
         case AST_TYPEDEF_DECL:
             clone->data.typedef_decl.name = strdup(node->data.typedef_decl.name);
             clone->data.typedef_decl.base_type = strdup(node->data.typedef_decl.base_type);
+            break;
+        case AST_ENUM_DECL:
+            clone->data.enum_decl.name = node->data.enum_decl.name ? strdup(node->data.enum_decl.name) : NULL;
+            clone->data.enum_decl.enumerator_count = node->data.enum_decl.enumerator_count;
+            clone->data.enum_decl.enumerator_names = malloc(clone->data.enum_decl.enumerator_count * sizeof(char*));
+            clone->data.enum_decl.enumerator_values = malloc(clone->data.enum_decl.enumerator_count * sizeof(int));
+            for (int i = 0; i < clone->data.enum_decl.enumerator_count; i++) {
+                clone->data.enum_decl.enumerator_names[i] = strdup(node->data.enum_decl.enumerator_names[i]);
+                clone->data.enum_decl.enumerator_values[i] = node->data.enum_decl.enumerator_values[i];
+            }
             break;
         default:
             LOG_ERROR("ast_clone not implemented for node type: %d", node->type);

@@ -1561,6 +1561,16 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         free(param_names);
     }
     
+    // Process enums - add enum constants to symbol table
+    for (int i = 0; i < ast->data.program.enum_count; i++) {
+        ASTNode *enum_node = ast->data.program.enums[i];
+        for (int j = 0; j < enum_node->data.enum_decl.enumerator_count; j++) {
+            // For now, store enum constants as "int" type in symbol table
+            // This is a simplified approach - enum constants are treated as global constants
+            symtab_insert(gen->symtab, enum_node->data.enum_decl.enumerator_names[j], "int");
+        }
+    }
+    
     // Second pass: generate code for each function
     for (int i = 0; i < ast->data.program.function_count; i++) {
         codegen_function(gen, ast->data.program.functions[i]);

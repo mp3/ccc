@@ -37,7 +37,8 @@ typedef enum {
     AST_DEFAULT_STMT,
     AST_TERNARY,
     AST_CAST,
-    AST_TYPEDEF_DECL
+    AST_TYPEDEF_DECL,
+    AST_ENUM_DECL
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -52,6 +53,8 @@ typedef struct ASTNode {
             int global_var_count;
             struct ASTNode **typedefs;
             int typedef_count;
+            struct ASTNode **enums;
+            int enum_count;
         } program;
         struct {
             char *name;
@@ -175,6 +178,12 @@ typedef struct ASTNode {
             char *name;                     // The new type name being defined
             char *base_type;                // The existing type it's based on
         } typedef_decl;
+        struct {
+            char *name;                     // The enum name (can be NULL for anonymous enums)
+            char **enumerator_names;        // Array of enumerator names
+            int *enumerator_values;         // Array of enumerator values
+            int enumerator_count;           // Number of enumerators
+        } enum_decl;
     } data;
 } ASTNode;
 
