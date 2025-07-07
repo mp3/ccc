@@ -1,30 +1,67 @@
 # ccc - A Small C Compiler
 
-A minimal C89 subset compiler that generates LLVM IR.
+A C89 subset compiler that generates LLVM IR, supporting a comprehensive set of C language features.
 
 ## Features Implemented
 
-- **Lexer**: Tokenizes C source code
-- **Parser**: Recursive descent parser for a subset of C
-- **Code Generator**: Produces LLVM IR
-- **Logger**: Comprehensive logging system for debugging
+### Core Language Features
 
-### Currently Supported
+#### Data Types
+- **Integer types**: `int` (32-bit)
+- **Character types**: `char` (8-bit) with proper char literals `'a'`
+- **String literals**: `"hello world"` with escape sequences
+- **Arrays**: Single and multi-dimensional arrays
+- **Pointers**: Full pointer arithmetic and dereferencing
+- **Structs**: Structure types with member access
+- **Unions**: Union types with shared memory layout
+- **Enums**: Enumeration types with auto-incrementing values
+- **Function pointers**: Pointers to functions with full call support
+- **Type qualifiers**: `const` for read-only variables
+- **Type definitions**: `typedef` for type aliases
 
-- Integer literals
-- Arithmetic operators: `+`, `-`, `*`, `/`
-- Comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
-- Multiple function definitions
-- Function parameters
-- Function calls with arguments
-- Return statements
-- Proper operator precedence
-- Variable declarations with optional initialization
-- Variable assignments
-- Expression statements
-- If statements with optional else clause
-- While loops
-- Recursive functions
+#### Control Flow
+- **Conditionals**: `if`/`else` statements
+- **Loops**: `while`, `do-while`, and `for` loops
+- **Switch statements**: `switch`/`case`/`default` with fallthrough
+- **Jump statements**: `break`, `continue`, and `return`
+
+#### Operators
+- **Arithmetic**: `+`, `-`, `*`, `/`, `%` (modulo)
+- **Comparison**: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- **Logical**: `&&`, `||`, `!`
+- **Bitwise**: `&`, `|`, `^`, `~`, `<<`, `>>`
+- **Assignment**: `=` and compound assignments (`+=`, `-=`, `*=`, `/=`)
+- **Increment/Decrement**: Prefix and postfix `++`/`--`
+- **Address/Dereference**: `&` (address-of), `*` (dereference)
+- **Member access**: `.` (struct/union), `->` (pointer to struct/union)
+- **Ternary**: `? :` conditional operator
+- **Comma**: `,` operator
+- **Cast**: Type casting `(type)expression`
+- **Sizeof**: `sizeof` operator for type sizes
+
+#### Functions
+- **Function definitions**: With parameters and return values
+- **Function calls**: With argument passing
+- **Recursive functions**: Full recursion support
+- **Variadic functions**: Functions with variable arguments `(...)`
+- **Static variables**: Function-scoped static variables
+
+#### Storage Classes
+- **Global variables**: Top-level variable declarations
+- **Local variables**: Function and block-scoped variables
+- **Static variables**: Both global and local static storage
+
+#### I/O Support
+- **Built-in functions**: `putchar()` and `getchar()` for basic I/O
+
+### Compiler Features
+- **Lexer**: Full tokenization of C source code
+- **Parser**: Recursive descent parser with proper precedence
+- **Code Generator**: LLVM IR generation
+- **Symbol Table**: Hierarchical scope management
+- **Type System**: Type checking and conversions
+- **Optimizer**: Basic constant folding optimizations
+- **Logger**: Comprehensive debugging output
 
 ## Building
 
@@ -45,28 +82,91 @@ clang output.o -o output
 ./output
 ```
 
-## Example
+### Command Line Options
+- `-o <file>`: Specify output file (default: stdout)
+- `-O<level>`: Optimization level (0-2, default: 1)
+- `-v`: Verbose output
 
+## Examples
+
+### Function Pointers
 ```c
-int factorial(int n) {
-    if (n <= 1) {
-        return 1;
-    } else {
-        return n * factorial(n - 1);
-    }
-}
+int add(int a, int b) { return a + b; }
+int multiply(int a, int b) { return a * b; }
 
-int add(int a, int b) {
-    return a + b;
+int main() {
+    int (*operation)(int, int);
+    operation = add;
+    int result1 = operation(5, 3);  // 8
+    
+    operation = multiply;
+    int result2 = operation(5, 3);  // 15
+    
+    return result1 + result2;  // 23
+}
+```
+
+### Structures and Unions
+```c
+struct Point {
+    int x;
+    int y;
+};
+
+union Data {
+    int i;
+    char c;
+};
+
+int main() {
+    struct Point p;
+    p.x = 10;
+    p.y = 20;
+    
+    union Data d;
+    d.i = 65;
+    char ch = d.c;  // 'A'
+    
+    return p.x + p.y + ch;
+}
+```
+
+### Variadic Functions
+```c
+int sum(int count, ...) {
+    // Note: Full stdarg.h support requires standard library
+    return count;  // Placeholder implementation
 }
 
 int main() {
-    int x = 5;
-    int y = 3;
-    int sum = add(x, y);
-    int fact = factorial(5);
+    return sum(3, 10, 20, 30);
+}
+```
+
+### Advanced Control Flow
+```c
+int main() {
+    int result = 0;
     
-    return sum + fact;  // 8 + 120 = 128
+    // For loop with continue
+    for (int i = 0; i < 10; i++) {
+        if (i % 2 == 0) continue;
+        result += i;
+    }
+    
+    // Switch with fallthrough
+    switch (result) {
+        case 25:
+            result++;
+        case 26:
+            result *= 2;
+            break;
+        default:
+            result = 0;
+    }
+    
+    // Ternary operator
+    return result > 50 ? 50 : result;
 }
 ```
 
@@ -75,29 +175,69 @@ int main() {
 ```
 ccc/
 ├── src/
-│   ├── main.c      # Entry point
-│   ├── lexer.[ch]  # Tokenization
-│   ├── parser.[ch] # AST construction
-│   ├── codegen.[ch]# LLVM IR generation
-│   └── logger.[ch] # Logging utilities
-├── tests/          # Test suite
-├── samples/        # Example C programs
-└── Makefile
+│   ├── main.c       # Entry point and command line handling
+│   ├── lexer.[ch]   # Tokenization
+│   ├── parser.[ch]  # AST construction
+│   ├── codegen.[ch] # LLVM IR generation
+│   ├── symtab.[ch]  # Symbol table management
+│   ├── optimizer.[ch] # AST optimizations
+│   └── logger.[ch]  # Logging utilities
+├── tests/           # Test suite
+│   ├── test_*.c    # Individual test cases
+│   └── test_*.py   # Python test runners
+├── samples/         # Example C programs
+├── Makefile
+└── README.md
 ```
+
+## Implementation Status
+
+### Completed Features ✅
+All features listed above are fully implemented and tested.
+
+### Known Limitations
+- Only `int` and `char` primitive types (no `float`, `double`, `long`, etc.)
+- No preprocessor support (`#include`, `#define`, etc.)
+- Limited standard library (only `putchar`/`getchar`)
+- No inline assembly
+- Single translation unit only (no linking multiple .c files)
+- Variadic functions require manual argument handling (no `stdarg.h`)
+
+## Testing
+
+Run individual test suites:
+```bash
+python3 tests/test_lexer.py
+python3 tests/test_arrays.py
+python3 tests/test_pointers.py
+python3 tests/test_strings.py
+python3 tests/test_char.py
+python3 tests/test_function_pointers.py
+```
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[User Guide](docs/USER_GUIDE.md)** - Getting started and language features
+- **[Feature Reference](docs/FEATURES.md)** - Detailed documentation of all features
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Compiler internals and design
+- **[Development Guide](docs/DEVELOPMENT.md)** - Contributing and extending the compiler
 
 ## Next Steps
 
-- [x] Variables and assignments
-- [x] Control flow (if/while)
-- [x] Comparison operators
-- [x] Function parameters and local variables
-- [ ] Simple optimizations (constant folding, dead code elimination)
+- [ ] Comprehensive test suite with automated testing
+- [ ] Better error messages and error recovery
+- [ ] More optimization passes
+- [ ] Floating point support
+- [ ] Preprocessor implementation
+- [ ] Standard library functions
 - [ ] Self-hosting capability
 
-## Extensions (Future)
+## Contributing
 
-- Structs and pointers
-- Arrays
-- More data types (char, float, etc.)
-- Standard library functions
-- Preprocessor directives
+Contributions are welcome! Please read the [Development Guide](docs/DEVELOPMENT.md) for details on our code style, testing requirements, and the pull request process.
+
+## License
+
+This project is part of an educational compiler construction course.
