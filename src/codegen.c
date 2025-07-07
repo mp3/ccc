@@ -1413,6 +1413,40 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             LOG_DEBUG("Generated struct declaration: %s", stmt->data.struct_decl.name);
             break;
         }
+        
+        case AST_UNION_DECL: {
+            // Register union in symbol table for later use
+            // Unions are similar to structs but all members share the same memory
+            Symbol **member_symbols = malloc(stmt->data.struct_decl.member_count * sizeof(Symbol*));
+            
+            for (int i = 0; i < stmt->data.struct_decl.member_count; i++) {
+                ASTNode *member = stmt->data.struct_decl.members[i];
+                Symbol *mem_sym = malloc(sizeof(Symbol));
+                mem_sym->name = strdup(member->data.var_decl.name);
+                mem_sym->type = SYM_VARIABLE;
+                mem_sym->data_type = strdup(member->data.var_decl.type);
+                mem_sym->is_param = false;
+                mem_sym->is_array = false;
+                mem_sym->array_size = 0;
+                member_symbols[i] = mem_sym;
+            }
+            
+            // For now, treat unions like structs in the symbol table
+            Symbol *union_sym = symtab_insert_struct(gen->symtab, stmt->data.struct_decl.name, 
+                                                    member_symbols, stmt->data.struct_decl.member_count);
+            if (!union_sym) {
+                LOG_ERROR("Failed to declare union: %s", stmt->data.struct_decl.name);
+                exit(1);
+            }
+            
+            // Generate LLVM union type declaration (treated as struct for simplicity)
+            fprintf(gen->output, "  ; union %s definition (members: %d)\n", 
+                    stmt->data.struct_decl.name, stmt->data.struct_decl.member_count);
+            
+            free(member_symbols);
+            LOG_DEBUG("Generated union declaration: %s", stmt->data.struct_decl.name);
+            break;
+        }
             
         default:
             LOG_ERROR("Unknown statement type in codegen: %d", stmt->type);
@@ -1567,7 +1601,7 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         for (int j = 0; j < enum_node->data.enum_decl.enumerator_count; j++) {
             // For now, store enum constants as "int" type in symbol table
             // This is a simplified approach - enum constants are treated as global constants
-            symtab_insert(gen->symtab, enum_node->data.enum_decl.enumerator_names[j], "int");
+            symtab_insert(gen->symtab, enum_node->data.enum_decl.enumerator_names[j], SYM_VARIABLE, "int");
         }
     }
     

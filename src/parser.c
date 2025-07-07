@@ -790,8 +790,9 @@ static ASTNode *parse_statement(Parser *parser) {
               token->column);
     
     // Struct declaration
-    if (token->type == TOKEN_KEYWORD_STRUCT) {
-        parser_advance(parser); // consume 'struct'
+    if (token->type == TOKEN_KEYWORD_STRUCT || token->type == TOKEN_KEYWORD_UNION) {
+        bool is_union = (token->type == TOKEN_KEYWORD_UNION);
+        parser_advance(parser); // consume 'struct' or 'union'
         
         Token *name_token = parser->current_token;
         char *struct_name = strdup(name_token->text);
@@ -853,13 +854,14 @@ static ASTNode *parse_statement(Parser *parser) {
         parser_expect(parser, TOKEN_RBRACE);
         parser_expect(parser, TOKEN_SEMICOLON);
         
-        // Create struct declaration node
-        ASTNode *struct_node = create_ast_node(AST_STRUCT_DECL, name_token->line, name_token->column);
-        struct_node->data.struct_decl.name = struct_name;
-        struct_node->data.struct_decl.members = members;
-        struct_node->data.struct_decl.member_count = member_count;
+        // Create struct/union declaration node
+        ASTNode *node = create_ast_node(is_union ? AST_UNION_DECL : AST_STRUCT_DECL, 
+                                        name_token->line, name_token->column);
+        node->data.struct_decl.name = struct_name;
+        node->data.struct_decl.members = members;
+        node->data.struct_decl.member_count = member_count;
         
-        return struct_node;
+        return node;
     }
     
     // Variable declaration
@@ -1662,6 +1664,7 @@ void ast_destroy(ASTNode *node) {
             ast_destroy(node->data.unary_op.operand);
             break;
         case AST_STRUCT_DECL:
+        case AST_UNION_DECL:
             free(node->data.struct_decl.name);
             for (int i = 0; i < node->data.struct_decl.member_count; i++) {
                 ast_destroy(node->data.struct_decl.members[i]);

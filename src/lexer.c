@@ -79,6 +79,7 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     else if (strcmp(buffer, "int") == 0) type = TOKEN_KEYWORD_INT;
     else if (strcmp(buffer, "char") == 0) type = TOKEN_KEYWORD_CHAR;
     else if (strcmp(buffer, "struct") == 0) type = TOKEN_KEYWORD_STRUCT;
+    else if (strcmp(buffer, "union") == 0) type = TOKEN_KEYWORD_UNION;
     else if (strcmp(buffer, "sizeof") == 0) type = TOKEN_KEYWORD_SIZEOF;
     else if (strcmp(buffer, "switch") == 0) type = TOKEN_KEYWORD_SWITCH;
     else if (strcmp(buffer, "case") == 0) type = TOKEN_KEYWORD_CASE;
@@ -346,7 +347,7 @@ void token_destroy(Token *token) {
 const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
         "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
-        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "STRUCT", "SIZEOF",
+        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "STRUCT", "UNION", "SIZEOF",
         "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
