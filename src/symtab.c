@@ -124,7 +124,7 @@ Symbol *symtab_insert_array(SymbolTable *table, const char *name, const char *da
 }
 
 Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char *return_type,
-                              char **param_types, char **param_names, int param_count) {
+                              char **param_types, char **param_names, int param_count, bool is_variadic) {
     // Check if already exists in local scope
     if (symtab_lookup_local(table, name)) {
         LOG_ERROR("Function '%s' already defined in this scope", name);
@@ -139,6 +139,7 @@ Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char 
     sym->is_array = false;
     sym->array_size = 0;
     sym->offset = 0;
+    sym->is_variadic = is_variadic;
     
     // Copy parameter information
     sym->param_count = param_count;
@@ -158,8 +159,8 @@ Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char 
     sym->next = table->symbols;
     table->symbols = sym;
     
-    LOG_DEBUG("Inserted function '%s' (returns: %s, params: %d)", 
-              name, return_type, param_count);
+    LOG_DEBUG("Inserted function '%s' (returns: %s, params: %d%s)", 
+              name, return_type, param_count, is_variadic ? ", variadic" : "");
     return sym;
 }
 

@@ -22,6 +22,7 @@ typedef struct Symbol {
     char **param_types;
     char **param_names;
     int param_count;
+    bool is_variadic;
     // For structs
     struct Symbol **struct_members;
     int member_count;
@@ -39,7 +40,7 @@ void symtab_destroy(SymbolTable *table);
 Symbol *symtab_insert(SymbolTable *table, const char *name, SymbolType type, const char *data_type);
 Symbol *symtab_insert_array(SymbolTable *table, const char *name, const char *data_type, int size);
 Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char *return_type, 
-                              char **param_types, char **param_names, int param_count);
+                              char **param_types, char **param_names, int param_count, bool is_variadic);
 Symbol *symtab_insert_struct(SymbolTable *table, const char *name, struct Symbol **members, int member_count);
 Symbol *symtab_lookup(SymbolTable *table, const char *name);
 Symbol *symtab_lookup_local(SymbolTable *table, const char *name);

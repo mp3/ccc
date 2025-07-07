@@ -63,6 +63,7 @@ typedef struct ASTNode {
             struct ASTNode *body;
             struct ASTNode **params;
             int param_count;
+            bool is_variadic;
         } function;
         struct {
             struct ASTNode **statements;

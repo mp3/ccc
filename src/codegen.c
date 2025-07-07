@@ -699,12 +699,24 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             // Use function symbol if not external
             if (!is_external && !is_func_ptr) {
                 // Check argument count for regular functions
-                if (expr->data.function_call.argument_count != func_sym->param_count) {
-                    LOG_ERROR("Function '%s' expects %d arguments, got %d",
-                             expr->data.function_call.name,
-                             func_sym->param_count,
-                             expr->data.function_call.argument_count);
-                    exit(1);
+                if (func_sym->is_variadic) {
+                    // Variadic functions must have at least the required parameters
+                    if (expr->data.function_call.argument_count < func_sym->param_count) {
+                        LOG_ERROR("Variadic function '%s' expects at least %d arguments, got %d",
+                                 expr->data.function_call.name,
+                                 func_sym->param_count,
+                                 expr->data.function_call.argument_count);
+                        exit(1);
+                    }
+                } else {
+                    // Non-variadic functions must have exact argument count
+                    if (expr->data.function_call.argument_count != func_sym->param_count) {
+                        LOG_ERROR("Function '%s' expects %d arguments, got %d",
+                                 expr->data.function_call.name,
+                                 func_sym->param_count,
+                                 expr->data.function_call.argument_count);
+                        exit(1);
+                    }
                 }
             } else if (is_external) {
                 // Check argument count for external functions
@@ -1727,6 +1739,10 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
         const char *param_llvm_type = strcmp(func->data.function.params[i]->data.param_decl.type, "char") == 0 ? "i8" : "i32";
         fprintf(gen->output, "%s %%%s.param", param_llvm_type, func->data.function.params[i]->data.param_decl.name);
     }
+    if (func->data.function.is_variadic) {
+        if (func->data.function.param_count > 0) fprintf(gen->output, ", ");
+        fprintf(gen->output, "...");
+    }
     fprintf(gen->output, ") {\n");
     fprintf(gen->output, "entry:\n");
     
@@ -1853,7 +1869,8 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         symtab_insert_function(gen->symtab, func->data.function.name,
                               func->data.function.return_type,
                               param_types, param_names,
-                              func->data.function.param_count);
+                              func->data.function.param_count,
+                              func->data.function.is_variadic);
         
         free(param_types);
         free(param_names);

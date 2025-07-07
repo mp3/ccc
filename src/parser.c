@@ -1429,12 +1429,27 @@ static ASTNode *parse_function(Parser *parser) {
     int param_capacity = 4;
     ASTNode **params = malloc(param_capacity * sizeof(ASTNode*));
     int param_count = 0;
+    bool is_variadic = false;
     
     if (parser->current_token->type != TOKEN_RPAREN) {
         params[param_count++] = parse_parameter(parser);
+        LOG_TRACE("After first parameter, current token: %s at %d:%d", 
+                  token_type_to_string(parser->current_token->type),
+                  parser->current_token->line,
+                  parser->current_token->column);
         
         while (parser->current_token->type == TOKEN_COMMA) {
+            LOG_TRACE("Found comma in parameter list");
             parser_advance(parser);
+            
+            // Check for ellipsis after comma
+            if (parser->current_token->type == TOKEN_ELLIPSIS) {
+                LOG_TRACE("Found ellipsis after comma");
+                is_variadic = true;
+                parser_advance(parser);
+                break; // Ellipsis must be last
+            }
+            
             if (param_count >= param_capacity) {
                 param_capacity *= 2;
                 params = realloc(params, param_capacity * sizeof(ASTNode*));
@@ -1443,6 +1458,10 @@ static ASTNode *parse_function(Parser *parser) {
         }
     }
     
+    LOG_TRACE("Before expecting RPAREN, current token: %s at %d:%d",
+              token_type_to_string(parser->current_token->type),
+              parser->current_token->line,
+              parser->current_token->column);
     parser_expect(parser, TOKEN_RPAREN);
     
     ASTNode *node = create_ast_node(AST_FUNCTION, func_line, func_column);
@@ -1450,6 +1469,7 @@ static ASTNode *parse_function(Parser *parser) {
     node->data.function.return_type = strdup(return_type);
     node->data.function.params = params;
     node->data.function.param_count = param_count;
+    node->data.function.is_variadic = is_variadic;
     node->data.function.body = parse_compound_statement(parser);
     
     LOG_DEBUG("Parsed function: %s with %d parameters", node->data.function.name, param_count);

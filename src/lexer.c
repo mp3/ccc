@@ -291,7 +291,22 @@ Token *lexer_next_token(Lexer *lexer) {
                 return create_token(TOKEN_AND, "&&", line, column);
             }
             return create_token(TOKEN_AMPERSAND, "&", line, column);
-        case '.': return create_token(TOKEN_DOT, ".", line, column);
+        case '.':
+            // Check for ellipsis (...)
+            if (lexer->current_char == '.') {
+                lexer_advance(lexer); // consume second dot
+                if (lexer->current_char == '.') {
+                    lexer_advance(lexer); // consume third dot  
+                    return create_token(TOKEN_ELLIPSIS, "...", line, column);
+                } else {
+                    // Not ellipsis, return single dot and backup
+                    ungetc(lexer->current_char, lexer->input);
+                    lexer->current_char = '.';
+                    lexer->column--;
+                    return create_token(TOKEN_DOT, ".", line, column);
+                }
+            }
+            return create_token(TOKEN_DOT, ".", line, column);
         case ':': return create_token(TOKEN_COLON, ":", line, column);
         case '=':
             // LOG_TRACE("Found '=' at %d:%d, next char is '%c'", line, column, lexer->current_char);
@@ -359,7 +374,7 @@ const char *token_type_to_string(TokenType type) {
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 
         "LSHIFT", "RSHIFT", "PLUS_ASSIGN", "MINUS_ASSIGN", "STAR_ASSIGN", "SLASH_ASSIGN", 
-        "INCREMENT", "DECREMENT", "QUESTION", "UNKNOWN"
+        "INCREMENT", "DECREMENT", "QUESTION", "ELLIPSIS", "UNKNOWN"
     };
     return names[type];
 }

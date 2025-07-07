@@ -66,6 +66,7 @@ typedef enum {
     TOKEN_INCREMENT,    // ++
     TOKEN_DECREMENT,    // --
     TOKEN_QUESTION,     // ?
+    TOKEN_ELLIPSIS,     // ...
     TOKEN_UNKNOWN
 } TokenType;
 
