@@ -86,8 +86,10 @@ void parser_destroy(Parser *parser) {
 
 static ASTNode *parse_primary(Parser *parser);
 static ASTNode *parse_postfix(Parser *parser);
+static ASTNode *parse_assignment(Parser *parser);
 static ASTNode *parse_expression(Parser *parser);
 static ASTNode *parse_statement(Parser *parser);
+static char *parse_type(Parser *parser, char **identifier);
 
 static ASTNode *parse_primary(Parser *parser) {
     Token *token = parser->current_token;
@@ -285,7 +287,8 @@ static ASTNode *parse_primary(Parser *parser) {
             int arg_count = 0;
             
             if (parser->current_token->type != TOKEN_RPAREN) {
-                arguments[arg_count++] = parse_expression(parser);
+                // Parse assignment expression (which stops at comma)
+                arguments[arg_count++] = parse_assignment(parser);
                 
                 while (parser->current_token->type == TOKEN_COMMA) {
                     parser_advance(parser);
@@ -293,7 +296,7 @@ static ASTNode *parse_primary(Parser *parser) {
                         arg_capacity *= 2;
                         arguments = realloc(arguments, arg_capacity * sizeof(ASTNode*));
                     }
-                    arguments[arg_count++] = parse_expression(parser);
+                    arguments[arg_count++] = parse_assignment(parser);
                 }
             }
             
@@ -670,6 +673,11 @@ static ASTNode *parse_assignment(Parser *parser) {
     ASTNode *left = parse_ternary(parser);
     
     TokenType op_type = parser->current_token->type;
+    // LOG_TRACE("parse_assignment: after parse_ternary, current token: %s at %d:%d",
+    //           token_type_to_string(op_type), 
+    //           parser->current_token->line, 
+    //           parser->current_token->column);
+    
     if (op_type == TOKEN_ASSIGN || 
         op_type == TOKEN_PLUS_ASSIGN ||
         op_type == TOKEN_MINUS_ASSIGN ||
@@ -709,6 +717,7 @@ static ASTNode *parse_assignment(Parser *parser) {
         }
         
         if (left->type == AST_IDENTIFIER) {
+            // LOG_DEBUG("Creating AST_ASSIGNMENT for %s", left->data.identifier.name);
             ASTNode *node = create_ast_node(AST_ASSIGNMENT, op_token->line, op_token->column);
             node->data.assignment.name = strdup(left->data.identifier.name);
             node->data.assignment.value = right;
@@ -756,7 +765,125 @@ static ASTNode *parse_expression(Parser *parser) {
     return parse_comma(parser);
 }
 
+static char *parse_type(Parser *parser, char **identifier) {
+    LOG_TRACE("parse_type called, current token: %s at %d:%d",
+              token_type_to_string(parser->current_token->type),
+              parser->current_token->line,
+              parser->current_token->column);
+    
+    // Parse base type
+    char *base_type = NULL;
+    if (parser->current_token->type == TOKEN_KEYWORD_INT) {
+        base_type = strdup("int");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+        base_type = strdup("char");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
+        // Could be a typedef'd type
+        base_type = strdup(parser->current_token->text);
+        parser_advance(parser);
+    } else {
+        return NULL;
+    }
+    
+    LOG_TRACE("Base type: %s, next token: %s, peek: %s",
+              base_type,
+              token_type_to_string(parser->current_token->type),
+              token_type_to_string(parser->peek_token->type));
+    
+    // Check for function pointer syntax: return_type (*
+    if (parser->current_token->type == TOKEN_LPAREN &&
+        parser->peek_token->type == TOKEN_STAR) {
+        
+        parser_advance(parser); // consume '('
+        parser_advance(parser); // consume '*'
+        
+        // Get the identifier
+        if (identifier && parser->current_token->type == TOKEN_IDENTIFIER) {
+            *identifier = strdup(parser->current_token->text);
+            parser_advance(parser);
+        }
+        
+        parser_expect(parser, TOKEN_RPAREN);
+        parser_expect(parser, TOKEN_LPAREN);
+        
+        // Parse parameter types
+        char param_types[512] = "";
+        bool first = true;
+        
+        while (parser->current_token->type != TOKEN_RPAREN &&
+               parser->current_token->type != TOKEN_EOF) {
+            
+            if (!first) {
+                parser_expect(parser, TOKEN_COMMA);
+                strcat(param_types, ",");
+            }
+            first = false;
+            
+            // Parse parameter type
+            char *param_type = NULL;
+            if (parser->current_token->type == TOKEN_KEYWORD_INT) {
+                param_type = "int";
+                parser_advance(parser);
+            } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+                param_type = "char";
+                parser_advance(parser);
+            } else {
+                LOG_ERROR("Expected parameter type at %d:%d",
+                         parser->current_token->line, parser->current_token->column);
+                exit(1);
+            }
+            
+            strcat(param_types, param_type);
+            
+            // Handle pointer parameters
+            while (parser->current_token->type == TOKEN_STAR) {
+                strcat(param_types, "*");
+                parser_advance(parser);
+            }
+            
+            // Skip parameter name if present
+            if (parser->current_token->type == TOKEN_IDENTIFIER) {
+                parser_advance(parser);
+            }
+        }
+        
+        parser_expect(parser, TOKEN_RPAREN);
+        
+        // Build function pointer type string
+        char *func_ptr_type = malloc(512);
+        snprintf(func_ptr_type, 512, "%s(*)(%s)", base_type, param_types);
+        free(base_type);
+        return func_ptr_type;
+    }
+    
+    // Handle regular pointers
+    int pointer_count = 0;
+    while (parser->current_token->type == TOKEN_STAR) {
+        pointer_count++;
+        parser_advance(parser);
+    }
+    
+    // Get identifier if not a function pointer
+    if (identifier && parser->current_token->type == TOKEN_IDENTIFIER) {
+        *identifier = strdup(parser->current_token->text);
+        parser_advance(parser);
+    }
+    
+    // Build the complete type string
+    char type_name[256];
+    strcpy(type_name, base_type);
+    for (int i = 0; i < pointer_count; i++) {
+        strcat(type_name, "*");
+    }
+    free(base_type);
+    
+    return strdup(type_name);
+}
+
 static ASTNode *parse_compound_statement(Parser *parser) {
+    LOG_TRACE("parse_compound_statement called");
     parser_expect(parser, TOKEN_LBRACE);
     
     ASTNode *node = create_ast_node(AST_COMPOUND_STMT, 
@@ -769,6 +896,10 @@ static ASTNode *parse_compound_statement(Parser *parser) {
     
     while (parser->current_token->type != TOKEN_RBRACE &&
            parser->current_token->type != TOKEN_EOF) {
+        LOG_TRACE("In compound statement loop, current token: %s at %d:%d",
+                  token_type_to_string(parser->current_token->type),
+                  parser->current_token->line,
+                  parser->current_token->column);
         if (node->data.compound.statement_count >= capacity) {
             capacity *= 2;
             node->data.compound.statements = realloc(node->data.compound.statements,
@@ -790,6 +921,7 @@ static ASTNode *parse_statement(Parser *parser) {
               token->column);
     
     // Struct declaration
+    LOG_TRACE("Checking for struct/union, token: %s", token_type_to_string(token->type));
     if (token->type == TOKEN_KEYWORD_STRUCT || token->type == TOKEN_KEYWORD_UNION) {
         bool is_union = (token->type == TOKEN_KEYWORD_UNION);
         parser_advance(parser); // consume 'struct' or 'union'
@@ -873,38 +1005,63 @@ static ASTNode *parse_statement(Parser *parser) {
         token = parser->current_token;
     }
     
-    // Variable declaration
-    if (token->type == TOKEN_KEYWORD_INT || token->type == TOKEN_KEYWORD_CHAR) {
-        char *base_type = strdup(token->type == TOKEN_KEYWORD_INT ? "int" : "char");
+    // Check for const keyword (can appear before type)
+    bool is_const = false;
+    if (token->type == TOKEN_KEYWORD_CONST) {
+        is_const = true;
         parser_advance(parser);
+        token = parser->current_token;
+    }
+    
+    // Variable declaration (including function pointers)
+    LOG_TRACE("Checking for variable declaration, current token: %s at %d:%d",
+              token_type_to_string(parser->current_token->type),
+              parser->current_token->line,
+              parser->current_token->column);
+    if (parser->current_token->type == TOKEN_KEYWORD_INT || 
+        parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+        LOG_TRACE("Attempting to parse variable declaration starting with %s",
+                  token_type_to_string(token->type));
+        char *var_name = NULL;
+        char *type_name = parse_type(parser, &var_name);
         
-        // Check for pointer type
-        int pointer_count = 0;
-        while (parser->current_token->type == TOKEN_STAR) {
-            pointer_count++;
+        if (!type_name) {
+            LOG_ERROR("Failed to parse type at %d:%d", token->line, token->column);
+            exit(1);
+        }
+        
+        LOG_TRACE("Parsed type: %s, identifier: %s", type_name, var_name ? var_name : "(null)");
+        
+        // Check for const after type (e.g., int const)
+        if (!is_const && parser->current_token->type == TOKEN_KEYWORD_CONST) {
+            is_const = true;
             parser_advance(parser);
         }
         
-        // Build the complete type string
-        char type_name[256];
-        strcpy(type_name, base_type);
-        for (int i = 0; i < pointer_count; i++) {
-            strcat(type_name, "*");
+        int var_line = token->line;
+        int var_column = token->column;
+        
+        // If parse_type didn't get the identifier (for non-function-pointer types),
+        // we need to get it now
+        if (!var_name && parser->current_token->type == TOKEN_IDENTIFIER) {
+            var_name = strdup(parser->current_token->text);
+            var_line = parser->current_token->line;
+            var_column = parser->current_token->column;
+            parser_advance(parser);
         }
         
-        Token *name_token = parser->current_token;
-        char *var_name = strdup(name_token->text);
-        int var_line = name_token->line;
-        int var_column = name_token->column;
-        parser_expect(parser, TOKEN_IDENTIFIER);
-        
-        free(base_type);
+        if (!var_name) {
+            LOG_ERROR("Expected variable name at %d:%d", 
+                     parser->current_token->line, parser->current_token->column);
+            exit(1);
+        }
         
         ASTNode *node = create_ast_node(AST_VAR_DECL, var_line, var_column);
         node->data.var_decl.type = strdup(type_name);
         node->data.var_decl.name = var_name;
         node->data.var_decl.array_size = NULL;
         node->data.var_decl.is_static = is_static;
+        node->data.var_decl.is_const = is_const;
         
         // Check for array declaration
         if (parser->current_token->type == TOKEN_LBRACKET) {
@@ -1230,6 +1387,8 @@ static ASTNode *parse_parameter(Parser *parser) {
 }
 
 static ASTNode *parse_function(Parser *parser) {
+    LOG_TRACE("parse_function called at %d:%d", 
+              parser->current_token->line, parser->current_token->column);
     char *base_type = NULL;
     if (parser->current_token->type == TOKEN_KEYWORD_INT) {
         base_type = strdup("int");

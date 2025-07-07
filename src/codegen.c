@@ -96,6 +96,67 @@ static bool is_static_variable(Symbol *sym, char *real_type, char *global_name) 
 static char *c_type_to_llvm_type(const char *c_type) {
     static char llvm_type[256];
     
+    // Check for function pointer type: return_type(*)(param_types)
+    if (strstr(c_type, "(*)")) {
+        // Parse function pointer type
+        char type_copy[256];
+        strcpy(type_copy, c_type);
+        
+        // Extract return type
+        char *func_ptr_marker = strstr(type_copy, "(*)");
+        *func_ptr_marker = '\0';
+        char *return_type = type_copy;
+        
+        // Extract parameter types
+        char *params_start = strchr(func_ptr_marker + 3, '(');
+        if (params_start) {
+            params_start++; // Skip '('
+            char *params_end = strchr(params_start, ')');
+            if (params_end) {
+                *params_end = '\0';
+                
+                // Build LLVM function pointer type
+                char llvm_return_type[64];
+                if (strcmp(return_type, "int") == 0) {
+                    strcpy(llvm_return_type, "i32");
+                } else if (strcmp(return_type, "char") == 0) {
+                    strcpy(llvm_return_type, "i8");
+                } else {
+                    strcpy(llvm_return_type, "i32"); // Default
+                }
+                
+                // Build parameter list
+                char llvm_params[256] = "";
+                if (strlen(params_start) > 0) {
+                    // Simple parameter parsing - assumes int/char types
+                    char *param = strtok(params_start, ",");
+                    bool first = true;
+                    while (param) {
+                        if (!first) strcat(llvm_params, ", ");
+                        first = false;
+                        
+                        // Trim whitespace
+                        while (*param == ' ') param++;
+                        
+                        if (strstr(param, "int")) {
+                            strcat(llvm_params, "i32");
+                        } else if (strstr(param, "char")) {
+                            strcat(llvm_params, "i8");
+                        } else {
+                            strcat(llvm_params, "i32"); // Default
+                        }
+                        
+                        param = strtok(NULL, ",");
+                    }
+                }
+                
+                snprintf(llvm_type, sizeof(llvm_type), "%s (%s)*", 
+                        llvm_return_type, llvm_params);
+                return llvm_type;
+            }
+        }
+    }
+    
     if (strcmp(c_type, "int") == 0) {
         strcpy(llvm_type, "i32");
     } else if (strcmp(c_type, "char") == 0) {
@@ -203,6 +264,7 @@ static void emit_string_literals(CodeGenerator *gen) {
 }
 
 static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
+    LOG_TRACE("codegen_expression: type=%d", expr->type);
     switch (expr->type) {
         case AST_INT_LITERAL: {
             char *temp = codegen_next_temp(gen);
@@ -244,6 +306,14 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 exit(1);
             }
             
+            // If this is a function, return the function pointer directly
+            if (sym->type == SYM_FUNCTION) {
+                // No need to load, just return the function name with @
+                char *func_ref = malloc(strlen(sym->name) + 2);
+                sprintf(func_ref, "@%s", sym->name);
+                return func_ref;
+            }
+            
             char *temp = codegen_next_temp(gen);
             char real_type[256];
             char global_name[256];
@@ -271,6 +341,12 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             Symbol *sym = symtab_lookup(gen->symtab, expr->data.assignment.name);
             if (!sym) {
                 LOG_ERROR("Undefined variable: %s", expr->data.assignment.name);
+                exit(1);
+            }
+            
+            // Check if trying to assign to a const variable
+            if (sym->is_const) {
+                LOG_ERROR("Cannot assign to const variable: %s", expr->data.assignment.name);
                 exit(1);
             }
             
@@ -588,6 +664,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             // Check for built-in/external functions
             const char *func_name = expr->data.function_call.name;
             bool is_external = false;
+            bool is_func_ptr = false;
             const char *return_type = "i32";
             const char *param_types[10]; // max 10 params for built-ins
             int expected_params = 0;
@@ -601,14 +678,27 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 is_external = true;
                 return_type = "i32";
                 expected_params = 0;
+            } else if (func_sym && func_sym->type == SYM_VARIABLE && 
+                      strstr(func_sym->data_type, "(*)")) {
+                // This is a function pointer variable
+                is_func_ptr = true;
+                // Extract return type from function pointer type
+                // Format: "return_type(*)(param_types)"
+                char type_copy[256];
+                strcpy(type_copy, func_sym->data_type);
+                char *paren = strstr(type_copy, "(*)");
+                if (paren) {
+                    *paren = '\0';
+                    return_type = strcmp(type_copy, "int") == 0 ? "i32" : "i8";
+                }
             } else if (!func_sym || func_sym->type != SYM_FUNCTION) {
                 LOG_ERROR("Undefined function: %s", expr->data.function_call.name);
                 exit(1);
             }
             
             // Use function symbol if not external
-            if (!is_external) {
-                // Check argument count
+            if (!is_external && !is_func_ptr) {
+                // Check argument count for regular functions
                 if (expr->data.function_call.argument_count != func_sym->param_count) {
                     LOG_ERROR("Function '%s' expects %d arguments, got %d",
                              expr->data.function_call.name,
@@ -616,7 +706,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                              expr->data.function_call.argument_count);
                     exit(1);
                 }
-            } else {
+            } else if (is_external) {
                 // Check argument count for external functions
                 if (expr->data.function_call.argument_count != expected_params) {
                     LOG_ERROR("Function '%s' expects %d arguments, got %d",
@@ -625,6 +715,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     exit(1);
                 }
             }
+            // For function pointers, we can't check argument count at compile time
             
             // Evaluate arguments
             char **arg_values = malloc(expr->data.function_call.argument_count * sizeof(char*));
@@ -634,16 +725,39 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             
             // Generate function call
             char *result = codegen_next_temp(gen);
-            fprintf(gen->output, "  %s = call %s @%s(", result, return_type, func_name);
-            for (int i = 0; i < expr->data.function_call.argument_count; i++) {
-                if (i > 0) fprintf(gen->output, ", ");
-                if (is_external) {
-                    fprintf(gen->output, "%s %s", param_types[i], arg_values[i]);
-                } else {
+            
+            if (is_func_ptr) {
+                // For function pointers, load the pointer value first
+                char *func_ptr_val = codegen_next_temp(gen);
+                
+                // Determine function pointer type
+                char func_ptr_type[256];
+                // Use c_type_to_llvm_type to convert the whole function pointer type
+                strcpy(func_ptr_type, c_type_to_llvm_type(func_sym->data_type));
+                
+                fprintf(gen->output, "  %s = load %s, %s* %%%s\n", 
+                        func_ptr_val, func_ptr_type, func_ptr_type, func_name);
+                
+                // Call through function pointer
+                fprintf(gen->output, "  %s = call %s %s(", result, return_type, func_ptr_val);
+                for (int i = 0; i < expr->data.function_call.argument_count; i++) {
+                    if (i > 0) fprintf(gen->output, ", ");
                     fprintf(gen->output, "i32 %s", arg_values[i]);
                 }
+                fprintf(gen->output, ")\n");
+            } else {
+                // Regular function call
+                fprintf(gen->output, "  %s = call %s @%s(", result, return_type, func_name);
+                for (int i = 0; i < expr->data.function_call.argument_count; i++) {
+                    if (i > 0) fprintf(gen->output, ", ");
+                    if (is_external) {
+                        fprintf(gen->output, "%s %s", param_types[i], arg_values[i]);
+                    } else {
+                        fprintf(gen->output, "i32 %s", arg_values[i]);
+                    }
+                }
+                fprintf(gen->output, ")\n");
             }
-            fprintf(gen->output, ")\n");
             
             // Free argument values
             for (int i = 0; i < expr->data.function_call.argument_count; i++) {
@@ -1103,6 +1217,7 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                     LOG_ERROR("Failed to declare array: %s", stmt->data.var_decl.name);
                     exit(1);
                 }
+                sym->is_const = stmt->data.var_decl.is_const;
                 
                 // Allocate stack space for the array
                 char *base_llvm_type = c_type_to_llvm_type(stmt->data.var_decl.type);
@@ -1115,6 +1230,7 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                     LOG_ERROR("Failed to declare variable: %s", stmt->data.var_decl.name);
                     exit(1);
                 }
+                sym->is_const = stmt->data.var_decl.is_const;
                 
                 // Allocate stack space for the variable
                 char *llvm_type = c_type_to_llvm_type(stmt->data.var_decl.type);
@@ -1123,7 +1239,17 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 // Initialize if needed
                 if (stmt->data.var_decl.initializer) {
                     char *value = codegen_expression(gen, stmt->data.var_decl.initializer);
-                    fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+                    
+                    // Determine the type of the initializer value
+                    const char *value_type = llvm_type;  // default to variable type
+                    
+                    // If this is a function call, the result is the return type, not the function type
+                    if (stmt->data.var_decl.initializer->type == AST_FUNCTION_CALL) {
+                        // Function calls return their return type (i32 for now)
+                        value_type = "i32";
+                    }
+                    
+                    fprintf(gen->output, "  store %s %s, %s* %%%s\n", value_type, value, value_type, sym->name);
                     free(value);
                 }
             }
@@ -1527,6 +1653,7 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 mem_sym->is_param = false;
                 mem_sym->is_array = false;
                 mem_sym->array_size = 0;
+                mem_sym->is_const = false;
                 member_symbols[i] = mem_sym;
             }
             
@@ -1560,6 +1687,7 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 mem_sym->is_param = false;
                 mem_sym->is_array = false;
                 mem_sym->array_size = 0;
+                mem_sym->is_const = false;
                 member_symbols[i] = mem_sym;
             }
             

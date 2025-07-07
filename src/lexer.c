@@ -87,6 +87,7 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     else if (strcmp(buffer, "typedef") == 0) type = TOKEN_KEYWORD_TYPEDEF;
     else if (strcmp(buffer, "enum") == 0) type = TOKEN_KEYWORD_ENUM;
     else if (strcmp(buffer, "static") == 0) type = TOKEN_KEYWORD_STATIC;
+    else if (strcmp(buffer, "const") == 0) type = TOKEN_KEYWORD_CONST;
     
     Token *token = create_token(type, buffer, start_line, start_column);
     LOG_TRACE("Lexed %s: %s", token_type_to_string(type), buffer);
@@ -205,6 +206,9 @@ void lexer_destroy(Lexer *lexer) {
 Token *lexer_next_token(Lexer *lexer) {
     lexer_skip_whitespace(lexer);
     
+    // LOG_TRACE("lexer_next_token: current char='%c' (0x%02X) at %d:%d", 
+    //           lexer->current_char, (unsigned char)lexer->current_char, lexer->line, lexer->column);
+    
     while (lexer->current_char == '/') {
         int next_char = fgetc(lexer->input);
         ungetc(next_char, lexer->input);
@@ -290,6 +294,7 @@ Token *lexer_next_token(Lexer *lexer) {
         case '.': return create_token(TOKEN_DOT, ".", line, column);
         case ':': return create_token(TOKEN_COLON, ":", line, column);
         case '=':
+            // LOG_TRACE("Found '=' at %d:%d, next char is '%c'", line, column, lexer->current_char);
             if (lexer->current_char == '=') {
                 lexer_advance(lexer);
                 return create_token(TOKEN_EQ, "==", line, column);
@@ -349,7 +354,7 @@ const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
         "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
         "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "STRUCT", "UNION", "SIZEOF",
-        "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "COLON", "AND", "OR", "NOT",
+        "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "CONST", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 

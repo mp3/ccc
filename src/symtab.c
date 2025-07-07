@@ -56,6 +56,7 @@ Symbol *symtab_insert(SymbolTable *table, const char *name, SymbolType type, con
     sym->is_param = false;
     sym->is_array = false;
     sym->array_size = 0;
+    sym->is_const = false;
     sym->param_types = NULL;
     sym->param_names = NULL;
     sym->param_count = 0;
@@ -102,6 +103,7 @@ Symbol *symtab_insert_array(SymbolTable *table, const char *name, const char *da
     sym->is_param = false;
     sym->is_array = true;
     sym->array_size = size;
+    sym->is_const = false;
     sym->param_types = NULL;
     sym->param_names = NULL;
     sym->param_count = 0;

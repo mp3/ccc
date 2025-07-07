@@ -17,6 +17,7 @@ typedef struct Symbol {
     bool is_param;    // True if this is a function parameter
     bool is_array;    // True if this is an array
     int array_size;   // Size of the array (0 if not an array)
+    bool is_const;    // True if this is a const variable
     // For functions
     char **param_types;
     char **param_names;
