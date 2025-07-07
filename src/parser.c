@@ -345,9 +345,66 @@ static ASTNode *parse_primary(Parser *parser) {
     }
     
     if (parser_match(parser, TOKEN_LPAREN)) {
-        ASTNode *expr = parse_expression(parser);
-        parser_expect(parser, TOKEN_RPAREN);
-        return expr;
+        // Check if this is a type cast or a parenthesized expression
+        if (parser->current_token->type == TOKEN_KEYWORD_INT || 
+            parser->current_token->type == TOKEN_KEYWORD_CHAR ||
+            parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
+            // This is a type cast
+            int line = parser->peek_token->line;
+            int column = parser->peek_token->column;
+            
+            // Parse the type
+            char *base_type = NULL;
+            if (parser->current_token->type == TOKEN_KEYWORD_INT) {
+                base_type = strdup("int");
+                parser_advance(parser);
+            } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+                base_type = strdup("char");
+                parser_advance(parser);
+            } else if (parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
+                parser_advance(parser);
+                if (parser->current_token->type != TOKEN_IDENTIFIER) {
+                    LOG_ERROR("Expected struct name after 'struct' in cast");
+                    exit(1);
+                }
+                char struct_type[256];
+                sprintf(struct_type, "struct %s", parser->current_token->text);
+                base_type = strdup(struct_type);
+                parser_advance(parser);
+            }
+            
+            // Check for pointer type
+            int pointer_count = 0;
+            while (parser->current_token->type == TOKEN_STAR) {
+                pointer_count++;
+                parser_advance(parser);
+            }
+            
+            // Build the complete type string
+            char type_name[256];
+            strcpy(type_name, base_type);
+            for (int i = 0; i < pointer_count; i++) {
+                strcat(type_name, "*");
+            }
+            free(base_type);
+            
+            parser_expect(parser, TOKEN_RPAREN);
+            
+            // Parse the expression to cast
+            ASTNode *expr = parse_primary(parser);
+            
+            // Create the cast node
+            ASTNode *node = create_ast_node(AST_CAST, line, column);
+            node->data.cast.target_type = strdup(type_name);
+            node->data.cast.expression = expr;
+            LOG_TRACE("Parsed type cast to: %s", type_name);
+            return node;
+        } else {
+            // This is a parenthesized expression
+            ASTNode *expr = parse_expression(parser);
+            parser_expect(parser, TOKEN_RPAREN);
+            return expr;
+        }
     }
     
     LOG_ERROR("Unexpected token in primary expression: %s at %d:%d",
@@ -671,10 +728,32 @@ static ASTNode *parse_assignment(Parser *parser) {
     return left;
 }
 
+static ASTNode *parse_comma(Parser *parser) {
+    LOG_TRACE("parse_comma called, current token: %s",
+              token_type_to_string(parser->current_token->type));
+    
+    ASTNode *left = parse_assignment(parser);
+    
+    while (parser->current_token->type == TOKEN_COMMA) {
+        Token *op_token = parser->current_token;
+        parser_advance(parser); // consume comma
+        
+        ASTNode *right = parse_assignment(parser);
+        
+        ASTNode *node = create_ast_node(AST_BINARY_OP, op_token->line, op_token->column);
+        node->data.binary_op.op = TOKEN_COMMA;
+        node->data.binary_op.left = left;
+        node->data.binary_op.right = right;
+        left = node;
+    }
+    
+    return left;
+}
+
 static ASTNode *parse_expression(Parser *parser) {
     LOG_TRACE("parse_expression called, current token: %s",
               token_type_to_string(parser->current_token->type));
-    return parse_assignment(parser);
+    return parse_comma(parser);
 }
 
 static ASTNode *parse_compound_statement(Parser *parser) {
@@ -1426,6 +1505,15 @@ void ast_destroy(ASTNode *node) {
             }
             free(node->data.default_stmt.statements);
             break;
+        case AST_TERNARY:
+            ast_destroy(node->data.ternary.condition);
+            ast_destroy(node->data.ternary.true_expr);
+            ast_destroy(node->data.ternary.false_expr);
+            break;
+        case AST_CAST:
+            free(node->data.cast.target_type);
+            ast_destroy(node->data.cast.expression);
+            break;
         default:
             break;
     }
@@ -1603,6 +1691,10 @@ ASTNode *ast_clone(ASTNode *node) {
             clone->data.ternary.condition = ast_clone(node->data.ternary.condition);
             clone->data.ternary.true_expr = ast_clone(node->data.ternary.true_expr);
             clone->data.ternary.false_expr = ast_clone(node->data.ternary.false_expr);
+            break;
+        case AST_CAST:
+            clone->data.cast.target_type = strdup(node->data.cast.target_type);
+            clone->data.cast.expression = ast_clone(node->data.cast.expression);
             break;
         default:
             LOG_ERROR("ast_clone not implemented for node type: %d", node->type);

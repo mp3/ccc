@@ -35,7 +35,8 @@ typedef enum {
     AST_SWITCH_STMT,
     AST_CASE_STMT,
     AST_DEFAULT_STMT,
-    AST_TERNARY
+    AST_TERNARY,
+    AST_CAST
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -163,6 +164,10 @@ typedef struct ASTNode {
             struct ASTNode *true_expr;      // Expression if true
             struct ASTNode *false_expr;     // Expression if false
         } ternary;
+        struct {
+            char *target_type;              // Type to cast to (e.g., "int", "char*")
+            struct ASTNode *expression;     // Expression to cast
+        } cast;
     } data;
 } ASTNode;
 

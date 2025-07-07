@@ -67,11 +67,11 @@ static char *c_type_to_llvm_type(const char *c_type) {
     if (strcmp(c_type, "int") == 0) {
         strcpy(llvm_type, "i32");
     } else if (strcmp(c_type, "char") == 0) {
-        strcpy(llvm_type, "i8");
+        strcpy(llvm_type, "i32");  // Treat char as i32 for simplicity
     } else if (strcmp(c_type, "int*") == 0) {
         strcpy(llvm_type, "i32*");
     } else if (strcmp(c_type, "char*") == 0) {
-        strcpy(llvm_type, "i8*");
+        strcpy(llvm_type, "i32*");  // char* is pointer to i32
     } else if (strcmp(c_type, "int**") == 0) {
         strcpy(llvm_type, "i32**");
     } else if (strcmp(c_type, "char**") == 0) {
@@ -481,6 +481,12 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     free(right);
                     return result;
                 }
+                case TOKEN_COMMA: {
+                    // Comma operator: evaluate left for side effects, return right
+                    free(left);  // Discard left result
+                    free(result);
+                    return right;  // Return right result
+                }
                 default:
                     LOG_ERROR("Unknown binary operator: %d (%s)", 
                              expr->data.binary_op.op,
@@ -837,7 +843,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     } else if (strcmp(sym->data_type, "int") == 0) {
                         size = 4;
                     } else if (strcmp(sym->data_type, "char") == 0) {
-                        size = 1;
+                        size = 1;  // Even though we use i32 internally, char is conceptually 1 byte
                     } else if (strstr(sym->data_type, "*")) {
                         size = 8;  // Pointer
                     }
@@ -906,6 +912,38 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             free(false_label);
             free(end_label);
             
+            return result;
+        }
+        
+        case AST_CAST: {
+            // Generate code for the expression to cast
+            char *value = codegen_expression(gen, expr->data.cast.expression);
+            char *result = codegen_next_temp(gen);
+            
+            // Determine source and target types
+            const char *target_type = expr->data.cast.target_type;
+            
+            // For now, we support basic casts between int and char types
+            if (strcmp(target_type, "int") == 0) {
+                // Cast to int - since we treat char as i32, this is a no-op
+                fprintf(gen->output, "  %s = add i32 0, %s\n", result, value);
+            } else if (strcmp(target_type, "char") == 0) {
+                // Cast to char - truncate to 8 bits by masking with 0xFF
+                fprintf(gen->output, "  %s = and i32 %s, 255\n", result, value);
+            } else if (strstr(target_type, "*")) {
+                // Pointer cast
+                // We need to determine if the source is a pointer or integer
+                // For simplicity, we'll just copy the value since we treat all pointers as i32*
+                fprintf(gen->output, "  %s = add i32 0, 0  ; pointer cast placeholder\n", result);
+                free(result);
+                result = strdup(value);  // Just use the original value
+            } else {
+                LOG_ERROR("Unsupported cast to type: %s", target_type);
+                exit(1);
+            }
+            
+            free(value);
+            LOG_TRACE("Generated cast to %s", target_type);
             return result;
         }
         
