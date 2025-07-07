@@ -1,0 +1,52 @@
+{
+  "test_categories": {
+    "lexer": {
+      "description": "Lexical analysis tests",
+      "timeout": 10
+    },
+    "parser": {
+      "description": "Parsing tests",
+      "timeout": 10
+    },
+    "codegen": {
+      "description": "Code generation tests",
+      "timeout": 15
+    },
+    "features": {
+      "description": "Language feature tests",
+      "timeout": 20
+    },
+    "integration": {
+      "description": "Integration tests",
+      "timeout": 30
+    },
+    "optimization": {
+      "description": "Optimization tests",
+      "timeout": 15
+    },
+    "errors": {
+      "description": "Error handling tests",
+      "timeout": 10
+    }
+  },
+  "test_expectations": {
+    "test_const_error.c": {
+      "should_fail": true,
+      "expected_error": "const"
+    },
+    "test_variadic_parse.c": {
+      "expected_exit_code": 3
+    },
+    "test_static_behavior.c": {
+      "expected_exit_code": 0
+    },
+    "test_funcptr_simple.c": {
+      "expected_exit_code": 23
+    }
+  },
+  "compiler_flags": {
+    "default": ["-O1"],
+    "optimization_test": ["-O0", "-O1", "-O2"],
+    "debug": ["-v"]
+  }
+}

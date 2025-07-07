@@ -24,6 +24,18 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 test: $(TARGET)
+	python3 $(TESTDIR)/run_tests.py
+
+test-quick: $(TARGET)
+	python3 $(TESTDIR)/quick_test.py
+
+test-verbose: $(TARGET)
+	python3 $(TESTDIR)/run_tests.py --verbose
+
+test-category: $(TARGET)
+	python3 $(TESTDIR)/run_tests.py --category $(CATEGORY)
+
+test-pytest: $(TARGET)
 	python3 -m pytest $(TESTDIR) -v
 
 clean:

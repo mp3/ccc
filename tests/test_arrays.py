@@ -25,7 +25,7 @@ def test_int_array():
         f.flush()
         
         # Compile
-        result = subprocess.run(['../ccc', f.name, '-o', 'test_int_array.ll'], 
+        result = subprocess.run(['./ccc', f.name, '-o', 'test_int_array.ll'], 
                               capture_output=True, text=True)
         assert result.returncode == 0, f"Compilation failed: {result.stderr}"
         
@@ -58,7 +58,7 @@ def test_char_array():
         f.flush()
         
         # Compile
-        result = subprocess.run(['../ccc', f.name, '-o', 'test_char_array.ll'], 
+        result = subprocess.run(['./ccc', f.name, '-o', 'test_char_array.ll'], 
                               capture_output=True, text=True)
         assert result.returncode == 0, f"Compilation failed: {result.stderr}"
         
@@ -93,7 +93,7 @@ def test_array_with_variables():
         f.flush()
         
         # Compile
-        result = subprocess.run(['../ccc', f.name, '-o', 'test_array_var.ll'], 
+        result = subprocess.run(['./ccc', f.name, '-o', 'test_array_var.ll'], 
                               capture_output=True, text=True)
         assert result.returncode == 0, f"Compilation failed: {result.stderr}"
         
@@ -126,7 +126,7 @@ def test_array_assignment():
         f.flush()
         
         # Compile
-        result = subprocess.run(['../ccc', f.name, '-o', 'test_array_assign.ll'], 
+        result = subprocess.run(['./ccc', f.name, '-o', 'test_array_assign.ll'], 
                               capture_output=True, text=True)
         assert result.returncode == 0, f"Compilation failed: {result.stderr}"
         
