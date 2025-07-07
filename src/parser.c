@@ -842,6 +842,7 @@ static ASTNode *parse_statement(Parser *parser) {
                 member->data.var_decl.name = member_name;
                 member->data.var_decl.initializer = NULL;
                 member->data.var_decl.array_size = NULL;
+                member->data.var_decl.is_static = false;
                 
                 members[member_count++] = member;
                 free(member_type);
@@ -862,6 +863,14 @@ static ASTNode *parse_statement(Parser *parser) {
         node->data.struct_decl.member_count = member_count;
         
         return node;
+    }
+    
+    // Check for static keyword
+    bool is_static = false;
+    if (token->type == TOKEN_KEYWORD_STATIC) {
+        is_static = true;
+        parser_advance(parser);
+        token = parser->current_token;
     }
     
     // Variable declaration
@@ -895,6 +904,7 @@ static ASTNode *parse_statement(Parser *parser) {
         node->data.var_decl.type = strdup(type_name);
         node->data.var_decl.name = var_name;
         node->data.var_decl.array_size = NULL;
+        node->data.var_decl.is_static = is_static;
         
         // Check for array declaration
         if (parser->current_token->type == TOKEN_LBRACKET) {
@@ -1498,6 +1508,7 @@ static ASTNode *parse_global_variable(Parser *parser) {
     var_decl->data.var_decl.name = var_name;
     var_decl->data.var_decl.initializer = initializer;
     var_decl->data.var_decl.array_size = NULL;
+    var_decl->data.var_decl.is_static = false;
     
     return var_decl;
 }

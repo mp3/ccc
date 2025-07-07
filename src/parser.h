@@ -124,6 +124,7 @@ typedef struct ASTNode {
             char *name;
             struct ASTNode *initializer;
             struct ASTNode *array_size;  // NULL for non-arrays
+            bool is_static;              // true if declared with static keyword
         } var_decl;
         struct {
             char *name;

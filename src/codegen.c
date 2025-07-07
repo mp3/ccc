@@ -13,8 +13,10 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->symtab = NULL;
     gen->current_function_return_type = NULL;
     gen->string_literals = NULL;
+    gen->static_variables = NULL;
     gen->current_loop_end_label = NULL;
     gen->current_loop_continue_label = NULL;
+    gen->current_function_name = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -32,6 +34,16 @@ void codegen_destroy(CodeGenerator *gen) {
             free(str->value);
             free(str);
             str = next;
+        }
+        // Free static variables
+        StaticVariable *svar = gen->static_variables;
+        while (svar) {
+            StaticVariable *next = svar->next;
+            free(svar->global_name);
+            free(svar->local_name);
+            free(svar->type);
+            free(svar);
+            svar = next;
         }
         free(gen);
     }
@@ -59,6 +71,26 @@ static bool is_global_variable(CodeGenerator *gen, const char *name) {
     // Check if the variable exists in global scope
     Symbol *global_sym = symtab_lookup_local(global_table, name);
     return (global_sym != NULL);
+}
+
+// Helper function to check if a symbol is a static variable and extract its info
+static bool is_static_variable(Symbol *sym, char *real_type, char *global_name) {
+    if (!sym || !sym->data_type) return false;
+    
+    // Check if the data_type contains the static marker
+    const char *static_marker = ":static:@";
+    char *marker_pos = strstr(sym->data_type, static_marker);
+    if (!marker_pos) return false;
+    
+    // Extract the real type (everything before :static:)
+    size_t type_len = marker_pos - sym->data_type;
+    strncpy(real_type, sym->data_type, type_len);
+    real_type[type_len] = '\0';
+    
+    // Extract the global name (everything after @)
+    strcpy(global_name, marker_pos + strlen(static_marker));
+    
+    return true;
 }
 
 static char *c_type_to_llvm_type(const char *c_type) {
@@ -94,6 +126,36 @@ static char *c_type_to_llvm_type(const char *c_type) {
     }
     
     return llvm_type;
+}
+
+static void emit_static_variables(CodeGenerator *gen) {
+    // Emit static variables in reverse order (so they appear in the order they were encountered)
+    StaticVariable *reversed = NULL;
+    StaticVariable *current = gen->static_variables;
+    while (current) {
+        StaticVariable *next = current->next;
+        current->next = reversed;
+        reversed = current;
+        current = next;
+    }
+    
+    // Now emit them
+    current = reversed;
+    while (current) {
+        char *llvm_type = c_type_to_llvm_type(current->type);
+        if (current->has_initializer) {
+            fprintf(gen->output, "@%s = internal global %s %d\n",
+                    current->global_name, llvm_type, current->initial_value);
+        } else {
+            fprintf(gen->output, "@%s = internal global %s 0\n",
+                    current->global_name, llvm_type);
+        }
+        current = current->next;
+    }
+    
+    if (reversed) {
+        fprintf(gen->output, "\n");
+    }
 }
 
 static void emit_string_literals(CodeGenerator *gen) {
@@ -183,14 +245,24 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             
             char *temp = codegen_next_temp(gen);
-            char *llvm_type = c_type_to_llvm_type(sym->data_type);
+            char real_type[256];
+            char global_name[256];
             
-            if (is_global_variable(gen, expr->data.identifier.name)) {
-                // This is a global variable
-                fprintf(gen->output, "  %s = load %s, %s* @%s\n", temp, llvm_type, llvm_type, sym->name);
+            if (is_static_variable(sym, real_type, global_name)) {
+                // This is a static variable
+                char *llvm_type = c_type_to_llvm_type(real_type);
+                fprintf(gen->output, "  %s = load %s, %s* @%s\n", temp, llvm_type, llvm_type, global_name);
             } else {
-                // This is a local variable
-                fprintf(gen->output, "  %s = load %s, %s* %%%s\n", temp, llvm_type, llvm_type, sym->name);
+                // Regular variable
+                char *llvm_type = c_type_to_llvm_type(sym->data_type);
+                
+                if (is_global_variable(gen, expr->data.identifier.name)) {
+                    // This is a global variable
+                    fprintf(gen->output, "  %s = load %s, %s* @%s\n", temp, llvm_type, llvm_type, sym->name);
+                } else {
+                    // This is a local variable
+                    fprintf(gen->output, "  %s = load %s, %s* %%%s\n", temp, llvm_type, llvm_type, sym->name);
+                }
             }
             return temp;
         }
@@ -203,14 +275,24 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             
             char *value = codegen_expression(gen, expr->data.assignment.value);
-            char *llvm_type = c_type_to_llvm_type(sym->data_type);
+            char real_type[256];
+            char global_name[256];
             
-            if (is_global_variable(gen, expr->data.assignment.name)) {
-                // This is a global variable assignment
-                fprintf(gen->output, "  store %s %s, %s* @%s\n", llvm_type, value, llvm_type, sym->name);
+            if (is_static_variable(sym, real_type, global_name)) {
+                // This is a static variable assignment
+                char *llvm_type = c_type_to_llvm_type(real_type);
+                fprintf(gen->output, "  store %s %s, %s* @%s\n", llvm_type, value, llvm_type, global_name);
             } else {
-                // This is a local variable assignment
-                fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+                // Regular variable
+                char *llvm_type = c_type_to_llvm_type(sym->data_type);
+                
+                if (is_global_variable(gen, expr->data.assignment.name)) {
+                    // This is a global variable assignment
+                    fprintf(gen->output, "  store %s %s, %s* @%s\n", llvm_type, value, llvm_type, sym->name);
+                } else {
+                    // This is a local variable assignment
+                    fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+                }
             }
             return value;
         }
@@ -957,7 +1039,57 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
     switch (stmt->type) {
         case AST_VAR_DECL: {
             Symbol *sym;
-            if (stmt->data.var_decl.array_size) {
+            if (stmt->data.var_decl.is_static) {
+                // Static variable - collect for later generation
+                static int static_var_counter = 0;
+                char global_name[256];
+                
+                // Create unique name for static variable
+                snprintf(global_name, sizeof(global_name), "%s.static.%s.%d", 
+                         gen->current_function_name ? gen->current_function_name : "global",
+                         stmt->data.var_decl.name, static_var_counter++);
+                
+                // Add to static variables list
+                StaticVariable *svar = malloc(sizeof(StaticVariable));
+                svar->global_name = strdup(global_name);
+                svar->local_name = strdup(stmt->data.var_decl.name);
+                svar->type = strdup(stmt->data.var_decl.type);
+                svar->has_initializer = false;
+                svar->initial_value = 0;
+                
+                if (stmt->data.var_decl.initializer) {
+                    // Static variable with initializer
+                    if (stmt->data.var_decl.initializer->type == AST_INT_LITERAL) {
+                        svar->has_initializer = true;
+                        svar->initial_value = stmt->data.var_decl.initializer->data.int_literal.value;
+                    } else if (stmt->data.var_decl.initializer->type == AST_CHAR_LITERAL) {
+                        svar->has_initializer = true;
+                        svar->initial_value = (int)stmt->data.var_decl.initializer->data.char_literal.value;
+                    } else {
+                        LOG_ERROR("Static variable initializer must be a constant");
+                        exit(1);
+                    }
+                }
+                
+                // Add to linked list
+                svar->next = gen->static_variables;
+                gen->static_variables = svar;
+                
+                // Register in symbol table with a special marker for static variables
+                // We'll store the global name in the symbol's data_type field temporarily
+                char type_with_global[512];
+                snprintf(type_with_global, sizeof(type_with_global), "%s:static:@%s", 
+                         stmt->data.var_decl.type, global_name);
+                sym = symtab_insert(gen->symtab, stmt->data.var_decl.name, 
+                                   SYM_VARIABLE, type_with_global);
+                if (!sym) {
+                    LOG_ERROR("Failed to declare static variable: %s", stmt->data.var_decl.name);
+                    exit(1);
+                }
+                
+                LOG_DEBUG("Registered static variable: %s as @%s", stmt->data.var_decl.name, global_name);
+                
+            } else if (stmt->data.var_decl.array_size) {
                 // Array declaration
                 // First evaluate the array size (must be a constant for now)
                 if (stmt->data.var_decl.array_size->type != AST_INT_LITERAL) {
@@ -1455,8 +1587,9 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
 }
 
 static void codegen_function(CodeGenerator *gen, ASTNode *func) {
-    // Set current function return type
+    // Set current function return type and name
     gen->current_function_return_type = func->data.function.return_type;
+    gen->current_function_name = func->data.function.name;
     
     // Generate function signature
     const char *ret_llvm_type = strcmp(func->data.function.return_type, "char") == 0 ? "i8" : "i32";
@@ -1505,6 +1638,9 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     // Restore global scope
     symtab_destroy(gen->symtab);
     gen->symtab = old_symtab;
+    
+    // Clear current function name
+    gen->current_function_name = NULL;
     
     LOG_DEBUG("Generated code for function: %s", func->data.function.name);
 }
@@ -1609,6 +1745,9 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     for (int i = 0; i < ast->data.program.function_count; i++) {
         codegen_function(gen, ast->data.program.functions[i]);
     }
+    
+    // Emit static variables after all functions
+    emit_static_variables(gen);
     
     // Emit string literals at the end
     emit_string_literals(gen);
