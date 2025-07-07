@@ -1299,6 +1299,74 @@ static bool is_function_declaration(Parser *parser) {
     return true;  // Start by defaulting to function parsing
 }
 
+static ASTNode *parse_typedef(Parser *parser) {
+    LOG_TRACE("parse_typedef called");
+    
+    int line = parser->current_token->line;
+    int column = parser->current_token->column;
+    
+    parser_expect(parser, TOKEN_KEYWORD_TYPEDEF);
+    
+    // Parse the base type
+    char *base_type = NULL;
+    if (parser->current_token->type == TOKEN_KEYWORD_INT) {
+        base_type = strdup("int");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+        base_type = strdup("char");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
+        parser_advance(parser);
+        if (parser->current_token->type != TOKEN_IDENTIFIER) {
+            LOG_ERROR("Expected struct name after 'struct' at %d:%d",
+                      parser->current_token->line, parser->current_token->column);
+            exit(1);
+        }
+        char struct_type[256];
+        snprintf(struct_type, sizeof(struct_type), "struct %s", parser->current_token->text);
+        base_type = strdup(struct_type);
+        parser_advance(parser);
+    } else {
+        LOG_ERROR("Expected type after typedef at %d:%d", 
+                  parser->current_token->line, parser->current_token->column);
+        exit(1);
+    }
+    
+    // Handle pointer types
+    int pointer_count = 0;
+    while (parser->current_token->type == TOKEN_STAR) {
+        pointer_count++;
+        parser_advance(parser);
+    }
+    
+    // Build the complete type string
+    char type_name[256];
+    strcpy(type_name, base_type);
+    for (int i = 0; i < pointer_count; i++) {
+        strcat(type_name, "*");
+    }
+    free(base_type);
+    
+    // Get the new type name
+    if (parser->current_token->type != TOKEN_IDENTIFIER) {
+        LOG_ERROR("Expected identifier after type in typedef at %d:%d",
+                  parser->current_token->line, parser->current_token->column);
+        exit(1);
+    }
+    char *new_type_name = strdup(parser->current_token->text);
+    parser_advance(parser);
+    
+    parser_expect(parser, TOKEN_SEMICOLON);
+    
+    // Create the typedef node
+    ASTNode *node = create_ast_node(AST_TYPEDEF_DECL, line, column);
+    node->data.typedef_decl.name = new_type_name;
+    node->data.typedef_decl.base_type = strdup(type_name);
+    
+    LOG_TRACE("Parsed typedef: %s as %s", new_type_name, type_name);
+    return node;
+}
+
 static ASTNode *parse_global_variable(Parser *parser) {
     // Parse global variable declaration (similar to local but at global scope)
     char *base_type = strdup(parser->current_token->type == TOKEN_KEYWORD_INT ? "int" : "char");
@@ -1347,25 +1415,39 @@ ASTNode *parser_parse(Parser *parser) {
     
     int func_capacity = 8;
     int var_capacity = 8;
+    int typedef_capacity = 8;
     program->data.program.functions = malloc(func_capacity * sizeof(ASTNode*));
     program->data.program.function_count = 0;
     program->data.program.global_vars = malloc(var_capacity * sizeof(ASTNode*));
     program->data.program.global_var_count = 0;
+    program->data.program.typedefs = malloc(typedef_capacity * sizeof(ASTNode*));
+    program->data.program.typedef_count = 0;
     
     while (parser->current_token->type != TOKEN_EOF) {
-        // For now, revert to function-only parsing to fix the immediate issue
-        // We'll implement global variables in a follow-up step
-        if (program->data.program.function_count >= func_capacity) {
-            func_capacity *= 2;
-            program->data.program.functions = realloc(program->data.program.functions,
-                                                     func_capacity * sizeof(ASTNode*));
+        if (parser->current_token->type == TOKEN_KEYWORD_TYPEDEF) {
+            // Parse typedef
+            if (program->data.program.typedef_count >= typedef_capacity) {
+                typedef_capacity *= 2;
+                program->data.program.typedefs = realloc(program->data.program.typedefs,
+                                                        typedef_capacity * sizeof(ASTNode*));
+            }
+            program->data.program.typedefs[program->data.program.typedef_count++] = 
+                parse_typedef(parser);
+        } else {
+            // Parse function (for now, we'll add global variables later)
+            if (program->data.program.function_count >= func_capacity) {
+                func_capacity *= 2;
+                program->data.program.functions = realloc(program->data.program.functions,
+                                                         func_capacity * sizeof(ASTNode*));
+            }
+            program->data.program.functions[program->data.program.function_count++] = 
+                parse_function(parser);
         }
-        program->data.program.functions[program->data.program.function_count++] = 
-            parse_function(parser);
     }
     
-    LOG_INFO("Parsed program with %d functions and %d global variables", 
-             program->data.program.function_count, program->data.program.global_var_count);
+    LOG_INFO("Parsed program with %d functions, %d global variables, and %d typedefs", 
+             program->data.program.function_count, program->data.program.global_var_count,
+             program->data.program.typedef_count);
     return program;
 }
 
@@ -1382,6 +1464,10 @@ void ast_destroy(ASTNode *node) {
                 ast_destroy(node->data.program.global_vars[i]);
             }
             free(node->data.program.global_vars);
+            for (int i = 0; i < node->data.program.typedef_count; i++) {
+                ast_destroy(node->data.program.typedefs[i]);
+            }
+            free(node->data.program.typedefs);
             break;
         case AST_FUNCTION:
             free(node->data.function.name);
@@ -1514,6 +1600,10 @@ void ast_destroy(ASTNode *node) {
             free(node->data.cast.target_type);
             ast_destroy(node->data.cast.expression);
             break;
+        case AST_TYPEDEF_DECL:
+            free(node->data.typedef_decl.name);
+            free(node->data.typedef_decl.base_type);
+            break;
         default:
             break;
     }
@@ -1529,6 +1619,9 @@ void ast_print(ASTNode *node, int indent) {
     switch (node->type) {
         case AST_PROGRAM:
             printf("Program\n");
+            for (int i = 0; i < node->data.program.typedef_count; i++) {
+                ast_print(node->data.program.typedefs[i], indent + 1);
+            }
             for (int i = 0; i < node->data.program.function_count; i++) {
                 ast_print(node->data.program.functions[i], indent + 1);
             }
@@ -1653,6 +1746,9 @@ void ast_print(ASTNode *node, int indent) {
             printf("Dereference (*)\n");
             ast_print(node->data.unary_op.operand, indent + 1);
             break;
+        case AST_TYPEDEF_DECL:
+            printf("Typedef: %s = %s\n", node->data.typedef_decl.name, node->data.typedef_decl.base_type);
+            break;
         default:
             printf("Unknown node type: %d\n", node->type);
     }
@@ -1695,6 +1791,10 @@ ASTNode *ast_clone(ASTNode *node) {
         case AST_CAST:
             clone->data.cast.target_type = strdup(node->data.cast.target_type);
             clone->data.cast.expression = ast_clone(node->data.cast.expression);
+            break;
+        case AST_TYPEDEF_DECL:
+            clone->data.typedef_decl.name = strdup(node->data.typedef_decl.name);
+            clone->data.typedef_decl.base_type = strdup(node->data.typedef_decl.base_type);
             break;
         default:
             LOG_ERROR("ast_clone not implemented for node type: %d", node->type);

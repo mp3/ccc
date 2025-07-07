@@ -24,6 +24,7 @@ typedef enum {
     TOKEN_KEYWORD_SWITCH,
     TOKEN_KEYWORD_CASE,
     TOKEN_KEYWORD_DEFAULT,
+    TOKEN_KEYWORD_TYPEDEF,
     TOKEN_COLON,
     TOKEN_AND,     // &&
     TOKEN_OR,      // ||

@@ -36,7 +36,8 @@ typedef enum {
     AST_CASE_STMT,
     AST_DEFAULT_STMT,
     AST_TERNARY,
-    AST_CAST
+    AST_CAST,
+    AST_TYPEDEF_DECL
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -49,6 +50,8 @@ typedef struct ASTNode {
             int function_count;
             struct ASTNode **global_vars;
             int global_var_count;
+            struct ASTNode **typedefs;
+            int typedef_count;
         } program;
         struct {
             char *name;
@@ -168,6 +171,10 @@ typedef struct ASTNode {
             char *target_type;              // Type to cast to (e.g., "int", "char*")
             struct ASTNode *expression;     // Expression to cast
         } cast;
+        struct {
+            char *name;                     // The new type name being defined
+            char *base_type;                // The existing type it's based on
+        } typedef_decl;
     } data;
 } ASTNode;
 
