@@ -1139,20 +1139,52 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             // Determine source and target types
             const char *target_type = expr->data.cast.target_type;
             
-            // For now, we support basic casts between int and char types
+            // Get the source type from the expression
+            // For now, we'll assume everything is i32 unless it's a float/double literal
+            bool source_is_float = (expr->data.cast.expression->type == AST_FLOAT_LITERAL);
+            
+            // Handle different cast types
             if (strcmp(target_type, "int") == 0) {
-                // Cast to int - since we treat char as i32, this is a no-op
-                fprintf(gen->output, "  %s = add i32 0, %s\n", result, value);
+                if (source_is_float) {
+                    // Float to int conversion
+                    fprintf(gen->output, "  %s = fptosi double %s to i32\n", result, value);
+                } else {
+                    // Int/char to int - since we treat char as i32, this is a no-op
+                    fprintf(gen->output, "  %s = add i32 0, %s\n", result, value);
+                }
             } else if (strcmp(target_type, "char") == 0) {
-                // Cast to char - truncate to 8 bits by masking with 0xFF
-                fprintf(gen->output, "  %s = and i32 %s, 255\n", result, value);
+                if (source_is_float) {
+                    // Float to char: first convert to int, then mask
+                    char *temp = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = fptosi double %s to i32\n", temp, value);
+                    fprintf(gen->output, "  %s = and i32 %s, 255\n", result, temp);
+                    free(temp);
+                } else {
+                    // Int to char - truncate to 8 bits by masking with 0xFF
+                    fprintf(gen->output, "  %s = and i32 %s, 255\n", result, value);
+                }
+            } else if (strcmp(target_type, "float") == 0 || strcmp(target_type, "double") == 0) {
+                if (source_is_float) {
+                    // Float to float/double - just copy
+                    fprintf(gen->output, "  %s = fadd double 0.0, %s\n", result, value);
+                } else {
+                    // Int to float/double conversion
+                    fprintf(gen->output, "  %s = sitofp i32 %s to double\n", result, value);
+                }
             } else if (strstr(target_type, "*")) {
                 // Pointer cast
-                // We need to determine if the source is a pointer or integer
-                // For simplicity, we'll just copy the value since we treat all pointers as i32*
-                fprintf(gen->output, "  %s = add i32 0, 0  ; pointer cast placeholder\n", result);
+                if (strstr(target_type, "void*")) {
+                    // Cast to void* - in LLVM we can use i8* as void*
+                    fprintf(gen->output, "  %s = inttoptr i32 %s to i8*\n", result, value);
+                } else {
+                    // Other pointer casts - for now just copy the value
+                    fprintf(gen->output, "  %s = add i32 0, %s  ; pointer cast\n", result, value);
+                }
+            } else if (strcmp(target_type, "void") == 0) {
+                // Cast to void - this is typically an error unless it's discarding a value
+                LOG_WARN("Cast to void type");
                 free(result);
-                result = strdup(value);  // Just use the original value
+                result = strdup(value);
             } else {
                 LOG_ERROR("Unsupported cast to type: %s", target_type);
                 exit(1);

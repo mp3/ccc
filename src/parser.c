@@ -394,62 +394,55 @@ static ASTNode *parse_primary(Parser *parser) {
     }
     
     if (parser_match(parser, TOKEN_LPAREN)) {
-        // Check if this is a type cast or a parenthesized expression
-        if (parser->current_token->type == TOKEN_KEYWORD_INT || 
+        // Save position to potentially backtrack
+        int line = token->line;
+        int column = token->column;
+        
+        // Check if this might be a cast by looking for a type keyword
+        bool could_be_cast = false;
+        if (parser->current_token->type == TOKEN_KEYWORD_INT ||
             parser->current_token->type == TOKEN_KEYWORD_CHAR ||
+            parser->current_token->type == TOKEN_KEYWORD_FLOAT ||
+            parser->current_token->type == TOKEN_KEYWORD_DOUBLE ||
+            parser->current_token->type == TOKEN_KEYWORD_VOID ||
             parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
-            // This is a type cast
-            int line = parser->peek_token->line;
-            int column = parser->peek_token->column;
+            could_be_cast = true;
+        } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
+            // Could be a typedef'd type, but for now we'll be conservative
+            // and only treat it as a cast if followed immediately by ) or *
+            if (parser->peek_token->type == TOKEN_RPAREN ||
+                parser->peek_token->type == TOKEN_STAR) {
+                could_be_cast = true;
+            }
+        }
+        
+        if (could_be_cast) {
+            // Try to parse a type
+            char *type_name = parse_type(parser, NULL);
             
-            // Parse the type
-            char *base_type = NULL;
-            if (parser->current_token->type == TOKEN_KEYWORD_INT) {
-                base_type = strdup("int");
-                parser_advance(parser);
-            } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
-                base_type = strdup("char");
-                parser_advance(parser);
-            } else if (parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
-                parser_advance(parser);
-                if (parser->current_token->type != TOKEN_IDENTIFIER) {
-                    LOG_ERROR("Expected struct name after 'struct' in cast");
-                    exit(1);
+            if (type_name && parser->current_token->type == TOKEN_RPAREN) {
+                // This looks like a cast
+                parser_advance(parser); // consume ')'
+                
+                // Parse the expression to cast
+                ASTNode *expr = parse_primary(parser);
+                
+                // Create the cast node
+                ASTNode *node = create_ast_node(AST_CAST, line, column);
+                node->data.cast.target_type = type_name;
+                node->data.cast.expression = expr;
+                LOG_TRACE("Parsed type cast to: %s", type_name);
+                return node;
+            } else {
+                // Not a valid cast
+                if (type_name) {
+                    free(type_name);
                 }
-                char struct_type[256];
-                sprintf(struct_type, "struct %s", parser->current_token->text);
-                base_type = strdup(struct_type);
-                parser_advance(parser);
+                LOG_ERROR("Invalid cast syntax at %d:%d", line, column);
+                exit(1);
             }
-            
-            // Check for pointer type
-            int pointer_count = 0;
-            while (parser->current_token->type == TOKEN_STAR) {
-                pointer_count++;
-                parser_advance(parser);
-            }
-            
-            // Build the complete type string
-            char type_name[256];
-            strcpy(type_name, base_type);
-            for (int i = 0; i < pointer_count; i++) {
-                strcat(type_name, "*");
-            }
-            free(base_type);
-            
-            parser_expect(parser, TOKEN_RPAREN);
-            
-            // Parse the expression to cast
-            ASTNode *expr = parse_primary(parser);
-            
-            // Create the cast node
-            ASTNode *node = create_ast_node(AST_CAST, line, column);
-            node->data.cast.target_type = strdup(type_name);
-            node->data.cast.expression = expr;
-            LOG_TRACE("Parsed type cast to: %s", type_name);
-            return node;
         } else {
-            // This is a parenthesized expression
+            // Definitely not a cast, parse as parenthesized expression
             ASTNode *expr = parse_expression(parser);
             parser_expect(parser, TOKEN_RPAREN);
             return expr;
@@ -1077,7 +1070,8 @@ ASTNode *parse_statement(Parser *parser) {
     if (parser->current_token->type == TOKEN_KEYWORD_INT || 
         parser->current_token->type == TOKEN_KEYWORD_CHAR ||
         parser->current_token->type == TOKEN_KEYWORD_FLOAT ||
-        parser->current_token->type == TOKEN_KEYWORD_DOUBLE) {
+        parser->current_token->type == TOKEN_KEYWORD_DOUBLE ||
+        parser->current_token->type == TOKEN_KEYWORD_VOID) {
         LOG_TRACE("Attempting to parse variable declaration starting with %s",
                   token_type_to_string(token->type));
         char *var_name = NULL;
