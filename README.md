@@ -223,16 +223,45 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[Feature Reference](docs/FEATURES.md)** - Detailed documentation of all features
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Compiler internals and design
 - **[Development Guide](docs/DEVELOPMENT.md)** - Contributing and extending the compiler
+- **[Project Completion Summary](docs/project_completion_summary.md)** - Summary of all implemented features and achievements
+
+## Recent Achievements
+
+The CCC compiler has recently completed major enhancements:
+
+- ✅ **Professional Error Handling**: Color-coded error messages with line/column information and helpful hints
+- ✅ **Compiler Warnings**: Semantic analysis phase with warnings for unused variables and framework for additional checks
+- ✅ **Advanced Optimization**: Multiple optimization passes including constant propagation, algebraic simplification, and strength reduction
+- ✅ **Optimization Levels**: Support for -O0, -O1, and -O2 optimization flags
+- ✅ **Floating Point Foundation**: Basic lexer and parser support for float/double types (code generation in progress)
+- ✅ **Comprehensive Test Suite**: Over 50 test cases with automated verification
+- ✅ **Test Infrastructure**: Multiple test runners including unified runner, category-based testing, and pytest integration
+
+## Self-Hosting Status
+
+While the compiler has made significant progress, **self-hosting has not yet been achieved**. A comprehensive analysis has been completed:
+
+- **[Self-Hosting Roadmap](docs/self_hosting_roadmap.md)** - Detailed analysis of missing features and implementation plan
+- **[Minimal Self-Hosting Demo](docs/minimal_self_hosting_demo.md)** - Alternative approach for limited self-hosting proof of concept
+
+### Missing Features for Self-Hosting
+
+The primary obstacles to self-hosting are:
+
+1. **Preprocessor**: No support for `#include`, `#define`, or conditional compilation
+2. **Standard Library Integration**: Limited to `putchar`/`getchar`, missing essential functions like `malloc`, `printf`, file I/O
+3. **Variadic Function Support**: Basic parsing exists but full `stdarg.h` support is needed
+4. **Global Variables**: Partial implementation needs completion
+
+The estimated effort for full self-hosting is 10-18 weeks. See the roadmap documents for detailed implementation strategies.
 
 ## Next Steps
 
-- [ ] Comprehensive test suite with automated testing
-- [ ] Better error messages and error recovery
-- [ ] More optimization passes
-- [ ] Floating point support
-- [ ] Preprocessor implementation
-- [ ] Standard library functions
-- [ ] Self-hosting capability
+- [ ] Implement preprocessor directives
+- [ ] Add standard library integration
+- [ ] Complete global variable support
+- [ ] Full variadic function implementation
+- [ ] Achieve self-hosting capability
 
 ## Contributing
 
