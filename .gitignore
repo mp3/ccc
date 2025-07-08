@@ -36,3 +36,7 @@ venv/
 # Build directories
 build/
 dist/
+
+# Log files
+ccc.log
+*.log
