@@ -7,6 +7,7 @@
 
 #define MAX_INCLUDE_DEPTH 64
 #define MAX_LINE_LENGTH 4096
+#define MAX_IFDEF_DEPTH 64
 
 // Create a new preprocessor instance
 Preprocessor *preprocessor_create(void) {
@@ -18,6 +19,12 @@ Preprocessor *preprocessor_create(void) {
     
     pp->include_depth = 0;
     pp->in_include = false;
+    pp->cond_depth = 0;
+    
+    // Initialize the base conditional state (always active)
+    pp->cond_stack[0].active = true;
+    pp->cond_stack[0].has_else = false;
+    pp->cond_stack[0].ever_true = true;
     
     // Add some predefined macros
     preprocessor_define_macro(pp, "__CCC__", "1");
@@ -146,9 +153,10 @@ static void skip_whitespace(const char **p) {
 // Forward declarations
 static void process_file_internal(Preprocessor *pp, FILE *input);
 static char *expand_macros(Preprocessor *pp, const char *line);
+static bool is_active_conditional(Preprocessor *pp);
 
 // Parse a preprocessor directive
-static void process_directive(Preprocessor *pp, const char *line, FILE *input) {
+static void process_directive(Preprocessor *pp, const char *line, FILE *input __attribute__((unused))) {
     const char *p = line + 1; // Skip '#'
     skip_whitespace(&p);
     
@@ -317,14 +325,121 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input) {
         
         free(name);
         
-    } else if (strncmp(p, "ifdef", 5) == 0 || strncmp(p, "ifndef", 6) == 0) {
-        // TODO: Implement conditional compilation
-        LOG_WARN("Conditional compilation not yet implemented");
-        fprintf(pp->output, "%s\n", line);
+    } else if (strncmp(p, "ifdef", 5) == 0) {
+        p += 5;
+        skip_whitespace(&p);
+        
+        // Parse macro name
+        const char *name_start = p;
+        while (*p && (isalnum(*p) || *p == '_')) {
+            p++;
+        }
+        
+        if (p == name_start) {
+            LOG_ERROR("%s:%d: invalid macro name in #ifdef", 
+                     pp->current_file, pp->current_line);
+            return;
+        }
+        
+        size_t name_len = p - name_start;
+        char *name = strndup(name_start, name_len);
+        
+        // Check if we can nest deeper
+        if (pp->cond_depth >= MAX_IFDEF_DEPTH - 1) {
+            LOG_ERROR("%s:%d: conditional nesting too deep", 
+                     pp->current_file, pp->current_line);
+            free(name);
+            return;
+        }
+        
+        // Push new conditional state
+        pp->cond_depth++;
+        bool macro_defined = preprocessor_is_macro_defined(pp, name);
+        bool parent_active = pp->cond_stack[pp->cond_depth - 1].active;
+        
+        pp->cond_stack[pp->cond_depth].active = parent_active && macro_defined;
+        pp->cond_stack[pp->cond_depth].has_else = false;
+        pp->cond_stack[pp->cond_depth].ever_true = pp->cond_stack[pp->cond_depth].active;
+        
+        LOG_DEBUG("#ifdef %s: defined=%d, active=%d", name, macro_defined, 
+                  pp->cond_stack[pp->cond_depth].active);
+        
+        free(name);
+        
+    } else if (strncmp(p, "ifndef", 6) == 0) {
+        p += 6;
+        skip_whitespace(&p);
+        
+        // Parse macro name
+        const char *name_start = p;
+        while (*p && (isalnum(*p) || *p == '_')) {
+            p++;
+        }
+        
+        if (p == name_start) {
+            LOG_ERROR("%s:%d: invalid macro name in #ifndef", 
+                     pp->current_file, pp->current_line);
+            return;
+        }
+        
+        size_t name_len = p - name_start;
+        char *name = strndup(name_start, name_len);
+        
+        // Check if we can nest deeper
+        if (pp->cond_depth >= MAX_IFDEF_DEPTH - 1) {
+            LOG_ERROR("%s:%d: conditional nesting too deep", 
+                     pp->current_file, pp->current_line);
+            free(name);
+            return;
+        }
+        
+        // Push new conditional state
+        pp->cond_depth++;
+        bool macro_defined = preprocessor_is_macro_defined(pp, name);
+        bool parent_active = pp->cond_stack[pp->cond_depth - 1].active;
+        
+        pp->cond_stack[pp->cond_depth].active = parent_active && !macro_defined;
+        pp->cond_stack[pp->cond_depth].has_else = false;
+        pp->cond_stack[pp->cond_depth].ever_true = pp->cond_stack[pp->cond_depth].active;
+        
+        LOG_DEBUG("#ifndef %s: defined=%d, active=%d", name, macro_defined, 
+                  pp->cond_stack[pp->cond_depth].active);
+        
+        free(name);
+        
+    } else if (strncmp(p, "else", 4) == 0 && !isalnum(p[4])) {
+        if (pp->cond_depth == 0) {
+            LOG_ERROR("%s:%d: #else without #if", 
+                     pp->current_file, pp->current_line);
+            return;
+        }
+        
+        if (pp->cond_stack[pp->cond_depth].has_else) {
+            LOG_ERROR("%s:%d: multiple #else directives", 
+                     pp->current_file, pp->current_line);
+            return;
+        }
+        
+        pp->cond_stack[pp->cond_depth].has_else = true;
+        bool parent_active = pp->cond_stack[pp->cond_depth - 1].active;
+        bool was_true = pp->cond_stack[pp->cond_depth].ever_true;
+        
+        pp->cond_stack[pp->cond_depth].active = parent_active && !was_true;
+        if (pp->cond_stack[pp->cond_depth].active) {
+            pp->cond_stack[pp->cond_depth].ever_true = true;
+        }
+        
+        LOG_DEBUG("#else: active=%d", pp->cond_stack[pp->cond_depth].active);
+        
     } else if (strncmp(p, "endif", 5) == 0) {
-        // TODO: Implement conditional compilation
-        LOG_WARN("Conditional compilation not yet implemented");
-        fprintf(pp->output, "%s\n", line);
+        if (pp->cond_depth == 0) {
+            LOG_ERROR("%s:%d: #endif without #if", 
+                     pp->current_file, pp->current_line);
+            return;
+        }
+        
+        LOG_DEBUG("#endif: leaving depth %d", pp->cond_depth);
+        pp->cond_depth--;
     } else {
         // Unknown directive, pass through
         LOG_WARN("Unknown preprocessor directive: %s", line);
@@ -394,6 +509,11 @@ static char *expand_macros(Preprocessor *pp, const char *line) {
     return expanded;
 }
 
+// Check if we're in an active conditional branch
+static bool is_active_conditional(Preprocessor *pp) {
+    return pp->cond_stack[pp->cond_depth].active;
+}
+
 // Process a file (internal helper)
 static void process_file_internal(Preprocessor *pp, FILE *input) {
     char line[MAX_LINE_LENGTH];
@@ -413,11 +533,13 @@ static void process_file_internal(Preprocessor *pp, FILE *input) {
         
         if (*p == '#') {
             process_directive(pp, p, input);
-        } else {
+        } else if (is_active_conditional(pp)) {
+            // Only output lines in active conditional branches
             // Perform macro expansion
             char *expanded = expand_macros(pp, line);
             fprintf(pp->output, "%s\n", expanded);
         }
+        // else: skip line in inactive conditional branch
     }
 }
 
@@ -447,6 +569,18 @@ int preprocessor_process_file(Preprocessor *pp, const char *input_file, const ch
     fprintf(pp->output, "# 1 \"%s\"\n", input_file);
     
     process_file_internal(pp, input);
+    
+    // Check for unmatched conditionals
+    if (pp->cond_depth > 0) {
+        LOG_ERROR("%s: unmatched #if/#ifdef/#ifndef (depth=%d)", 
+                  input_file, pp->cond_depth);
+        fclose(input);
+        if (pp->output != stdout) {
+            fclose(pp->output);
+            pp->output = NULL;
+        }
+        return -1;
+    }
     
     fclose(input);
     if (pp->output != stdout) {

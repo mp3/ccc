@@ -24,6 +24,13 @@ struct MacroDefinition {
     MacroDefinition *next;
 };
 
+// Conditional compilation state
+typedef struct ConditionalState {
+    bool active;                // Whether this branch is active
+    bool has_else;              // Whether we've seen an else
+    bool ever_true;             // Whether any branch has been true
+} ConditionalState;
+
 // Main preprocessor structure
 struct Preprocessor {
     FILE *output;               // Output stream for preprocessed code
@@ -33,6 +40,8 @@ struct Preprocessor {
     MacroDefinition *macros;    // List of defined macros
     bool in_include;           // Currently processing an include
     int include_depth;         // Nesting level of includes
+    ConditionalState cond_stack[64]; // Stack for nested conditionals
+    int cond_depth;            // Current conditional nesting depth
 };
 
 // Preprocessor API
