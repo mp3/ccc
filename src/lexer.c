@@ -29,6 +29,19 @@ static void lexer_skip_comment(Lexer *lexer) {
     }
 }
 
+static void lexer_skip_line_directive(Lexer *lexer) {
+    // Skip preprocessor line directives: # linenum "filename"
+    if (lexer->current_char == '#' && lexer->column == 0) {
+        // Skip the entire line
+        while (lexer->current_char != '\n' && lexer->current_char != EOF) {
+            lexer_advance(lexer);
+        }
+        if (lexer->current_char == '\n') {
+            lexer_advance(lexer);
+        }
+    }
+}
+
 static Token *create_token(TokenType type, const char *text, int line, int column) {
     Token *token = malloc(sizeof(Token));
     token->type = type;
@@ -136,6 +149,7 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     else if (strcmp(buffer, "char") == 0) type = TOKEN_KEYWORD_CHAR;
     else if (strcmp(buffer, "float") == 0) type = TOKEN_KEYWORD_FLOAT;
     else if (strcmp(buffer, "double") == 0) type = TOKEN_KEYWORD_DOUBLE;
+    else if (strcmp(buffer, "void") == 0) type = TOKEN_KEYWORD_VOID;
     else if (strcmp(buffer, "struct") == 0) type = TOKEN_KEYWORD_STRUCT;
     else if (strcmp(buffer, "union") == 0) type = TOKEN_KEYWORD_UNION;
     else if (strcmp(buffer, "sizeof") == 0) type = TOKEN_KEYWORD_SIZEOF;
@@ -262,6 +276,8 @@ void lexer_destroy(Lexer *lexer) {
 }
 
 Token *lexer_next_token(Lexer *lexer) {
+    lexer_skip_whitespace(lexer);
+    lexer_skip_line_directive(lexer);
     lexer_skip_whitespace(lexer);
     
     // LOG_TRACE("lexer_next_token: current char='%c' (0x%02X) at %d:%d", 
@@ -427,7 +443,7 @@ void token_destroy(Token *token) {
 const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
         "EOF", "INT_LITERAL", "FLOAT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
-        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "FLOAT", "DOUBLE", "STRUCT", "UNION", "SIZEOF",
+        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "FLOAT", "DOUBLE", "VOID", "STRUCT", "UNION", "SIZEOF",
         "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "CONST", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "PERCENT", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 

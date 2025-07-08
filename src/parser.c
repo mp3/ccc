@@ -832,6 +832,9 @@ static char *parse_type(Parser *parser, char **identifier) {
     } else if (parser->current_token->type == TOKEN_KEYWORD_DOUBLE) {
         base_type = strdup("double");
         parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
+        base_type = strdup("void");
+        parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
         // Could be a typedef'd type
         base_type = strdup(parser->current_token->text);
@@ -1407,6 +1410,9 @@ static ASTNode *parse_parameter(Parser *parser) {
     } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
         base_type = strdup("char");
         parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
+        base_type = strdup("void");
+        parser_advance(parser);
     } else {
         LOG_ERROR("Expected type specifier but got %s", 
                   token_type_to_string(parser->current_token->type));
@@ -1451,6 +1457,9 @@ static ASTNode *parse_function(Parser *parser) {
     } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
         base_type = strdup("char");
         parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
+        base_type = strdup("void");
+        parser_advance(parser);
     } else {
         LOG_ERROR("Expected return type but got %s", 
                   token_type_to_string(parser->current_token->type));
@@ -1487,13 +1496,22 @@ static ASTNode *parse_function(Parser *parser) {
     bool is_variadic = false;
     
     if (parser->current_token->type != TOKEN_RPAREN) {
-        params[param_count++] = parse_parameter(parser);
-        LOG_TRACE("After first parameter, current token: %s at %d:%d", 
-                  token_type_to_string(parser->current_token->type),
-                  parser->current_token->line,
-                  parser->current_token->column);
+        // Special case: void parameter list
+        if (parser->current_token->type == TOKEN_KEYWORD_VOID && 
+            parser->peek_token->type == TOKEN_RPAREN) {
+            parser_advance(parser); // consume 'void'
+            // Empty parameter list
+        } else {
+            params[param_count++] = parse_parameter(parser);
+        }
+        if (param_count > 0) {
+            LOG_TRACE("After first parameter, current token: %s at %d:%d", 
+                      token_type_to_string(parser->current_token->type),
+                      parser->current_token->line,
+                      parser->current_token->column);
+        }
         
-        while (parser->current_token->type == TOKEN_COMMA) {
+        while (param_count > 0 && parser->current_token->type == TOKEN_COMMA) {
             LOG_TRACE("Found comma in parameter list");
             parser_advance(parser);
             

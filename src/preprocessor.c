@@ -143,8 +143,9 @@ static void skip_whitespace(const char **p) {
     }
 }
 
-// Forward declaration
+// Forward declarations
 static void process_file_internal(Preprocessor *pp, FILE *input);
+static char *expand_macros(Preprocessor *pp, const char *line);
 
 // Parse a preprocessor directive
 static void process_directive(Preprocessor *pp, const char *line, FILE *input) {
@@ -260,20 +261,39 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input) {
         size_t name_len = p - name_start;
         char *name = strndup(name_start, name_len);
         
-        // For now, just handle simple object-like macros
-        skip_whitespace(&p);
-        char *value = strdup(p);
-        
-        // Remove trailing whitespace
-        char *end = value + strlen(value) - 1;
-        while (end > value && isspace(*end)) {
-            *end-- = '\0';
+        // Check if it's a function-like macro
+        if (*p == '(') {
+            // Function-like macro - for now, store the whole definition including params
+            const char *macro_start = p;
+            char *value = strdup(macro_start);
+            
+            // Remove trailing whitespace
+            char *end = value + strlen(value) - 1;
+            while (end > value && isspace(*end)) {
+                *end-- = '\0';
+            }
+            
+            // Store with parameters (simplified for now)
+            preprocessor_define_macro(pp, name, value);
+            
+            free(value);
+        } else {
+            // Object-like macro
+            skip_whitespace(&p);
+            char *value = strdup(p);
+            
+            // Remove trailing whitespace
+            char *end = value + strlen(value) - 1;
+            while (end > value && isspace(*end)) {
+                *end-- = '\0';
+            }
+            
+            preprocessor_define_macro(pp, name, value);
+            
+            free(value);
         }
         
-        preprocessor_define_macro(pp, name, value);
-        
         free(name);
-        free(value);
         
     } else if (strncmp(p, "undef", 5) == 0) {
         p += 5;
@@ -312,6 +332,68 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input) {
     }
 }
 
+// Expand macros in a line
+static char *expand_macros(Preprocessor *pp, const char *line) {
+    static char expanded[MAX_LINE_LENGTH * 2];  // Allow for expansion
+    char temp[MAX_LINE_LENGTH];
+    const char *src = line;
+    char *dst = expanded;
+    
+    while (*src && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+        // Skip whitespace
+        if (isspace(*src)) {
+            *dst++ = *src++;
+            continue;
+        }
+        
+        // Check if we're starting an identifier
+        if (isalpha(*src) || *src == '_') {
+            const char *id_start = src;
+            char *temp_dst = temp;
+            
+            // Collect the identifier
+            while ((isalnum(*src) || *src == '_') && (temp_dst - temp) < MAX_LINE_LENGTH - 1) {
+                *temp_dst++ = *src++;
+            }
+            *temp_dst = '\0';
+            
+            // Check if it's a macro
+            MacroDefinition *macro = pp->macros;
+            bool found = false;
+            while (macro) {
+                if (strcmp(macro->name, temp) == 0) {
+                    // Found a macro - expand it
+                    // For now, only handle object-like macros (no parameters)
+                    if (macro->params == NULL) {
+                        // Copy the macro value
+                        const char *val = macro->value;
+                        while (*val && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+                            *dst++ = *val++;
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                macro = macro->next;
+            }
+            
+            // If not a macro, copy the identifier as-is
+            if (!found) {
+                const char *copy = id_start;
+                while (copy < src && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+                    *dst++ = *copy++;
+                }
+            }
+        } else {
+            // Not an identifier, copy as-is
+            *dst++ = *src++;
+        }
+    }
+    
+    *dst = '\0';
+    return expanded;
+}
+
 // Process a file (internal helper)
 static void process_file_internal(Preprocessor *pp, FILE *input) {
     char line[MAX_LINE_LENGTH];
@@ -332,8 +414,9 @@ static void process_file_internal(Preprocessor *pp, FILE *input) {
         if (*p == '#') {
             process_directive(pp, p, input);
         } else {
-            // TODO: Perform macro expansion here
-            fprintf(pp->output, "%s\n", line);
+            // Perform macro expansion
+            char *expanded = expand_macros(pp, line);
+            fprintf(pp->output, "%s\n", expanded);
         }
     }
 }
