@@ -83,8 +83,8 @@ Implemented:
 
 Not yet implemented:
 - Global variables (partial implementation exists)
-- Bitwise operators
-- Compound assignments (+=, -=, etc.)
-- Increment/decrement operators (++, --)
+- Static variables and functions
 - Type casting
-- Preprocessor directives
+- Preprocessor directives (#include, #define, etc.)
+- Variadic functions (...)
+- Standard library integration
