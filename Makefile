@@ -38,5 +38,8 @@ test-category: $(TARGET)
 test-pytest: $(TARGET)
 	python3 -m pytest $(TESTDIR) -v
 
+test-comprehensive: $(TARGET)
+	python3 $(TESTDIR)/comprehensive/run_comprehensive_tests.py
+
 clean:
 	rm -rf $(OBJDIR) $(TARGET) ccc.log *.ll *.o *.out __pycache__ .pytest_cache

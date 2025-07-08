@@ -266,6 +266,7 @@ class TestRunner:
         self.add_category("integration", "Integration tests")
         self.add_category("optimization", "Optimization tests")
         self.add_category("errors", "Error handling tests")
+        self.add_category("comprehensive", "Comprehensive test suite with expected outputs")
         
         # Discover Python test files
         python_tests = list(test_path.glob("test_*.py"))
@@ -284,6 +285,14 @@ class TestRunner:
         
         # Discover C test files
         c_tests = list(test_path.glob("test_*.c"))
+        comprehensive_tests = list(test_path.glob("comprehensive/test_*.c"))
+        
+        # Add comprehensive tests
+        for test_file in comprehensive_tests:
+            self.categories["comprehensive"].tests.append(
+                ("c", str(test_file), True, self.get_expected_exit_code(str(test_file)))
+            )
+        
         for test_file in c_tests:
             name = test_file.stem
             
