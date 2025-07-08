@@ -76,6 +76,15 @@ int main(int argc, char **argv) {
     Parser *parser = parser_create(lexer);
     ASTNode *ast = parser_parse(parser);
     
+    if (!ast) {
+        LOG_ERROR("Parsing failed");
+        parser_destroy(parser);
+        lexer_destroy(lexer);
+        fclose(input);
+        log_cleanup();
+        return 1;
+    }
+    
     // Apply optimizations if enabled
     if (optimize) {
         LOG_INFO("Applying optimizations (level %d)", opt_level);

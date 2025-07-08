@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "logger.h"
 #include "symtab.h"
+#include "error.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -21,11 +22,29 @@ static bool parser_match(Parser *parser, TokenType type) {
 
 static void parser_expect(Parser *parser, TokenType type) {
     if (parser->current_token->type != type) {
-        LOG_ERROR("Expected %s but got %s at %d:%d",
-                  token_type_to_string(type),
-                  token_type_to_string(parser->current_token->type),
-                  parser->current_token->line,
-                  parser->current_token->column);
+        ErrorContext ctx = error_context_from_token(parser->filename, parser->current_token);
+        error_syntax(parser->error_manager, &ctx,
+                    token_type_to_string(type),
+                    token_type_to_string(parser->current_token->type));
+        parser->had_error = true;
+        
+        // Try to recover for common cases
+        if (type == TOKEN_SEMICOLON) {
+            // Check if next token suggests a new statement
+            TokenType next = parser->current_token->type;
+            if (next == TOKEN_RBRACE ||              // End of block
+                next == TOKEN_KEYWORD_INT || next == TOKEN_KEYWORD_CHAR ||  // Type declarations
+                next == TOKEN_KEYWORD_IF || next == TOKEN_KEYWORD_WHILE || next == TOKEN_KEYWORD_FOR ||   // Control flow
+                next == TOKEN_KEYWORD_RETURN || next == TOKEN_KEYWORD_BREAK || next == TOKEN_KEYWORD_CONTINUE ||
+                next == TOKEN_EOF) {
+                LOG_DEBUG("Recovering from missing semicolon before %s", 
+                         token_type_to_string(next));
+                return;
+            }
+        }
+        
+        // For now, still exit until we have full error recovery
+        error_print_all(parser->error_manager);
         exit(1);
     }
     parser_advance(parser);
@@ -68,11 +87,14 @@ static char *process_escape_sequences(const char *str) {
 }
 
 Parser *parser_create(Lexer *lexer) {
-    Parser *parser = malloc(sizeof(Parser));
+    Parser *parser = calloc(1, sizeof(Parser));
     parser->lexer = lexer;
     parser->current_token = lexer_next_token(lexer);
     parser->peek_token = lexer_next_token(lexer);
-    LOG_DEBUG("Created parser");
+    parser->error_manager = error_manager_create();
+    parser->filename = lexer->filename;
+    parser->had_error = false;
+    LOG_DEBUG("Created parser with error manager");
     return parser;
 }
 
@@ -80,6 +102,9 @@ void parser_destroy(Parser *parser) {
     if (parser) {
         token_destroy(parser->current_token);
         token_destroy(parser->peek_token);
+        if (parser->error_manager) {
+            error_manager_destroy(parser->error_manager);
+        }
         free(parser);
     }
 }
@@ -88,7 +113,7 @@ static ASTNode *parse_primary(Parser *parser);
 static ASTNode *parse_postfix(Parser *parser);
 static ASTNode *parse_assignment(Parser *parser);
 static ASTNode *parse_expression(Parser *parser);
-static ASTNode *parse_statement(Parser *parser);
+// parse_statement is declared in parser.h
 static char *parse_type(Parser *parser, char **identifier);
 
 static ASTNode *parse_primary(Parser *parser) {
@@ -913,7 +938,7 @@ static ASTNode *parse_compound_statement(Parser *parser) {
     return node;
 }
 
-static ASTNode *parse_statement(Parser *parser) {
+ASTNode *parse_statement(Parser *parser) {
     Token *token = parser->current_token;
     LOG_TRACE("parse_statement called with token: %s at %d:%d", 
               token_type_to_string(token->type),
@@ -1477,6 +1502,7 @@ static ASTNode *parse_function(Parser *parser) {
 }
 
 static bool is_function_declaration(Parser *parser) {
+    (void)parser;  // Suppress unused parameter warning
     // Simplified approach: try to parse as function first, if it fails, parse as variable
     // This is based on the observation that functions have '(' after the identifier
     // while variables have ';' or '=' after the identifier
@@ -1742,6 +1768,14 @@ ASTNode *parser_parse(Parser *parser) {
     LOG_INFO("Parsed program with %d functions, %d global variables, %d typedefs, and %d enums", 
              program->data.program.function_count, program->data.program.global_var_count,
              program->data.program.typedef_count, program->data.program.enum_count);
+    
+    // Check if we had any errors
+    if (parser->had_error) {
+        error_print_all(parser->error_manager);
+        ast_destroy(program);
+        return NULL;
+    }
+    
     return program;
 }
 

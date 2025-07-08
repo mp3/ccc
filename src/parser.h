@@ -191,10 +191,16 @@ typedef struct ASTNode {
     } data;
 } ASTNode;
 
+// Forward declaration
+struct ErrorManager;
+
 typedef struct {
     Lexer *lexer;
     Token *current_token;
     Token *peek_token;
+    struct ErrorManager *error_manager;
+    const char *filename;
+    bool had_error;
 } Parser;
 
 Parser *parser_create(Lexer *lexer);
@@ -202,6 +208,18 @@ void parser_destroy(Parser *parser);
 ASTNode *parser_parse(Parser *parser);
 void ast_destroy(ASTNode *node);
 void ast_print(ASTNode *node, int indent);
+
+// Error recovery functions
+void parser_synchronize(Parser *parser);
+bool parser_expect_with_recovery(Parser *parser, TokenType type, const char *context_msg);
+bool parser_try_recover_semicolon(Parser *parser);
+ASTNode *parser_recover_expression(Parser *parser);
+ASTNode *parse_statement_with_recovery(Parser *parser);
+ASTNode *parse_block_with_recovery(Parser *parser);
+void parser_report_common_error(Parser *parser, const char *situation);
+
+// Internal parsing functions (needed by error recovery)
+ASTNode *parse_statement(Parser *parser);
 ASTNode *ast_clone(ASTNode *node);
 
 #endif
