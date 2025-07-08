@@ -1,0 +1,455 @@
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_arrays_pointers.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_arrays_pointers.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_arrays_pointers.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_basic_arithmetic.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_basic_arithmetic.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_basic_arithmetic.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_const_qualifiers.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_const_qualifiers.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_const_qualifiers.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_control_flow.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_control_flow.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_control_flow.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_enums_typedefs.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_enums_typedefs.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_enums_typedefs.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_function_pointers.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_function_pointers.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_function_pointers.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_functions.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_functions.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_functions.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_operators.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_operators.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_operators.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_sizeof_operator.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_sizeof_operator.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_sizeof_operator.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_static_variables.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_static_variables.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_static_variables.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_strings_chars.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_strings_chars.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_strings_chars.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_structures.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_structures.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_structures.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_type_casting.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_type_casting.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_type_casting.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:01:40 2025] [INFO] main.c:63 - Compiling /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_variadic_functions.c to /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_variadic_functions.ll
+[Mon Jul  7 20:01:40 2025] [DEBUG] lexer.c:195 - Created lexer for file: /Users/itabashi.t/dev/git/mp3/ccc/tests/comprehensive/test_variadic_functions.c
+[Mon Jul  7 20:01:40 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:01:40 2025] [TRACE] parser.c:1391 - parse_function called at 1:0
+[Mon Jul  7 20:01:40 2025] [ERROR] parser.c:1401 - Expected return type but got SLASH
+[Mon Jul  7 20:02:43 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:02:43 2025] [INFO] main.c:63 - Compiling test_simple_arithmetic.c to test_simple_arithmetic.ll
+[Mon Jul  7 20:02:43 2025] [DEBUG] lexer.c:195 - Created lexer for file: test_simple_arithmetic.c
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: main
+[Mon Jul  7 20:02:43 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1391 - parse_function called at 5:0
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1464 - Before expecting RPAREN, current token: RPAREN at 5:9
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:886 - parse_compound_statement called
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 6:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 6:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 6:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 6:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:764 - parse_expression called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:742 - parse_comma called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: INT_LITERAL at 6:12
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:242 - Parsed int literal: 10
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 7:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 7:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 7:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 7:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:54 - Lexed integer: 5
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:764 - parse_expression called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:742 - parse_comma called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: INT_LITERAL at 7:12
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:242 - Parsed int literal: 5
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 8:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 8:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 8:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 8:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:54 - Lexed integer: 2
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: c
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:764 - parse_expression called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:742 - parse_comma called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: INT_LITERAL
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: INT_LITERAL at 8:12
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:242 - Parsed int literal: 2
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result1
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int c
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 11:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 11:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 11:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 11:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result1
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 11:18
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 11:22
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 11:26
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: c
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result2
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int result1
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 14:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 14:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 14:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 14:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result2
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 14:18
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 14:22
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: c
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 14:26
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result3
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int result2
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 17:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 17:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 17:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 17:4
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result3
+[Mon Jul  7 20:02:43 2025] [WARN] lexer.c:357 - Unknown character: % (0x25) at 17:20
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 17:18
+[Mon Jul  7 20:02:43 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:02:43 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:02:43 2025] [ERROR] parser.c:28 - Expected SEMICOLON but got UNKNOWN at 17:20
+[Mon Jul  7 20:03:16 2025] [INFO] main.c:21 - ccc compiler starting
+[Mon Jul  7 20:03:16 2025] [INFO] main.c:63 - Compiling test_working_arithmetic.c to test_working_arithmetic.ll
+[Mon Jul  7 20:03:16 2025] [DEBUG] lexer.c:195 - Created lexer for file: test_working_arithmetic.c
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: main
+[Mon Jul  7 20:03:16 2025] [DEBUG] parser.c:75 - Created parser
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1391 - parse_function called at 5:0
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1464 - Before expecting RPAREN, current token: RPAREN at 5:9
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:886 - parse_compound_statement called
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 6:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 6:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 6:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 6:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:54 - Lexed integer: 10
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: INT_LITERAL at 6:12
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:242 - Parsed int literal: 10
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 7:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 7:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 7:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 7:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:54 - Lexed integer: 5
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: INT_LITERAL at 7:12
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:242 - Parsed int literal: 5
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 8:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 8:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 8:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 8:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:54 - Lexed integer: 2
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: INT_LITERAL
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: INT_LITERAL at 8:12
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:242 - Parsed int literal: 2
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result1
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 11:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 11:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 11:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 11:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result1
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 11:18
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 11:22
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 11:26
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: c
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result2
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int result1
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 14:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 14:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 14:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 14:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result2
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 14:18
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 14:22
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 14:26
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result3
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int result2
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 17:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 17:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 17:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 17:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result3
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 17:18
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 17:22
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 17:26
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed INT: int
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: c
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: result4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int result3
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: INT at 20:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: INT at 20:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: INT at 20:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1024 - Attempting to parse variable declaration starting with INT
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:772 - parse_type called, current token: INT at 20:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:793 - Base type: int, next token: IDENTIFIER, peek: ASSIGN
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1033 - Parsed type: int, identifier: result4
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: LPAREN
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: LPAREN
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: LPAREN
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: LPAREN at 20:18
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 20:19
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 20:23
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: c
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 20:28
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed RETURN: return
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: c
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1085 - Parsed variable declaration: int result4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:902 - In compound statement loop, current token: RETURN at 23:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:921 - parse_statement called with token: RETURN at 23:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:924 - Checking for struct/union, token: RETURN
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1020 - Checking for variable declaration, current token: RETURN at 23:4
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:764 - parse_expression called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:742 - parse_comma called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:541 - parse_bitwise_and called, current token: IDENTIFIER
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 23:11
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 23:15
+[Mon Jul  7 20:03:16 2025] [TRACE] lexer.c:93 - Lexed IDENTIFIER: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: b
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:447 - parse_multiplicative called
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:99 - parse_primary called with token: IDENTIFIER at 23:19
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:345 - Parsed identifier: a
+[Mon Jul  7 20:03:16 2025] [TRACE] parser.c:1200 - Parsed return statement
+[Mon Jul  7 20:03:16 2025] [DEBUG] parser.c:1475 - Parsed function: main with 0 parameters
+[Mon Jul  7 20:03:16 2025] [INFO] parser.c:1744 - Parsed program with 1 functions, 0 global variables, 0 typedefs, and 0 enums
+[Mon Jul  7 20:03:16 2025] [INFO] main.c:81 - Applying optimizations (level 1)
+[Mon Jul  7 20:03:16 2025] [DEBUG] optimizer.c:12 - Created optimizer
+[Mon Jul  7 20:03:16 2025] [INFO] optimizer.c:567 - Starting optimization pass
+[Mon Jul  7 20:03:16 2025] [INFO] optimizer.c:575 - Optimization complete: 0 optimizations performed
+[Mon Jul  7 20:03:16 2025] [DEBUG] codegen.c:20 - Created code generator
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x0
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:163 - Inserted function 'main' (returns: int, params: 0)
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000007f0040
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:11 - Created symbol table with parent 0x6000007f0060
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'a' (type: int, offset: 0)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=13
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'b' (type: int, offset: 4)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=13
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'c' (type: int, offset: 8)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=13
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'result1' (type: int, offset: 12)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'result2' (type: int, offset: 16)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'result3' (type: int, offset: 20)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [DEBUG] symtab.c:77 - Inserted symbol 'result4' (type: int, offset: 24)
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=11
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [TRACE] codegen.c:267 - codegen_expression: type=16
+[Mon Jul  7 20:03:16 2025] [DEBUG] codegen.c:1789 - Generated code for function: main
+[Mon Jul  7 20:03:16 2025] [INFO] codegen.c:1904 - Code generation complete
+[Mon Jul  7 20:03:16 2025] [INFO] main.c:124 - Compilation complete
