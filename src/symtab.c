@@ -57,6 +57,10 @@ Symbol *symtab_insert(SymbolTable *table, const char *name, SymbolType type, con
     sym->is_array = false;
     sym->array_size = 0;
     sym->is_const = false;
+    sym->is_used = false;
+    sym->is_initialized = false;
+    sym->decl_line = 0;
+    sym->decl_column = 0;
     sym->param_types = NULL;
     sym->param_names = NULL;
     sym->param_count = 0;
@@ -104,6 +108,10 @@ Symbol *symtab_insert_array(SymbolTable *table, const char *name, const char *da
     sym->is_array = true;
     sym->array_size = size;
     sym->is_const = false;
+    sym->is_used = false;
+    sym->is_initialized = false;
+    sym->decl_line = 0;
+    sym->decl_column = 0;
     sym->param_types = NULL;
     sym->param_names = NULL;
     sym->param_count = 0;
@@ -138,6 +146,11 @@ Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char 
     sym->is_param = false;
     sym->is_array = false;
     sym->array_size = 0;
+    sym->is_const = false;
+    sym->is_used = false;
+    sym->is_initialized = true;  // Functions are always "initialized"
+    sym->decl_line = 0;
+    sym->decl_column = 0;
     sym->offset = 0;
     sym->is_variadic = is_variadic;
     

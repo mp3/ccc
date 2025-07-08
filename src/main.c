@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "codegen.h"
 #include "optimizer.h"
+#include "semantic.h"
 
 void print_usage(const char *program_name) {
     fprintf(stderr, "Usage: %s [options] <input.c> -o <output.ll>\n", program_name);
@@ -78,6 +79,26 @@ int main(int argc, char **argv) {
     
     if (!ast) {
         LOG_ERROR("Parsing failed");
+        parser_destroy(parser);
+        lexer_destroy(lexer);
+        fclose(input);
+        log_cleanup();
+        return 1;
+    }
+    
+    // Perform semantic analysis for warnings
+    LOG_INFO("Performing semantic analysis");
+    SemanticAnalyzer *analyzer = semantic_create(parser->error_manager);
+    semantic_analyze(analyzer, ast);
+    semantic_destroy(analyzer);
+    
+    // Print all errors and warnings
+    error_print_all(parser->error_manager);
+    
+    // Check if we should continue (only errors prevent compilation)
+    if (parser->error_manager->error_count > 0) {
+        LOG_ERROR("Compilation failed due to errors");
+        ast_destroy(ast);
         parser_destroy(parser);
         lexer_destroy(lexer);
         fclose(input);

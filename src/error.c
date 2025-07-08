@@ -235,6 +235,40 @@ bool error_should_continue(ErrorManager *manager) {
     return manager->error_count < manager->max_errors;
 }
 
+// Warning functions
+void warning_unused_variable(ErrorManager *manager, const ErrorContext *context,
+                           const char *var_name) {
+    error_report_with_hint(manager, ERROR_NONE, SEVERITY_WARNING, context,
+                          "Remove the unused variable or use it",
+                          "unused variable '%s'", var_name);
+}
+
+void warning_uninitialized_variable(ErrorManager *manager, const ErrorContext *context,
+                                  const char *var_name) {
+    error_report_with_hint(manager, ERROR_NONE, SEVERITY_WARNING, context,
+                          "Initialize the variable before use",
+                          "variable '%s' is used uninitialized", var_name);
+}
+
+void warning_unreachable_code(ErrorManager *manager, const ErrorContext *context) {
+    error_report(manager, ERROR_NONE, SEVERITY_WARNING, context,
+                "unreachable code");
+}
+
+void warning_missing_return(ErrorManager *manager, const ErrorContext *context,
+                          const char *func_name) {
+    error_report_with_hint(manager, ERROR_NONE, SEVERITY_WARNING, context,
+                          "Add a return statement at the end of the function",
+                          "function '%s' may not return a value", func_name);
+}
+
+void warning_implicit_conversion(ErrorManager *manager, const ErrorContext *context,
+                               const char *from_type, const char *to_type) {
+    error_report_with_hint(manager, ERROR_NONE, SEVERITY_WARNING, context,
+                          "Add an explicit cast if this is intentional",
+                          "implicit conversion from '%s' to '%s'", from_type, to_type);
+}
+
 ErrorContext error_context_from_token(const char *filename, Token *token) {
     ErrorContext context = {0};
     

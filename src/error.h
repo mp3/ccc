@@ -84,6 +84,21 @@ void error_redefinition(ErrorManager *manager, const ErrorContext *context,
 void error_argument_count(ErrorManager *manager, const ErrorContext *context,
                          const char *func_name, int expected, int actual);
 
+// Warning functions
+void warning_unused_variable(ErrorManager *manager, const ErrorContext *context,
+                           const char *var_name);
+
+void warning_uninitialized_variable(ErrorManager *manager, const ErrorContext *context,
+                                  const char *var_name);
+
+void warning_unreachable_code(ErrorManager *manager, const ErrorContext *context);
+
+void warning_missing_return(ErrorManager *manager, const ErrorContext *context,
+                          const char *func_name);
+
+void warning_implicit_conversion(ErrorManager *manager, const ErrorContext *context,
+                               const char *from_type, const char *to_type);
+
 // Print all errors
 void error_print_all(ErrorManager *manager);
 

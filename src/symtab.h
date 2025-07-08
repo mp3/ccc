@@ -18,6 +18,10 @@ typedef struct Symbol {
     bool is_array;    // True if this is an array
     int array_size;   // Size of the array (0 if not an array)
     bool is_const;    // True if this is a const variable
+    bool is_used;     // True if this variable has been referenced
+    bool is_initialized; // True if this variable has been initialized
+    int decl_line;    // Line where the symbol was declared
+    int decl_column;  // Column where the symbol was declared
     // For functions
     char **param_types;
     char **param_names;
