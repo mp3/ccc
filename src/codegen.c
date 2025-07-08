@@ -272,6 +272,13 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             return temp;
         }
         
+        case AST_FLOAT_LITERAL: {
+            char *temp = codegen_next_temp(gen);
+            // Use fadd for floating point
+            fprintf(gen->output, "  %s = fadd double 0.0, %f\n", temp, expr->data.float_literal.value);
+            return temp;
+        }
+        
         case AST_CHAR_LITERAL: {
             char *temp = codegen_next_temp(gen);
             // Generate as i32 instead of i8 for compatibility with function calls

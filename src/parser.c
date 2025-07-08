@@ -260,11 +260,32 @@ static ASTNode *parse_primary(Parser *parser) {
         return node;
     }
     
+    // Handle negative floats
+    if (token->type == TOKEN_MINUS && parser->peek_token->type == TOKEN_FLOAT_LITERAL) {
+        int line = token->line;
+        int column = token->column;
+        parser_advance(parser); // consume '-'
+        double value = -(parser->current_token->value.float_value);
+        parser_advance(parser); // consume number
+        ASTNode *node = create_ast_node(AST_FLOAT_LITERAL, line, column);
+        node->data.float_literal.value = value;
+        LOG_TRACE("Parsed negative float literal: %f", node->data.float_literal.value);
+        return node;
+    }
+    
     if (token->type == TOKEN_INT_LITERAL) {
         ASTNode *node = create_ast_node(AST_INT_LITERAL, token->line, token->column);
         node->data.int_literal.value = token->value.int_value;
         parser_advance(parser);
         LOG_TRACE("Parsed int literal: %d", node->data.int_literal.value);
+        return node;
+    }
+    
+    if (token->type == TOKEN_FLOAT_LITERAL) {
+        ASTNode *node = create_ast_node(AST_FLOAT_LITERAL, token->line, token->column);
+        node->data.float_literal.value = token->value.float_value;
+        parser_advance(parser);
+        LOG_TRACE("Parsed float literal: %f", node->data.float_literal.value);
         return node;
     }
     
@@ -804,6 +825,12 @@ static char *parse_type(Parser *parser, char **identifier) {
     } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
         base_type = strdup("char");
         parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_FLOAT) {
+        base_type = strdup("float");
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_DOUBLE) {
+        base_type = strdup("double");
+        parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
         // Could be a typedef'd type
         base_type = strdup(parser->current_token->text);
@@ -1044,7 +1071,9 @@ ASTNode *parse_statement(Parser *parser) {
               parser->current_token->line,
               parser->current_token->column);
     if (parser->current_token->type == TOKEN_KEYWORD_INT || 
-        parser->current_token->type == TOKEN_KEYWORD_CHAR) {
+        parser->current_token->type == TOKEN_KEYWORD_CHAR ||
+        parser->current_token->type == TOKEN_KEYWORD_FLOAT ||
+        parser->current_token->type == TOKEN_KEYWORD_DOUBLE) {
         LOG_TRACE("Attempting to parse variable declaration starting with %s",
                   token_type_to_string(token->type));
         char *var_name = NULL;
@@ -2003,6 +2032,9 @@ void ast_print(ASTNode *node, int indent) {
         case AST_INT_LITERAL:
             printf("Int: %d\n", node->data.int_literal.value);
             break;
+        case AST_FLOAT_LITERAL:
+            printf("Float: %f\n", node->data.float_literal.value);
+            break;
         case AST_IDENTIFIER:
             printf("Identifier: %s\n", node->data.identifier.name);
             break;
@@ -2132,6 +2164,9 @@ ASTNode *ast_clone(ASTNode *node) {
             break;
         case AST_INT_LITERAL:
             clone->data.int_literal.value = node->data.int_literal.value;
+            break;
+        case AST_FLOAT_LITERAL:
+            clone->data.float_literal.value = node->data.float_literal.value;
             break;
         case AST_MEMBER_ACCESS:
             clone->data.member_access.object = ast_clone(node->data.member_access.object);

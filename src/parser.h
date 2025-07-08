@@ -19,6 +19,7 @@ typedef enum {
     AST_BINARY_OP,
     AST_UNARY_OP,
     AST_INT_LITERAL,
+    AST_FLOAT_LITERAL,
     AST_CHAR_LITERAL,
     AST_STRING_LITERAL,
     AST_IDENTIFIER,
@@ -107,6 +108,9 @@ typedef struct ASTNode {
         struct {
             int value;
         } int_literal;
+        struct {
+            double value;
+        } float_literal;
         struct {
             char value;
         } char_literal;

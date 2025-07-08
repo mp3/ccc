@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 static void lexer_advance(Lexer *lexer) {
     if (lexer->current_char == '\n') {
@@ -42,17 +43,72 @@ static Token *lexer_read_number(Lexer *lexer) {
     int start_column = lexer->column;
     char buffer[256];
     int i = 0;
+    bool is_float = false;
     
+    // Read integer part
     while (isdigit(lexer->current_char) && i < 255) {
         buffer[i++] = lexer->current_char;
         lexer_advance(lexer);
     }
+    
+    // Check for decimal point
+    if (lexer->current_char == '.' && i < 254) {
+        // Peek ahead to ensure it's a float (not member access)
+        int next_char = fgetc(lexer->input);
+        ungetc(next_char, lexer->input);
+        
+        if (isdigit(next_char)) {
+            is_float = true;
+            buffer[i++] = lexer->current_char;
+            lexer_advance(lexer);
+            
+            // Read fractional part
+            while (isdigit(lexer->current_char) && i < 255) {
+                buffer[i++] = lexer->current_char;
+                lexer_advance(lexer);
+            }
+        }
+    }
+    
+    // Check for exponent (e or E)
+    if ((lexer->current_char == 'e' || lexer->current_char == 'E') && i < 253) {
+        is_float = true;
+        buffer[i++] = lexer->current_char;
+        lexer_advance(lexer);
+        
+        // Optional sign
+        if ((lexer->current_char == '+' || lexer->current_char == '-') && i < 254) {
+            buffer[i++] = lexer->current_char;
+            lexer_advance(lexer);
+        }
+        
+        // Exponent digits
+        while (isdigit(lexer->current_char) && i < 255) {
+            buffer[i++] = lexer->current_char;
+            lexer_advance(lexer);
+        }
+    }
+    
+    // Check for float suffix (f or F)
+    if ((lexer->current_char == 'f' || lexer->current_char == 'F') && i < 255) {
+        is_float = true;
+        buffer[i++] = lexer->current_char;
+        lexer_advance(lexer);
+    }
+    
     buffer[i] = '\0';
     
-    Token *token = create_token(TOKEN_INT_LITERAL, buffer, start_line, start_column);
-    token->value.int_value = atoi(buffer);
-    LOG_TRACE("Lexed integer: %d", token->value.int_value);
-    return token;
+    if (is_float) {
+        Token *token = create_token(TOKEN_FLOAT_LITERAL, buffer, start_line, start_column);
+        token->value.float_value = strtod(buffer, NULL);
+        LOG_TRACE("Lexed float: %f", token->value.float_value);
+        return token;
+    } else {
+        Token *token = create_token(TOKEN_INT_LITERAL, buffer, start_line, start_column);
+        token->value.int_value = atoi(buffer);
+        LOG_TRACE("Lexed integer: %d", token->value.int_value);
+        return token;
+    }
 }
 
 static Token *lexer_read_identifier(Lexer *lexer) {
@@ -78,6 +134,8 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     else if (strcmp(buffer, "return") == 0) type = TOKEN_KEYWORD_RETURN;
     else if (strcmp(buffer, "int") == 0) type = TOKEN_KEYWORD_INT;
     else if (strcmp(buffer, "char") == 0) type = TOKEN_KEYWORD_CHAR;
+    else if (strcmp(buffer, "float") == 0) type = TOKEN_KEYWORD_FLOAT;
+    else if (strcmp(buffer, "double") == 0) type = TOKEN_KEYWORD_DOUBLE;
     else if (strcmp(buffer, "struct") == 0) type = TOKEN_KEYWORD_STRUCT;
     else if (strcmp(buffer, "union") == 0) type = TOKEN_KEYWORD_UNION;
     else if (strcmp(buffer, "sizeof") == 0) type = TOKEN_KEYWORD_SIZEOF;
@@ -367,8 +425,8 @@ void token_destroy(Token *token) {
 
 const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
-        "EOF", "INT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
-        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "STRUCT", "UNION", "SIZEOF",
+        "EOF", "INT_LITERAL", "FLOAT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
+        "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "FLOAT", "DOUBLE", "STRUCT", "UNION", "SIZEOF",
         "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "CONST", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
