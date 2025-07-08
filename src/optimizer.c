@@ -1,20 +1,89 @@
 #include "optimizer.h"
 #include "logger.h"
 #include "lexer.h"
+#include "parser.h"
 #include <stdlib.h>
 #include <string.h>
+
+// Forward declaration for ast_destroy
+void ast_destroy(ASTNode *node);
+
+// Constant map for constant propagation
+typedef struct ConstantEntry {
+    char *name;
+    int value;
+    struct ConstantEntry *next;
+} ConstantEntry;
+
+typedef struct ConstantMap {
+    ConstantEntry *entries;
+} ConstantMap;
+
+static ConstantMap *constant_map_create(void) {
+    ConstantMap *map = malloc(sizeof(ConstantMap));
+    map->entries = NULL;
+    return map;
+}
+
+static void constant_map_destroy(ConstantMap *map) {
+    if (!map) return;
+    ConstantEntry *entry = map->entries;
+    while (entry) {
+        ConstantEntry *next = entry->next;
+        free(entry->name);
+        free(entry);
+        entry = next;
+    }
+    free(map);
+}
+
+static void constant_map_set(ConstantMap *map, const char *name, int value) {
+    ConstantEntry *entry = map->entries;
+    while (entry) {
+        if (strcmp(entry->name, name) == 0) {
+            entry->value = value;
+            return;
+        }
+        entry = entry->next;
+    }
+    // Add new entry
+    entry = malloc(sizeof(ConstantEntry));
+    entry->name = strdup(name);
+    entry->value = value;
+    entry->next = map->entries;
+    map->entries = entry;
+}
+
+static bool constant_map_get(ConstantMap *map, const char *name, int *value) {
+    ConstantEntry *entry = map->entries;
+    while (entry) {
+        if (strcmp(entry->name, name) == 0) {
+            *value = entry->value;
+            return true;
+        }
+        entry = entry->next;
+    }
+    return false;
+}
 
 Optimizer *optimizer_create(void) {
     Optimizer *opt = malloc(sizeof(Optimizer));
     opt->enable_constant_folding = true;
     opt->enable_dead_code_elimination = true;
+    opt->enable_constant_propagation = true;
+    opt->enable_strength_reduction = true;
+    opt->enable_algebraic_simplification = true;
+    opt->enable_common_subexpr_elimination = false; // Complex, disabled by default
+    opt->enable_loop_invariant_motion = false; // Complex, disabled by default
     opt->optimizations_performed = 0;
+    opt->constants = constant_map_create();
     LOG_DEBUG("Created optimizer");
     return opt;
 }
 
 void optimizer_destroy(Optimizer *opt) {
     if (opt) {
+        constant_map_destroy(opt->constants);
         free(opt);
     }
 }
@@ -33,6 +102,9 @@ static ASTNode *create_int_literal(int value, int line, int column) {
     node->data.int_literal.value = value;
     return node;
 }
+
+// Forward declaration for helper function
+static void optimize_node_children(ASTNode *node, ASTNode *(*optimize_fn)(Optimizer *, ASTNode *), Optimizer *opt);
 
 // Constant folding for binary operations
 static ASTNode *fold_binary_op(Optimizer *opt, ASTNode *node) {
@@ -558,6 +630,299 @@ ASTNode *optimize_dead_code_elimination(Optimizer *opt, ASTNode *node) {
     return node;
 }
 
+// Strength reduction optimization
+ASTNode *optimize_strength_reduction(Optimizer *opt, ASTNode *node) {
+    if (!opt || !opt->enable_strength_reduction || !node) {
+        return node;
+    }
+    
+    switch (node->type) {
+        case AST_BINARY_OP: {
+            // First optimize children
+            node->data.binary_op.left = optimize_strength_reduction(opt, node->data.binary_op.left);
+            node->data.binary_op.right = optimize_strength_reduction(opt, node->data.binary_op.right);
+            
+            ASTNode *left = node->data.binary_op.left;
+            ASTNode *right = node->data.binary_op.right;
+            
+            // Multiplication by power of 2 -> left shift
+            if (node->data.binary_op.op == TOKEN_STAR && is_constant(right)) {
+                int val = right->data.int_literal.value;
+                // Check if it's a power of 2
+                if (val > 0 && (val & (val - 1)) == 0) {
+                    // Count trailing zeros to get shift amount
+                    int shift = 0;
+                    while ((val & 1) == 0) {
+                        val >>= 1;
+                        shift++;
+                    }
+                    LOG_DEBUG("Strength reduction: multiply by %d -> left shift by %d", 
+                              right->data.int_literal.value, shift);
+                    // For now, keep as multiplication since we don't have shift operators
+                    // In a real implementation, we'd convert to shift here
+                    opt->optimizations_performed++;
+                }
+            }
+            
+            // Division by power of 2 -> right shift (for positive numbers)
+            if (node->data.binary_op.op == TOKEN_SLASH && is_constant(right)) {
+                int val = right->data.int_literal.value;
+                if (val > 0 && (val & (val - 1)) == 0) {
+                    int shift = 0;
+                    while ((val & 1) == 0) {
+                        val >>= 1;
+                        shift++;
+                    }
+                    LOG_DEBUG("Strength reduction: divide by %d -> right shift by %d", 
+                              right->data.int_literal.value, shift);
+                    opt->optimizations_performed++;
+                }
+            }
+            break;
+        }
+        
+        default:
+            // Recursively optimize other node types
+            optimize_node_children(node, optimize_strength_reduction, opt);
+            break;
+    }
+    
+    return node;
+}
+
+// Algebraic simplification
+ASTNode *optimize_algebraic_simplification(Optimizer *opt, ASTNode *node) {
+    if (!opt || !opt->enable_algebraic_simplification || !node) {
+        return node;
+    }
+    
+    switch (node->type) {
+        case AST_BINARY_OP: {
+            // First optimize children
+            node->data.binary_op.left = optimize_algebraic_simplification(opt, node->data.binary_op.left);
+            node->data.binary_op.right = optimize_algebraic_simplification(opt, node->data.binary_op.right);
+            
+            ASTNode *left = node->data.binary_op.left;
+            ASTNode *right = node->data.binary_op.right;
+            
+            // x + 0 = x, 0 + x = x
+            if (node->data.binary_op.op == TOKEN_PLUS) {
+                if (is_constant(right) && right->data.int_literal.value == 0) {
+                    LOG_DEBUG("Algebraic simplification: x + 0 -> x");
+                    opt->optimizations_performed++;
+                    ast_destroy(right);
+                    free(node);
+                    return left;
+                }
+                if (is_constant(left) && left->data.int_literal.value == 0) {
+                    LOG_DEBUG("Algebraic simplification: 0 + x -> x");
+                    opt->optimizations_performed++;
+                    ast_destroy(left);
+                    free(node);
+                    return right;
+                }
+            }
+            
+            // x - 0 = x
+            if (node->data.binary_op.op == TOKEN_MINUS) {
+                if (is_constant(right) && right->data.int_literal.value == 0) {
+                    LOG_DEBUG("Algebraic simplification: x - 0 -> x");
+                    opt->optimizations_performed++;
+                    ast_destroy(right);
+                    free(node);
+                    return left;
+                }
+            }
+            
+            // x * 0 = 0, 0 * x = 0
+            if (node->data.binary_op.op == TOKEN_STAR) {
+                if ((is_constant(right) && right->data.int_literal.value == 0) ||
+                    (is_constant(left) && left->data.int_literal.value == 0)) {
+                    LOG_DEBUG("Algebraic simplification: x * 0 -> 0");
+                    opt->optimizations_performed++;
+                    ast_destroy(node);
+                    return create_int_literal(0, node->line, node->column);
+                }
+                // x * 1 = x, 1 * x = x
+                if (is_constant(right) && right->data.int_literal.value == 1) {
+                    LOG_DEBUG("Algebraic simplification: x * 1 -> x");
+                    opt->optimizations_performed++;
+                    ast_destroy(right);
+                    free(node);
+                    return left;
+                }
+                if (is_constant(left) && left->data.int_literal.value == 1) {
+                    LOG_DEBUG("Algebraic simplification: 1 * x -> x");
+                    opt->optimizations_performed++;
+                    ast_destroy(left);
+                    free(node);
+                    return right;
+                }
+            }
+            
+            // x / 1 = x
+            if (node->data.binary_op.op == TOKEN_SLASH) {
+                if (is_constant(right) && right->data.int_literal.value == 1) {
+                    LOG_DEBUG("Algebraic simplification: x / 1 -> x");
+                    opt->optimizations_performed++;
+                    ast_destroy(right);
+                    free(node);
+                    return left;
+                }
+            }
+            break;
+        }
+        
+        default:
+            // Recursively optimize other node types
+            optimize_node_children(node, optimize_algebraic_simplification, opt);
+            break;
+    }
+    
+    return node;
+}
+
+// Constant propagation
+ASTNode *optimize_constant_propagation(Optimizer *opt, ASTNode *node) {
+    if (!opt || !opt->enable_constant_propagation || !node) {
+        return node;
+    }
+    
+    switch (node->type) {
+        case AST_VAR_DECL:
+            // If initializing with a constant, track it
+            if (node->data.var_decl.initializer && 
+                node->data.var_decl.initializer->type == AST_INT_LITERAL) {
+                constant_map_set(opt->constants, node->data.var_decl.name, 
+                               node->data.var_decl.initializer->data.int_literal.value);
+                LOG_DEBUG("Constant propagation: tracking %s = %d", 
+                         node->data.var_decl.name, 
+                         node->data.var_decl.initializer->data.int_literal.value);
+            }
+            break;
+            
+        case AST_IDENTIFIER: {
+            // Replace identifier with its constant value if known
+            int value;
+            if (constant_map_get(opt->constants, node->data.identifier.name, &value)) {
+                LOG_DEBUG("Constant propagation: replacing %s with %d", 
+                         node->data.identifier.name, value);
+                opt->optimizations_performed++;
+                ASTNode *literal = create_int_literal(value, node->line, node->column);
+                ast_destroy(node);
+                return literal;
+            }
+            break;
+        }
+        
+        case AST_ASSIGNMENT:
+            // If assigning a constant, update tracking
+            if (node->data.assignment.value && 
+                node->data.assignment.value->type == AST_INT_LITERAL) {
+                constant_map_set(opt->constants, node->data.assignment.name,
+                               node->data.assignment.value->data.int_literal.value);
+            } else {
+                // Non-constant assignment invalidates the constant tracking
+                constant_map_set(opt->constants, node->data.assignment.name, 0);
+            }
+            break;
+            
+        default:
+            // Recursively optimize other node types
+            optimize_node_children(node, optimize_constant_propagation, opt);
+            break;
+    }
+    
+    return node;
+}
+
+// Placeholder for complex optimizations
+ASTNode *optimize_common_subexpr_elimination(Optimizer *opt, ASTNode *node) {
+    // Complex implementation - would need expression hashing and tracking
+    return node;
+}
+
+ASTNode *optimize_loop_invariant_motion(Optimizer *opt, ASTNode *node) {
+    // Complex implementation - would need loop analysis and invariant detection
+    return node;
+}
+
+// Helper function to recursively optimize children of a node
+static void optimize_node_children(ASTNode *node, ASTNode *(*optimize_fn)(Optimizer *, ASTNode *), Optimizer *opt) {
+    if (!node) return;
+    
+    switch (node->type) {
+        case AST_PROGRAM:
+            for (int i = 0; i < node->data.program.function_count; i++) {
+                node->data.program.functions[i] = optimize_fn(opt, node->data.program.functions[i]);
+            }
+            break;
+            
+        case AST_FUNCTION:
+            node->data.function.body = optimize_fn(opt, node->data.function.body);
+            break;
+            
+        case AST_COMPOUND_STMT:
+            for (int i = 0; i < node->data.compound.statement_count; i++) {
+                node->data.compound.statements[i] = optimize_fn(opt, node->data.compound.statements[i]);
+            }
+            break;
+            
+        case AST_IF_STMT:
+            node->data.if_stmt.condition = optimize_fn(opt, node->data.if_stmt.condition);
+            node->data.if_stmt.then_stmt = optimize_fn(opt, node->data.if_stmt.then_stmt);
+            if (node->data.if_stmt.else_stmt) {
+                node->data.if_stmt.else_stmt = optimize_fn(opt, node->data.if_stmt.else_stmt);
+            }
+            break;
+            
+        case AST_WHILE_STMT:
+            node->data.while_stmt.condition = optimize_fn(opt, node->data.while_stmt.condition);
+            node->data.while_stmt.body = optimize_fn(opt, node->data.while_stmt.body);
+            break;
+            
+        case AST_FOR_STMT:
+            if (node->data.for_stmt.init) {
+                node->data.for_stmt.init = optimize_fn(opt, node->data.for_stmt.init);
+            }
+            if (node->data.for_stmt.condition) {
+                node->data.for_stmt.condition = optimize_fn(opt, node->data.for_stmt.condition);
+            }
+            if (node->data.for_stmt.update) {
+                node->data.for_stmt.update = optimize_fn(opt, node->data.for_stmt.update);
+            }
+            node->data.for_stmt.body = optimize_fn(opt, node->data.for_stmt.body);
+            break;
+            
+        case AST_RETURN_STMT:
+            if (node->data.return_stmt.expression) {
+                node->data.return_stmt.expression = optimize_fn(opt, node->data.return_stmt.expression);
+            }
+            break;
+            
+        case AST_EXPR_STMT:
+            if (node->data.expr_stmt.expression) {
+                node->data.expr_stmt.expression = optimize_fn(opt, node->data.expr_stmt.expression);
+            }
+            break;
+            
+        case AST_VAR_DECL:
+            if (node->data.var_decl.initializer) {
+                node->data.var_decl.initializer = optimize_fn(opt, node->data.var_decl.initializer);
+            }
+            break;
+            
+        case AST_BINARY_OP:
+            node->data.binary_op.left = optimize_fn(opt, node->data.binary_op.left);
+            node->data.binary_op.right = optimize_fn(opt, node->data.binary_op.right);
+            break;
+            
+        default:
+            // Other nodes don't have children or are handled specially
+            break;
+    }
+}
+
 // Main optimization entry point
 ASTNode *optimizer_optimize(Optimizer *opt, ASTNode *ast) {
     if (!opt || !ast) {
@@ -568,8 +933,40 @@ ASTNode *optimizer_optimize(Optimizer *opt, ASTNode *ast) {
     int initial_count = opt->optimizations_performed;
     
     // Apply optimizations in order
-    ast = optimize_constant_folding(opt, ast);
-    ast = optimize_dead_code_elimination(opt, ast);
+    // 1. Constant propagation (must come before constant folding)
+    if (opt->enable_constant_propagation) {
+        ast = optimize_constant_propagation(opt, ast);
+    }
+    
+    // 2. Constant folding
+    if (opt->enable_constant_folding) {
+        ast = optimize_constant_folding(opt, ast);
+    }
+    
+    // 3. Algebraic simplification
+    if (opt->enable_algebraic_simplification) {
+        ast = optimize_algebraic_simplification(opt, ast);
+    }
+    
+    // 4. Strength reduction
+    if (opt->enable_strength_reduction) {
+        ast = optimize_strength_reduction(opt, ast);
+    }
+    
+    // 5. Dead code elimination
+    if (opt->enable_dead_code_elimination) {
+        ast = optimize_dead_code_elimination(opt, ast);
+    }
+    
+    // 6. Common subexpression elimination (if enabled)
+    if (opt->enable_common_subexpr_elimination) {
+        ast = optimize_common_subexpr_elimination(opt, ast);
+    }
+    
+    // 7. Loop invariant motion (if enabled)
+    if (opt->enable_loop_invariant_motion) {
+        ast = optimize_loop_invariant_motion(opt, ast);
+    }
     
     int optimizations = opt->optimizations_performed - initial_count;
     LOG_INFO("Optimization complete: %d optimizations performed", optimizations);
