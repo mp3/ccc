@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "logger.h"
+#include "preprocessor.h"
 #include "lexer.h"
 #include "parser.h"
 #include "codegen.h"
@@ -26,6 +27,7 @@ int main(int argc, char **argv) {
     int opt_level = 1;
     const char *input_file = NULL;
     const char *output_file = NULL;
+    char temp_file[256] = {0};  // Temporary preprocessed file
     
     int i = 1;
     while (i < argc) {
@@ -63,9 +65,27 @@ int main(int argc, char **argv) {
     
     LOG_INFO("Compiling %s to %s", input_file, output_file);
     
-    FILE *input = fopen(input_file, "r");
+    // Run preprocessor
+    LOG_INFO("Running preprocessor");
+    Preprocessor *pp = preprocessor_create();
+    preprocessor_add_system_includes(pp);
+    
+    // Create temporary file for preprocessed output
+    snprintf(temp_file, sizeof(temp_file), "%s.pp", input_file);
+    
+    if (preprocessor_process_file(pp, input_file, temp_file) != 0) {
+        LOG_ERROR("Preprocessing failed");
+        preprocessor_destroy(pp);
+        log_cleanup();
+        return 1;
+    }
+    
+    preprocessor_destroy(pp);
+    
+    // Open preprocessed file
+    FILE *input = fopen(temp_file, "r");
     if (!input) {
-        LOG_ERROR("Failed to open input file: %s", input_file);
+        LOG_ERROR("Failed to open preprocessed file: %s", temp_file);
         log_cleanup();
         return 1;
     }
@@ -82,6 +102,7 @@ int main(int argc, char **argv) {
         parser_destroy(parser);
         lexer_destroy(lexer);
         fclose(input);
+        remove(temp_file);
         log_cleanup();
         return 1;
     }
@@ -102,6 +123,7 @@ int main(int argc, char **argv) {
         parser_destroy(parser);
         lexer_destroy(lexer);
         fclose(input);
+        remove(temp_file);
         log_cleanup();
         return 1;
     }
@@ -144,6 +166,7 @@ int main(int argc, char **argv) {
         parser_destroy(parser);
         lexer_destroy(lexer);
         fclose(input);
+        remove(temp_file);
         log_cleanup();
         return 1;
     }
@@ -159,6 +182,9 @@ int main(int argc, char **argv) {
     lexer_destroy(lexer);
     fclose(input);
     fclose(output);
+    
+    // Remove temporary preprocessed file
+    remove(temp_file);
     
     LOG_INFO("Compilation complete");
     log_cleanup();
