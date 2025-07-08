@@ -31,13 +31,35 @@ static void lexer_skip_comment(Lexer *lexer) {
 
 static void lexer_skip_line_directive(Lexer *lexer) {
     // Skip preprocessor line directives: # linenum "filename"
-    if (lexer->current_char == '#' && lexer->column == 0) {
-        // Skip the entire line
-        while (lexer->current_char != '\n' && lexer->current_char != EOF) {
+    if (lexer->current_char == '#') {
+        // Save current position
+        int saved_line = lexer->line;
+        int saved_column = lexer->column;
+        
+        // Skip #
+        lexer_advance(lexer);
+        
+        // Skip whitespace
+        while (lexer->current_char == ' ' || lexer->current_char == '\t') {
             lexer_advance(lexer);
         }
-        if (lexer->current_char == '\n') {
-            lexer_advance(lexer);
+        
+        // Check if this is a line directive (starts with a digit)
+        if (lexer->current_char >= '0' && lexer->current_char <= '9') {
+            // Skip the entire line
+            while (lexer->current_char != '\n' && lexer->current_char != EOF) {
+                lexer_advance(lexer);
+            }
+            if (lexer->current_char == '\n') {
+                lexer_advance(lexer);
+            }
+        } else {
+            // Not a line directive, restore position
+            // This is a hack - we'd need to unread characters properly
+            // For now, we'll just continue and let the lexer handle it as unknown
+            lexer->line = saved_line;
+            lexer->column = saved_column;
+            lexer->current_char = '#';
         }
     }
 }

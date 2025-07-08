@@ -234,7 +234,7 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input __
         }
         
         // Emit line directive for debugging
-        fprintf(pp->output, "# 1 \"%s\"\n", full_path);
+        // fprintf(pp->output, "# 1 \"%s\"\n", full_path);
         
         // Process the included file
         process_file_internal(pp, inc_file);
@@ -248,7 +248,7 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input __
         free(full_path);
         
         // Emit line directive to return to original file
-        fprintf(pp->output, "# %d \"%s\"\n", saved_line + 1, saved_file);
+        // fprintf(pp->output, "# %d \"%s\"\n", saved_line + 1, saved_file);
         
     } else if (strncmp(p, "define", 6) == 0) {
         p += 6;
@@ -735,7 +735,7 @@ int preprocessor_process_file(Preprocessor *pp, const char *input_file, const ch
     pp->current_line = 0;
     
     // Emit initial line directive
-    fprintf(pp->output, "# 1 \"%s\"\n", input_file);
+    // fprintf(pp->output, "# 1 \"%s\"\n", input_file);
     
     process_file_internal(pp, input);
     

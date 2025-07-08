@@ -164,7 +164,7 @@ static char *c_type_to_llvm_type(const char *c_type) {
     } else if (strcmp(c_type, "int*") == 0) {
         strcpy(llvm_type, "i32*");
     } else if (strcmp(c_type, "char*") == 0) {
-        strcpy(llvm_type, "i32*");  // char* is pointer to i32
+        strcpy(llvm_type, "i8*");  // char* is pointer to i8
     } else if (strcmp(c_type, "int**") == 0) {
         strcpy(llvm_type, "i32**");
     } else if (strcmp(c_type, "char**") == 0) {
@@ -393,15 +393,10 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     exit(1);
                 }
                 
-                const char *array_name = array_access->data.array_access.array->data.identifier.name;
-                Symbol *sym = symtab_lookup(gen->symtab, array_name);
+                const char *name = array_access->data.array_access.array->data.identifier.name;
+                Symbol *sym = symtab_lookup(gen->symtab, name);
                 if (!sym) {
-                    LOG_ERROR("Undefined array: %s", array_name);
-                    exit(1);
-                }
-                
-                if (!sym->is_array) {
-                    LOG_ERROR("'%s' is not an array", array_name);
+                    LOG_ERROR("Undefined variable: %s", name);
                     exit(1);
                 }
                 
@@ -409,18 +404,70 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 char *index = codegen_expression(gen, array_access->data.array_access.index);
                 char *value = codegen_expression(gen, expr->data.binary_op.right);
                 
-                // Generate getelementptr to get address of array element
-                char *addr = codegen_next_temp(gen);
-                const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
-                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
-                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
-                
-                // Store the value
-                fprintf(gen->output, "  store %s %s, %s* %s\n", llvm_type, value, llvm_type, addr);
-                
-                free(index);
-                free(addr);
-                return value;
+                if (sym->is_array) {
+                    // Array element assignment
+                    // Generate getelementptr to get address of array element
+                    char *addr = codegen_next_temp(gen);
+                    const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+                    fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                            addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                    
+                    // Store the value - need to check if we need to truncate
+                    if (strcmp(llvm_type, "i8") == 0) {
+                        // Truncate i32 to i8
+                        char *truncated = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = trunc i32 %s to i8\n", truncated, value);
+                        fprintf(gen->output, "  store i8 %s, i8* %s\n", truncated, addr);
+                        free(truncated);
+                    } else {
+                        fprintf(gen->output, "  store %s %s, %s* %s\n", llvm_type, value, llvm_type, addr);
+                    }
+                    
+                    free(index);
+                    free(addr);
+                    return value;
+                } else if (strstr(sym->data_type, "*")) {
+                    // Pointer element assignment - p[i] = value
+                    // Load the pointer value first
+                    char *ptr_value = codegen_next_temp(gen);
+                    
+                    // Determine types
+                    const char *llvm_base_type = "i32";
+                    const char *llvm_ptr_type = "i32*";
+                    
+                    if (strstr(sym->data_type, "char*")) {
+                        llvm_base_type = "i8";
+                        llvm_ptr_type = "i8*";
+                    }
+                    
+                    // Load the pointer
+                    fprintf(gen->output, "  %s = load %s, %s* %%%s\n", 
+                            ptr_value, llvm_ptr_type, llvm_ptr_type, sym->name);
+                    
+                    // Calculate the address using getelementptr
+                    char *addr = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = getelementptr %s, %s %s, i32 %s\n",
+                            addr, llvm_base_type, llvm_ptr_type, ptr_value, index);
+                    
+                    // Store the value - need to check if we need to truncate
+                    if (strcmp(llvm_base_type, "i8") == 0) {
+                        // Truncate i32 to i8
+                        char *truncated = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = trunc i32 %s to i8\n", truncated, value);
+                        fprintf(gen->output, "  store i8 %s, i8* %s\n", truncated, addr);
+                        free(truncated);
+                    } else {
+                        fprintf(gen->output, "  store %s %s, %s* %s\n", llvm_base_type, value, llvm_base_type, addr);
+                    }
+                    
+                    free(index);
+                    free(ptr_value);
+                    free(addr);
+                    return value;
+                } else {
+                    LOG_ERROR("'%s' is not an array or pointer", name);
+                    exit(1);
+                }
             } else if (expr->data.binary_op.left->type == AST_DEREFERENCE) {
                 // Dereference assignment (*p = value)
                 char *ptr = codegen_expression(gen, expr->data.binary_op.left->data.unary_op.operand);
@@ -686,6 +733,73 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 is_external = true;
                 return_type = "i32";
                 expected_params = 0;
+            } else if (strcmp(func_name, "puts") == 0) {
+                is_external = true;
+                return_type = "i32";
+                param_types[0] = "i8*";
+                expected_params = 1;
+            } else if (strcmp(func_name, "printf") == 0) {
+                is_external = true;
+                return_type = "i32";
+                param_types[0] = "i8*";
+                expected_params = -1; // variadic
+            } else if (strcmp(func_name, "malloc") == 0) {
+                is_external = true;
+                return_type = "i8*";
+                param_types[0] = "i64";
+                expected_params = 1;
+            } else if (strcmp(func_name, "free") == 0) {
+                is_external = true;
+                return_type = "void";
+                param_types[0] = "i8*";
+                expected_params = 1;
+            } else if (strcmp(func_name, "exit") == 0) {
+                is_external = true;
+                return_type = "void";
+                param_types[0] = "i32";
+                expected_params = 1;
+            } else if (strcmp(func_name, "strlen") == 0) {
+                is_external = true;
+                return_type = "i64";
+                param_types[0] = "i8*";
+                expected_params = 1;
+            } else if (strcmp(func_name, "strcpy") == 0) {
+                is_external = true;
+                return_type = "i8*";
+                param_types[0] = "i8*";
+                param_types[1] = "i8*";
+                expected_params = 2;
+            } else if (strcmp(func_name, "strcmp") == 0) {
+                is_external = true;
+                return_type = "i32";
+                param_types[0] = "i8*";
+                param_types[1] = "i8*";
+                expected_params = 2;
+            } else if (strcmp(func_name, "strcat") == 0) {
+                is_external = true;
+                return_type = "i8*";
+                param_types[0] = "i8*";
+                param_types[1] = "i8*";
+                expected_params = 2;
+            } else if (strcmp(func_name, "atoi") == 0) {
+                is_external = true;
+                return_type = "i32";
+                param_types[0] = "i8*";
+                expected_params = 1;
+            } else if (strcmp(func_name, "memcpy") == 0) {
+                is_external = true;
+                return_type = "i8*";
+                param_types[0] = "i8*";
+                param_types[1] = "i8*";
+                param_types[2] = "i64";
+                expected_params = 3;
+            } else if (strcmp(func_name, "memset") == 0) {
+                is_external = true;
+                return_type = "i8*";
+                param_types[0] = "i8*";
+                param_types[1] = "i32";
+                param_types[2] = "i64";
+                expected_params = 3;
             } else if (func_sym && func_sym->type == SYM_VARIABLE && 
                       strstr(func_sym->data_type, "(*)")) {
                 // This is a function pointer variable
@@ -728,19 +842,35 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 }
             } else if (is_external) {
                 // Check argument count for external functions
-                if (expr->data.function_call.argument_count != expected_params) {
+                if (expected_params >= 0 && expr->data.function_call.argument_count != expected_params) {
                     LOG_ERROR("Function '%s' expects %d arguments, got %d",
                              func_name, expected_params,
                              expr->data.function_call.argument_count);
+                    exit(1);
+                } else if (expected_params == -1 && expr->data.function_call.argument_count < 1) {
+                    // Variadic functions need at least one argument
+                    LOG_ERROR("Variadic function '%s' expects at least 1 argument, got %d",
+                             func_name, expr->data.function_call.argument_count);
                     exit(1);
                 }
             }
             // For function pointers, we can't check argument count at compile time
             
-            // Evaluate arguments
+            // Evaluate arguments and convert types if needed
             char **arg_values = malloc(expr->data.function_call.argument_count * sizeof(char*));
             for (int i = 0; i < expr->data.function_call.argument_count; i++) {
                 arg_values[i] = codegen_expression(gen, expr->data.function_call.arguments[i]);
+                
+                // Convert types for external functions if needed
+                if (is_external && i < expected_params && expected_params >= 0) {
+                    if (strcmp(param_types[i], "i64") == 0) {
+                        // Need to extend i32 to i64
+                        char *extended = codegen_next_temp(gen);
+                        fprintf(gen->output, "  %s = sext i32 %s to i64\n", extended, arg_values[i]);
+                        free(arg_values[i]);
+                        arg_values[i] = extended;
+                    }
+                }
             }
             
             // Generate function call
@@ -767,14 +897,27 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 fprintf(gen->output, ")\n");
             } else {
                 // Regular function call
-                fprintf(gen->output, "  %s = call %s @%s(", result, return_type, func_name);
+                if (strcmp(return_type, "void") == 0) {
+                    fprintf(gen->output, "  call void @%s(", func_name);
+                } else {
+                    fprintf(gen->output, "  %s = call %s @%s(", result, return_type, func_name);
+                }
                 for (int i = 0; i < expr->data.function_call.argument_count; i++) {
                     if (i > 0) fprintf(gen->output, ", ");
                     if (is_external) {
-                        fprintf(gen->output, "%s %s", param_types[i], arg_values[i]);
+                        // For variadic functions like printf, we need to handle args differently
+                        if (expected_params == -1 && i >= 1) {
+                            // For variadic args beyond the first, assume i32 for now
+                            fprintf(gen->output, "i32 %s", arg_values[i]);
+                        } else if (i < expected_params || expected_params == -1) {
+                            fprintf(gen->output, "%s %s", param_types[i], arg_values[i]);
+                        }
                     } else {
                         fprintf(gen->output, "i32 %s", arg_values[i]);
                     }
+                }
+                if (is_external && expected_params == -1) {
+                    // No extra syntax needed for variadic in call
                 }
                 fprintf(gen->output, ")\n");
             }
@@ -785,44 +928,85 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             }
             free(arg_values);
             
+            // For void functions, return a dummy value (0)
+            if (strcmp(return_type, "void") == 0) {
+                free(result);
+                char *dummy = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = add i32 0, 0  ; void function result\n", dummy);
+                return dummy;
+            }
+            
             return result;
         }
         
         case AST_ARRAY_ACCESS: {
-            // Get array symbol
+            // Get array/pointer symbol
             if (expr->data.array_access.array->type != AST_IDENTIFIER) {
                 LOG_ERROR("Array access must be on an identifier");
                 exit(1);
             }
             
-            const char *array_name = expr->data.array_access.array->data.identifier.name;
-            Symbol *sym = symtab_lookup(gen->symtab, array_name);
+            const char *name = expr->data.array_access.array->data.identifier.name;
+            Symbol *sym = symtab_lookup(gen->symtab, name);
             if (!sym) {
-                LOG_ERROR("Undefined array: %s", array_name);
-                exit(1);
-            }
-            
-            if (!sym->is_array) {
-                LOG_ERROR("'%s' is not an array", array_name);
+                LOG_ERROR("Undefined variable: %s", name);
                 exit(1);
             }
             
             // Evaluate index
             char *index = codegen_expression(gen, expr->data.array_access.index);
             
-            // Generate getelementptr to get address of array element
-            char *addr = codegen_next_temp(gen);
-            const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
-            fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
-                    addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
-            
-            // Load the value
-            char *value = codegen_next_temp(gen);
-            fprintf(gen->output, "  %s = load %s, %s* %s\n", value, llvm_type, llvm_type, addr);
-            
-            free(index);
-            free(addr);
-            return value;
+            if (sym->is_array) {
+                // Array access
+                // Generate getelementptr to get address of array element
+                char *addr = codegen_next_temp(gen);
+                const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                
+                // Load the value
+                char *value = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = load %s, %s* %s\n", value, llvm_type, llvm_type, addr);
+                
+                free(index);
+                free(addr);
+                return value;
+            } else if (strstr(sym->data_type, "*")) {
+                // Pointer access - p[i] is equivalent to *(p + i)
+                // Load the pointer value first
+                char *ptr_value = codegen_next_temp(gen);
+                
+                // Determine the base type (what the pointer points to)
+                const char *llvm_base_type = "i32";
+                const char *llvm_ptr_type = "i32*";
+                
+                if (strstr(sym->data_type, "char*")) {
+                    llvm_base_type = "i8";
+                    llvm_ptr_type = "i8*";
+                }
+                
+                // Load the pointer
+                fprintf(gen->output, "  %s = load %s, %s* %%%s\n", 
+                        ptr_value, llvm_ptr_type, llvm_ptr_type, sym->name);
+                
+                // Calculate the address using getelementptr
+                char *addr = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = getelementptr %s, %s %s, i32 %s\n",
+                        addr, llvm_base_type, llvm_ptr_type, ptr_value, index);
+                
+                // Load the value at that address
+                char *value = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = load %s, %s* %s\n", 
+                        value, llvm_base_type, llvm_base_type, addr);
+                
+                free(index);
+                free(ptr_value);
+                free(addr);
+                return value;
+            } else {
+                LOG_ERROR("'%s' is not an array or pointer", name);
+                exit(1);
+            }
         }
         
         case AST_ADDRESS_OF: {
@@ -845,24 +1029,52 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     exit(1);
                 }
                 
-                const char *array_name = array_access->data.array_access.array->data.identifier.name;
-                Symbol *sym = symtab_lookup(gen->symtab, array_name);
+                const char *name = array_access->data.array_access.array->data.identifier.name;
+                Symbol *sym = symtab_lookup(gen->symtab, name);
                 if (!sym) {
-                    LOG_ERROR("Undefined array: %s", array_name);
+                    LOG_ERROR("Undefined variable: %s", name);
                     exit(1);
                 }
                 
                 // Evaluate index
                 char *index = codegen_expression(gen, array_access->data.array_access.index);
                 
-                // Generate getelementptr to get address of array element
-                char *addr = codegen_next_temp(gen);
-                const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
-                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
-                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
-                
-                free(index);
-                return addr;
+                if (sym->is_array) {
+                    // Generate getelementptr to get address of array element
+                    char *addr = codegen_next_temp(gen);
+                    const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
+                    fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
+                            addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                    
+                    free(index);
+                    return addr;
+                } else if (strstr(sym->data_type, "*")) {
+                    // For pointers, we need to calculate the address
+                    char *ptr_value = codegen_next_temp(gen);
+                    const char *llvm_base_type = "i32";
+                    const char *llvm_ptr_type = "i32*";
+                    
+                    if (strstr(sym->data_type, "char*")) {
+                        llvm_base_type = "i8";
+                        llvm_ptr_type = "i8*";
+                    }
+                    
+                    // Load the pointer
+                    fprintf(gen->output, "  %s = load %s, %s* %%%s\n", 
+                            ptr_value, llvm_ptr_type, llvm_ptr_type, sym->name);
+                    
+                    // Calculate the address using getelementptr
+                    char *addr = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = getelementptr %s, %s %s, i32 %s\n",
+                            addr, llvm_base_type, llvm_ptr_type, ptr_value, index);
+                    
+                    free(index);
+                    free(ptr_value);
+                    return addr;
+                } else {
+                    LOG_ERROR("Cannot take address of array/pointer access on non-array/pointer");
+                    exit(1);
+                }
             } else {
                 LOG_ERROR("Cannot take address of expression");
                 exit(1);
@@ -1177,8 +1389,9 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     // Cast to void* - in LLVM we can use i8* as void*
                     fprintf(gen->output, "  %s = inttoptr i32 %s to i8*\n", result, value);
                 } else {
-                    // Other pointer casts - for now just copy the value
-                    fprintf(gen->output, "  %s = add i32 0, %s  ; pointer cast\n", result, value);
+                    // Other pointer casts - for char* just return the i8* value directly
+                    free(result);
+                    return value;  // i8* is already the right type for char*
                 }
             } else if (strcmp(target_type, "void") == 0) {
                 // Cast to void - this is typically an error unless it's discarding a value
@@ -1301,7 +1514,13 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                         value_type = "i32";
                     }
                     
-                    fprintf(gen->output, "  store %s %s, %s* %%%s\n", value_type, value, value_type, sym->name);
+                    // Special handling for pointer types
+                    if (strstr(llvm_type, "*") && strstr(value_type, "*")) {
+                        // Both are pointers, store with the variable's declared type
+                        fprintf(gen->output, "  store %s %s, %s* %%%s\n", llvm_type, value, llvm_type, sym->name);
+                    } else {
+                        fprintf(gen->output, "  store %s %s, %s* %%%s\n", value_type, value, value_type, sym->name);
+                    }
                     free(value);
                 }
             }
@@ -1488,7 +1707,21 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
             char *cond_bool = codegen_next_temp(gen);
             
             // Convert condition to i1
-            fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+            // Need to check if the condition is a pointer type
+            if (stmt->data.if_stmt.condition->type == AST_IDENTIFIER) {
+                Symbol *sym = symtab_lookup(gen->symtab, stmt->data.if_stmt.condition->data.identifier.name);
+                if (sym && strstr(sym->data_type, "*")) {
+                    // Pointer comparison - use ptrtoint
+                    char *int_val = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = ptrtoint i8* %s to i64\n", int_val, cond_value);
+                    fprintf(gen->output, "  %s = icmp ne i64 %s, 0\n", cond_bool, int_val);
+                    free(int_val);
+                } else {
+                    fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+                }
+            } else {
+                fprintf(gen->output, "  %s = icmp ne i32 %s, 0\n", cond_bool, cond_value);
+            }
             
             char *then_label = codegen_next_label(gen, "if.then.");
             char *else_label = stmt->data.if_stmt.else_stmt ? 
@@ -1843,7 +2076,19 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     
     // Declare external functions
     fprintf(gen->output, "declare i32 @putchar(i32)\n");
-    fprintf(gen->output, "declare i32 @getchar()\n\n");
+    fprintf(gen->output, "declare i32 @getchar()\n");
+    fprintf(gen->output, "declare i32 @puts(i8*)\n");
+    fprintf(gen->output, "declare i32 @printf(i8*, ...)\n");
+    fprintf(gen->output, "declare i8* @malloc(i64)\n");
+    fprintf(gen->output, "declare void @free(i8*)\n");
+    fprintf(gen->output, "declare void @exit(i32)\n");
+    fprintf(gen->output, "declare i32 @atoi(i8*)\n");
+    fprintf(gen->output, "declare i64 @strlen(i8*)\n");
+    fprintf(gen->output, "declare i8* @strcpy(i8*, i8*)\n");
+    fprintf(gen->output, "declare i32 @strcmp(i8*, i8*)\n");
+    fprintf(gen->output, "declare i8* @strcat(i8*, i8*)\n");
+    fprintf(gen->output, "declare i8* @memcpy(i8*, i8*, i64)\n");
+    fprintf(gen->output, "declare i8* @memset(i8*, i32, i64)\n\n");
     
     // Create global symbol table
     gen->symtab = symtab_create(NULL);
