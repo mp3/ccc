@@ -271,9 +271,61 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input __
         
         // Check if it's a function-like macro
         if (*p == '(') {
-            // Function-like macro - for now, store the whole definition including params
-            const char *macro_start = p;
-            char *value = strdup(macro_start);
+            // Function-like macro - parse parameters
+            p++; // Skip '('
+            
+            // Parse parameter list
+            char *params[32];
+            int param_count = 0;
+            
+            skip_whitespace(&p);
+            if (*p != ')') {
+                // Parse parameters
+                while (*p && *p != ')' && param_count < 32) {
+                    skip_whitespace(&p);
+                    
+                    const char *param_start = p;
+                    while (*p && (isalnum(*p) || *p == '_')) {
+                        p++;
+                    }
+                    
+                    if (p > param_start) {
+                        size_t param_len = p - param_start;
+                        params[param_count] = strndup(param_start, param_len);
+                        param_count++;
+                    }
+                    
+                    skip_whitespace(&p);
+                    if (*p == ',') {
+                        p++;
+                    } else if (*p != ')') {
+                        LOG_ERROR("%s:%d: invalid macro parameter list", 
+                                 pp->current_file, pp->current_line);
+                        // Clean up
+                        for (int i = 0; i < param_count; i++) {
+                            free(params[i]);
+                        }
+                        free(name);
+                        return;
+                    }
+                }
+            }
+            
+            if (*p != ')') {
+                LOG_ERROR("%s:%d: unterminated macro parameter list", 
+                         pp->current_file, pp->current_line);
+                // Clean up
+                for (int i = 0; i < param_count; i++) {
+                    free(params[i]);
+                }
+                free(name);
+                return;
+            }
+            p++; // Skip ')'
+            
+            // Get the macro body
+            skip_whitespace(&p);
+            char *value = strdup(p);
             
             // Remove trailing whitespace
             char *end = value + strlen(value) - 1;
@@ -281,9 +333,13 @@ static void process_directive(Preprocessor *pp, const char *line, FILE *input __
                 *end-- = '\0';
             }
             
-            // Store with parameters (simplified for now)
-            preprocessor_define_macro(pp, name, value);
+            // Create and define the macro with parameters
+            preprocessor_define_function_macro(pp, name, params, param_count, value);
             
+            // Clean up
+            for (int i = 0; i < param_count; i++) {
+                free(params[i]);
+            }
             free(value);
         } else {
             // Object-like macro
@@ -477,16 +533,129 @@ static char *expand_macros(Preprocessor *pp, const char *line) {
             bool found = false;
             while (macro) {
                 if (strcmp(macro->name, temp) == 0) {
-                    // Found a macro - expand it
-                    // For now, only handle object-like macros (no parameters)
+                    // Found a macro
                     if (macro->params == NULL) {
-                        // Copy the macro value
+                        // Object-like macro - simple expansion
                         const char *val = macro->value;
                         while (*val && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
                             *dst++ = *val++;
                         }
                         found = true;
                         break;
+                    } else {
+                        // Function-like macro - check for parentheses
+                        const char *saved_src = src;
+                        while (isspace(*src)) src++;
+                        
+                        if (*src == '(') {
+                            // Parse arguments
+                            src++; // Skip '('
+                            char *args[32];
+                            int arg_count = 0;
+                            
+                            // Parse each argument
+                            while (*src && *src != ')' && arg_count < 32) {
+                                while (isspace(*src)) src++;
+                                
+                                // Collect argument until comma or closing paren
+                                char arg_buf[MAX_LINE_LENGTH];
+                                char *arg_dst = arg_buf;
+                                int paren_depth = 0;
+                                
+                                while (*src && (paren_depth > 0 || (*src != ',' && *src != ')'))) {
+                                    if (*src == '(') paren_depth++;
+                                    else if (*src == ')') paren_depth--;
+                                    
+                                    if ((arg_dst - arg_buf) < MAX_LINE_LENGTH - 1) {
+                                        *arg_dst++ = *src;
+                                    }
+                                    src++;
+                                }
+                                *arg_dst = '\0';
+                                
+                                // Trim trailing whitespace
+                                while (arg_dst > arg_buf && isspace(*(arg_dst - 1))) {
+                                    *(--arg_dst) = '\0';
+                                }
+                                
+                                if (strlen(arg_buf) > 0 || arg_count > 0 || macro->param_count > 0) {
+                                    args[arg_count] = strdup(arg_buf);
+                                    arg_count++;
+                                }
+                                
+                                if (*src == ',') {
+                                    src++;
+                                }
+                            }
+                            
+                            if (*src == ')') {
+                                src++; // Skip ')'
+                                
+                                // Check argument count
+                                if (arg_count != macro->param_count) {
+                                    LOG_WARN("Macro %s expects %d arguments, got %d", 
+                                             macro->name, macro->param_count, arg_count);
+                                    // Copy unexpanded
+                                    const char *copy = id_start;
+                                    while (copy < src && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+                                        *dst++ = *copy++;
+                                    }
+                                } else {
+                                    // Expand the macro with argument substitution
+                                    const char *body = macro->value;
+                                    while (*body && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+                                        // Check if we're at a parameter name
+                                        if (isalpha(*body) || *body == '_') {
+                                            const char *param_start = body;
+                                            char param_name[MAX_LINE_LENGTH];
+                                            char *param_dst = param_name;
+                                            
+                                            while ((isalnum(*body) || *body == '_') && 
+                                                   (param_dst - param_name) < MAX_LINE_LENGTH - 1) {
+                                                *param_dst++ = *body++;
+                                            }
+                                            *param_dst = '\0';
+                                            
+                                            // Check if it's a parameter
+                                            bool param_found = false;
+                                            for (int i = 0; i < macro->param_count; i++) {
+                                                if (strcmp(param_name, macro->params[i]) == 0) {
+                                                    // Substitute with argument
+                                                    const char *arg = args[i];
+                                                    while (*arg && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+                                                        *dst++ = *arg++;
+                                                    }
+                                                    param_found = true;
+                                                    break;
+                                                }
+                                            }
+                                            
+                                            if (!param_found) {
+                                                // Not a parameter, copy as-is
+                                                const char *copy = param_start;
+                                                while (copy < body && (dst - expanded) < MAX_LINE_LENGTH * 2 - 1) {
+                                                    *dst++ = *copy++;
+                                                }
+                                            }
+                                        } else {
+                                            // Not an identifier, copy as-is
+                                            *dst++ = *body++;
+                                        }
+                                    }
+                                }
+                                
+                                // Clean up arguments
+                                for (int i = 0; i < arg_count; i++) {
+                                    free(args[i]);
+                                }
+                                
+                                found = true;
+                                break;
+                            }
+                        } else {
+                            // Function-like macro but no parentheses - don't expand
+                            src = saved_src;
+                        }
                     }
                 }
                 macro = macro->next;
@@ -590,6 +759,67 @@ int preprocessor_process_file(Preprocessor *pp, const char *input_file, const ch
     
     LOG_INFO("Preprocessed %s", input_file);
     return 0;
+}
+
+// Define a function-like macro
+void preprocessor_define_function_macro(Preprocessor *pp, const char *name, 
+                                       char **params, int param_count, const char *value) {
+    // Check if already defined
+    MacroDefinition *existing = pp->macros;
+    while (existing) {
+        if (strcmp(existing->name, name) == 0) {
+            // Redefine - free old params
+            if (existing->params) {
+                for (int i = 0; i < existing->param_count; i++) {
+                    free(existing->params[i]);
+                }
+                free(existing->params);
+            }
+            free(existing->value);
+            
+            // Set new params
+            existing->param_count = param_count;
+            if (param_count > 0) {
+                existing->params = malloc(param_count * sizeof(char*));
+                for (int i = 0; i < param_count; i++) {
+                    existing->params[i] = strdup(params[i]);
+                }
+            } else {
+                existing->params = NULL;
+            }
+            existing->value = strdup(value);
+            
+            LOG_DEBUG("Redefined function macro: %s(%d params) = %s", 
+                      name, param_count, value);
+            return;
+        }
+        existing = existing->next;
+    }
+    
+    // Create new macro
+    MacroDefinition *macro = calloc(1, sizeof(MacroDefinition));
+    if (!macro) {
+        LOG_ERROR("Failed to allocate macro");
+        return;
+    }
+    
+    macro->name = strdup(name);
+    macro->value = strdup(value);
+    macro->param_count = param_count;
+    
+    if (param_count > 0) {
+        macro->params = malloc(param_count * sizeof(char*));
+        for (int i = 0; i < param_count; i++) {
+            macro->params[i] = strdup(params[i]);
+        }
+    } else {
+        macro->params = NULL;
+    }
+    
+    macro->next = pp->macros;
+    pp->macros = macro;
+    
+    LOG_DEBUG("Defined function macro: %s(%d params) = %s", name, param_count, value);
 }
 
 // Define a macro

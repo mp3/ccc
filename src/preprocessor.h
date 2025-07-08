@@ -57,6 +57,8 @@ int preprocessor_process_file(Preprocessor *pp, const char *input_file, const ch
 
 // Macro handling
 void preprocessor_define_macro(Preprocessor *pp, const char *name, const char *value);
+void preprocessor_define_function_macro(Preprocessor *pp, const char *name, 
+                                       char **params, int param_count, const char *value);
 void preprocessor_undefine_macro(Preprocessor *pp, const char *name);
 bool preprocessor_is_macro_defined(Preprocessor *pp, const char *name);
 
