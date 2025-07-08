@@ -494,7 +494,8 @@ static ASTNode *parse_multiplicative(Parser *parser) {
     ASTNode *left = parse_postfix(parser);
     
     while (parser->current_token->type == TOKEN_STAR ||
-           parser->current_token->type == TOKEN_SLASH) {
+           parser->current_token->type == TOKEN_SLASH ||
+           parser->current_token->type == TOKEN_PERCENT) {
         Token *op_token = parser->current_token;
         TokenType op_type = op_token->type;
         int op_line = op_token->line;

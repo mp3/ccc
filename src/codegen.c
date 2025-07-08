@@ -614,6 +614,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     break;
                 case TOKEN_STAR: op = "mul"; break;
                 case TOKEN_SLASH: op = "sdiv"; break;
+                case TOKEN_PERCENT: op = "srem"; break;
                 case TOKEN_AMPERSAND: op = "and"; break;
                 case TOKEN_PIPE: op = "or"; break;
                 case TOKEN_CARET: op = "xor"; break;

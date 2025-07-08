@@ -335,6 +335,7 @@ Token *lexer_next_token(Lexer *lexer) {
                 return create_token(TOKEN_SLASH_ASSIGN, "/=", line, column);
             }
             return create_token(TOKEN_SLASH, "/", line, column);
+        case '%': return create_token(TOKEN_PERCENT, "%", line, column);
         case '(': return create_token(TOKEN_LPAREN, "(", line, column);
         case ')': return create_token(TOKEN_RPAREN, ")", line, column);
         case '{': return create_token(TOKEN_LBRACE, "{", line, column);
@@ -428,7 +429,7 @@ const char *token_type_to_string(TokenType type) {
         "EOF", "INT_LITERAL", "FLOAT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
         "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "FLOAT", "DOUBLE", "STRUCT", "UNION", "SIZEOF",
         "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "CONST", "COLON", "AND", "OR", "NOT",
-        "PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
+        "PLUS", "MINUS", "STAR", "SLASH", "PERCENT", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 
         "LSHIFT", "RSHIFT", "PLUS_ASSIGN", "MINUS_ASSIGN", "STAR_ASSIGN", "SLASH_ASSIGN", 
