@@ -828,6 +828,26 @@ static char *parse_type(Parser *parser, char **identifier) {
     } else if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
         base_type = strdup("void");
         parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
+        parser_advance(parser); // consume 'struct'
+        if (parser->current_token->type != TOKEN_IDENTIFIER) {
+            LOG_ERROR("Expected struct name after 'struct'");
+            return NULL;
+        }
+        // Create type name as "struct StructName"
+        base_type = malloc(strlen(parser->current_token->text) + 8);
+        sprintf(base_type, "struct %s", parser->current_token->text);
+        parser_advance(parser);
+    } else if (parser->current_token->type == TOKEN_KEYWORD_ENUM) {
+        parser_advance(parser); // consume 'enum'
+        if (parser->current_token->type != TOKEN_IDENTIFIER) {
+            LOG_ERROR("Expected enum name after 'enum'");
+            return NULL;
+        }
+        // Create type name as "enum EnumName"
+        base_type = malloc(strlen(parser->current_token->text) + 6);
+        sprintf(base_type, "enum %s", parser->current_token->text);
+        parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
         // Could be a typedef'd type
         base_type = strdup(parser->current_token->text);
