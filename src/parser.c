@@ -1517,9 +1517,19 @@ static ASTNode *parse_function(Parser *parser, bool is_static) {
     node->data.function.params = params;
     node->data.function.param_count = param_count;
     node->data.function.is_variadic = is_variadic;
-    node->data.function.body = parse_compound_statement(parser);
     
-    LOG_DEBUG("Parsed function: %s with %d parameters", node->data.function.name, param_count);
+    // Check if this is a function declaration (prototype) or definition
+    if (parser->current_token->type == TOKEN_SEMICOLON) {
+        // Function declaration (prototype)
+        parser_advance(parser); // consume ';'
+        node->data.function.body = NULL;
+        LOG_DEBUG("Parsed function declaration: %s with %d parameters", node->data.function.name, param_count);
+    } else {
+        // Function definition with body
+        node->data.function.body = parse_compound_statement(parser);
+        LOG_DEBUG("Parsed function definition: %s with %d parameters", node->data.function.name, param_count);
+    }
+    
     return node;
 }
 

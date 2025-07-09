@@ -887,6 +887,109 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 param_types[1] = "i32";
                 param_types[2] = "i64";
                 expected_params = 3;
+            } else if (strcmp(func_name, "__builtin_va_start") == 0) {
+                // va_start(ap, last) - initialize va_list
+                if (expr->data.function_call.argument_count != 2) {
+                    LOG_ERROR("__builtin_va_start requires exactly 2 arguments");
+                    exit(1);
+                }
+                
+                // Get the va_list variable name
+                ASTNode *va_list_arg = expr->data.function_call.arguments[0];
+                if (va_list_arg->type != AST_IDENTIFIER) {
+                    LOG_ERROR("First argument to __builtin_va_start must be a va_list variable");
+                    exit(1);
+                }
+                
+                // In LLVM, we use the llvm.va_start intrinsic
+                // First, we need to bitcast the va_list (char*) to i8*
+                fprintf(gen->output, "  %s.addr = bitcast i8** %%%s to i8*\n", 
+                        va_list_arg->data.identifier.name, va_list_arg->data.identifier.name);
+                fprintf(gen->output, "  call void @llvm.va_start(i8* %s.addr)\n", 
+                        va_list_arg->data.identifier.name);
+                
+                // va_start returns void, so return a dummy value
+                char *result = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = add i32 0, 0\n", result);
+                return result;
+                
+            } else if (strcmp(func_name, "__builtin_va_arg") == 0) {
+                // va_arg(ap, type) - get next argument
+                if (expr->data.function_call.argument_count != 2) {
+                    LOG_ERROR("__builtin_va_arg requires exactly 2 arguments");
+                    exit(1);
+                }
+                
+                // Get the va_list variable
+                ASTNode *va_list_arg = expr->data.function_call.arguments[0];
+                if (va_list_arg->type != AST_IDENTIFIER) {
+                    LOG_ERROR("First argument to __builtin_va_arg must be a va_list variable");
+                    exit(1);
+                }
+                
+                // For now, assume the type is int (i32)
+                // In a full implementation, we'd parse the type from the second argument
+                char *result = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s.addr = bitcast i8** %%%s to i8*\n", 
+                        va_list_arg->data.identifier.name, va_list_arg->data.identifier.name);
+                fprintf(gen->output, "  %s = va_arg i8* %s.addr, i32\n", 
+                        result, va_list_arg->data.identifier.name);
+                
+                return result;
+                
+            } else if (strcmp(func_name, "__builtin_va_end") == 0) {
+                // va_end(ap) - cleanup
+                if (expr->data.function_call.argument_count != 1) {
+                    LOG_ERROR("__builtin_va_end requires exactly 1 argument");
+                    exit(1);
+                }
+                
+                // Get the va_list variable
+                ASTNode *va_list_arg = expr->data.function_call.arguments[0];
+                if (va_list_arg->type != AST_IDENTIFIER) {
+                    LOG_ERROR("First argument to __builtin_va_end must be a va_list variable");
+                    exit(1);
+                }
+                
+                // In LLVM, we use the llvm.va_end intrinsic
+                fprintf(gen->output, "  %s.addr = bitcast i8** %%%s to i8*\n", 
+                        va_list_arg->data.identifier.name, va_list_arg->data.identifier.name);
+                fprintf(gen->output, "  call void @llvm.va_end(i8* %s.addr)\n", 
+                        va_list_arg->data.identifier.name);
+                
+                // va_end returns void, so return a dummy value
+                char *result = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = add i32 0, 0\n", result);
+                return result;
+                
+            } else if (strcmp(func_name, "__builtin_va_copy") == 0) {
+                // va_copy(dest, src) - copy va_list
+                if (expr->data.function_call.argument_count != 2) {
+                    LOG_ERROR("__builtin_va_copy requires exactly 2 arguments");
+                    exit(1);
+                }
+                
+                // Get both va_list variables
+                ASTNode *dest_arg = expr->data.function_call.arguments[0];
+                ASTNode *src_arg = expr->data.function_call.arguments[1];
+                if (dest_arg->type != AST_IDENTIFIER || src_arg->type != AST_IDENTIFIER) {
+                    LOG_ERROR("Both arguments to __builtin_va_copy must be va_list variables");
+                    exit(1);
+                }
+                
+                // In LLVM, we use the llvm.va_copy intrinsic
+                fprintf(gen->output, "  %s.dest.addr = bitcast i8** %%%s to i8*\n", 
+                        dest_arg->data.identifier.name, dest_arg->data.identifier.name);
+                fprintf(gen->output, "  %s.src.addr = bitcast i8** %%%s to i8*\n", 
+                        src_arg->data.identifier.name, src_arg->data.identifier.name);
+                fprintf(gen->output, "  call void @llvm.va_copy(i8* %s.dest.addr, i8* %s.src.addr)\n", 
+                        dest_arg->data.identifier.name, src_arg->data.identifier.name);
+                
+                // va_copy returns void, so return a dummy value
+                char *result = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = add i32 0, 0\n", result);
+                return result;
+                
             } else if (func_sym && func_sym->type == SYM_VARIABLE && 
                       strstr(func_sym->data_type, "(*)")) {
                 // This is a function pointer variable
@@ -2116,6 +2219,26 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     // Generate function signature
     const char *ret_llvm_type = strcmp(func->data.function.return_type, "char") == 0 ? "i8" : "i32";
     const char *linkage = func->data.function.is_static ? "internal " : "";
+    
+    // Check if this is a declaration or definition
+    if (func->data.function.body == NULL) {
+        // Function declaration (prototype) - use "declare"
+        fprintf(gen->output, "declare %s @%s(", ret_llvm_type, func->data.function.name);
+        for (int i = 0; i < func->data.function.param_count; i++) {
+            if (i > 0) fprintf(gen->output, ", ");
+            const char *param_llvm_type = strcmp(func->data.function.params[i]->data.param_decl.type, "char") == 0 ? "i8" : "i32";
+            fprintf(gen->output, "%s", param_llvm_type);
+        }
+        if (func->data.function.is_variadic) {
+            if (func->data.function.param_count > 0) fprintf(gen->output, ", ");
+            fprintf(gen->output, "...");
+        }
+        fprintf(gen->output, ")\n");
+        LOG_DEBUG("Generated function declaration: %s", func->data.function.name);
+        return;
+    }
+    
+    // Function definition - use "define"
     fprintf(gen->output, "define %s%s @%s(", linkage, ret_llvm_type, func->data.function.name);
     for (int i = 0; i < func->data.function.param_count; i++) {
         if (i > 0) fprintf(gen->output, ", ");
@@ -2200,7 +2323,12 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     fprintf(gen->output, "declare i32 @strcmp(i8*, i8*)\n");
     fprintf(gen->output, "declare i8* @strcat(i8*, i8*)\n");
     fprintf(gen->output, "declare i8* @memcpy(i8*, i8*, i64)\n");
-    fprintf(gen->output, "declare i8* @memset(i8*, i32, i64)\n\n");
+    fprintf(gen->output, "declare i8* @memset(i8*, i32, i64)\n");
+    
+    // Declare LLVM variadic intrinsics
+    fprintf(gen->output, "declare void @llvm.va_start(i8*)\n");
+    fprintf(gen->output, "declare void @llvm.va_end(i8*)\n");
+    fprintf(gen->output, "declare void @llvm.va_copy(i8*, i8*)\n\n");
     
     // Generate struct type definitions
     // For now, hardcode struct Point - in a real implementation we'd generate from AST
@@ -2305,8 +2433,19 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     }
     
     // Second pass: generate code for each function
+    // First, generate declarations for functions without bodies
     for (int i = 0; i < ast->data.program.function_count; i++) {
-        codegen_function(gen, ast->data.program.functions[i]);
+        ASTNode *func = ast->data.program.functions[i];
+        if (func->data.function.body == NULL) {
+            codegen_function(gen, func);
+        }
+    }
+    // Then, generate definitions for functions with bodies
+    for (int i = 0; i < ast->data.program.function_count; i++) {
+        ASTNode *func = ast->data.program.functions[i];
+        if (func->data.function.body != NULL) {
+            codegen_function(gen, func);
+        }
     }
     
     // Emit static variables after all functions
