@@ -244,24 +244,34 @@ While the compiler has made significant progress, **self-hosting has not yet bee
 - **[Self-Hosting Roadmap](docs/self_hosting_roadmap.md)** - Detailed analysis of missing features and implementation plan
 - **[Minimal Self-Hosting Demo](docs/minimal_self_hosting_demo.md)** - Alternative approach for limited self-hosting proof of concept
 
-### Missing Features for Self-Hosting
+### Recent Progress Toward Self-Hosting
 
-The primary obstacles to self-hosting are:
+Significant progress has been made on self-hosting capabilities:
 
-1. **Preprocessor**: No support for `#include`, `#define`, or conditional compilation
-2. **Standard Library Integration**: Limited to `putchar`/`getchar`, missing essential functions like `malloc`, `printf`, file I/O
-3. **Variadic Function Support**: Basic parsing exists but full `stdarg.h` support is needed
-4. **Global Variables**: Partial implementation needs completion
+✅ **Completed Features**:
+- **Global Variables**: Full implementation with initializers and static storage
+- **Enum Support**: Complete enumeration type support with auto-incrementing values
+- **Static Functions**: Static function definitions and calls
+- **Type Casting**: Explicit type cast operations
+- **Const Keyword**: Support for const-qualified variables
+- **Struct Member Access**: Basic struct declarations and member access (with limitations)
+- **Standard Library Bridge**: Integration with libc functions (malloc, printf, etc.)
+- **Preprocessor**: Basic macro expansion and conditional compilation
 
-The estimated effort for full self-hosting is 10-18 weeks. See the roadmap documents for detailed implementation strategies.
+⚠️ **Remaining Obstacles**:
+1. **Preprocessor**: Limited to basic macros, no `#include` support yet
+2. **Variadic Function Implementation**: Declaration parsing exists but va_arg mechanism incomplete
+3. **Struct Support**: Member offsets are hardcoded, needs proper type system integration
+
+The compiler is very close to achieving self-hosting. With the standard library bridge in place, many missing features have been addressed.
 
 ## Next Steps
 
-- [ ] Implement preprocessor directives
-- [ ] Add standard library integration
-- [ ] Complete global variable support
-- [ ] Full variadic function implementation
-- [ ] Achieve self-hosting capability
+- [ ] Implement `#include` directive for header files
+- [ ] Complete variadic function implementation (va_arg mechanism)
+- [ ] Fix struct member offset calculation (currently hardcoded)
+- [ ] Add `extern` storage class support
+- [ ] Achieve full self-hosting capability
 
 ## Contributing
 
