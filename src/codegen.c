@@ -181,12 +181,16 @@ static void register_struct_type(CodeGenerator *gen, ASTNode *struct_decl) {
 // Find a struct type by name
 static StructType *find_struct_type(CodeGenerator *gen, const char *name) {
     StructType *type = gen->struct_types;
+    LOG_DEBUG("Looking for struct type: %s", name);
     while (type) {
+        LOG_DEBUG("  Checking against: %s", type->name);
         if (strcmp(type->name, name) == 0) {
+            LOG_DEBUG("  Found match!");
             return type;
         }
         type = type->next;
     }
+    LOG_DEBUG("  Not found in registry");
     return NULL;
 }
 
@@ -765,24 +769,85 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                         exit(1);
                     }
                     
-                    // Determine member index
-                    int member_index = 0;
-                    if (strcmp(member_name, "y") == 0) {
-                        member_index = 1;
-                    } else if (strcmp(member_name, "z") == 0) {
-                        member_index = 2;
+                    // Get struct type and resolve typedef if necessary
+                    const char *struct_type = object_sym->data_type;
+                    const char *resolved_type = resolve_typedef(gen, struct_type);
+                    
+                    char struct_name[256];
+                    if (strncmp(resolved_type, "struct ", 7) == 0) {
+                        strcpy(struct_name, resolved_type + 7);
+                    } else {
+                        LOG_ERROR("Variable %s is not a struct type (type: %s)", object_name, struct_type);
+                        exit(1);
                     }
                     
+                    // Look up the struct type
+                    StructType *stype = find_struct_type(gen, struct_name);
+                    if (!stype) {
+                        LOG_ERROR("Struct type %s not found", struct_name);
+                        exit(1);
+                    }
+                    
+                    // Find the member index
+                    int member_index = -1;
+                    for (int i = 0; i < stype->member_count; i++) {
+                        if (strcmp(stype->members[i].name, member_name) == 0) {
+                            member_index = i;
+                            break;
+                        }
+                    }
+                    
+                    if (member_index == -1) {
+                        LOG_ERROR("Member %s not found in struct %s", member_name, struct_name);
+                        exit(1);
+                    }
+                    
+                    // Get the member type for proper store instruction
+                    const char *member_type = stype->members[member_index].type;
+                    const char *llvm_member_type = c_type_to_llvm_type(member_type);
+                    
                     left_addr = codegen_next_temp(gen);
-                    fprintf(gen->output, "  %s = getelementptr %%struct.Point, %%struct.Point* %%%s, i32 0, i32 %d\n",
-                            left_addr, object_name, member_index);
+                    fprintf(gen->output, "  %s = getelementptr %%struct.%s, %%struct.%s* %%%s, i32 0, i32 %d\n",
+                            left_addr, struct_name, struct_name, object_name, member_index);
+                    
+                    // Store the member type for later use
+                    // This is a hack - we'll encode it in the address string
+                    char *addr_with_type = malloc(strlen(left_addr) + strlen(llvm_member_type) + 10);
+                    sprintf(addr_with_type, "%s:%s", left_addr, llvm_member_type);
+                    free(left_addr);
+                    left_addr = addr_with_type;
                 }
                 
                 // Evaluate right side normally
                 char *right = codegen_expression(gen, expr->data.binary_op.right);
                 
-                // Store the value
-                fprintf(gen->output, "  store i32 %s, i32* %s\n", right, left_addr);
+                // Extract the type from the address (if it's a member access)
+                char *type_sep = strchr(left_addr, ':');
+                if (type_sep) {
+                    *type_sep = '\0'; // Split the string
+                    const char *member_llvm_type = type_sep + 1;
+                    
+                    // Check if we're assigning to a pointer type
+                    if (strstr(member_llvm_type, "*")) {
+                        // For pointer assignments, we need to handle null (0) specially
+                        // Check if the right side is a literal 0
+                        if (expr->data.binary_op.right->type == AST_INT_LITERAL && 
+                            expr->data.binary_op.right->data.int_literal.value == 0) {
+                            fprintf(gen->output, "  store %s null, %s* %s\n", member_llvm_type, member_llvm_type, left_addr);
+                        } else {
+                            // Need to convert i32 to pointer - use inttoptr
+                            char *ptr_value = codegen_next_temp(gen);
+                            fprintf(gen->output, "  %s = inttoptr i32 %s to %s\n", ptr_value, right, member_llvm_type);
+                            fprintf(gen->output, "  store %s %s, %s* %s\n", member_llvm_type, ptr_value, member_llvm_type, left_addr);
+                            free(ptr_value);
+                        }
+                    } else {
+                        fprintf(gen->output, "  store %s %s, %s* %s\n", member_llvm_type, right, member_llvm_type, left_addr);
+                    }
+                } else {
+                    // Default to i32 for non-member assignments
+                    fprintf(gen->output, "  store i32 %s, i32* %s\n", right, left_addr);
+                }
                 
                 free(left_addr);
                 return right;  // Assignment returns the assigned value
@@ -1550,9 +1615,11 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             
             // Extract struct name from type (e.g., "struct Point" -> "Point")
             const char *struct_type = object_sym->data_type;
+            LOG_DEBUG("Member access: %s.%s, object type: %s", object_name, member_name, struct_type);
             
             // Resolve typedef if necessary
             const char *resolved_type = resolve_typedef(gen, struct_type);
+            LOG_DEBUG("Resolved type: %s", resolved_type);
             
             char struct_name[256];
             if (strncmp(resolved_type, "struct ", 7) == 0) {
@@ -1561,6 +1628,7 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 LOG_ERROR("Variable %s is not a struct type (type: %s)", object_name, struct_type);
                 exit(1);
             }
+            LOG_DEBUG("Struct name: %s", struct_name);
             
             // Look up the struct type
             StructType *stype = find_struct_type(gen, struct_name);
