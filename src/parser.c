@@ -94,6 +94,14 @@ Parser *parser_create(Lexer *lexer) {
     parser->error_manager = error_manager_create();
     parser->filename = lexer->filename;
     parser->had_error = false;
+    // Initialize typedef tracking
+    parser->typedef_capacity = 16;
+    parser->typedef_count = 0;
+    parser->typedef_names = malloc(parser->typedef_capacity * sizeof(char*));
+    
+    // Initialize symbol table
+    parser->symtab = symtab_create(NULL);
+    
     LOG_DEBUG("Created parser with error manager");
     return parser;
 }
@@ -105,6 +113,15 @@ void parser_destroy(Parser *parser) {
         if (parser->error_manager) {
             error_manager_destroy(parser->error_manager);
         }
+        if (parser->typedef_names) {
+            for (int i = 0; i < parser->typedef_count; i++) {
+                free(parser->typedef_names[i]);
+            }
+            free(parser->typedef_names);
+        }
+        if (parser->symtab) {
+            symtab_destroy(parser->symtab);
+        }
         free(parser);
     }
 }
@@ -115,6 +132,16 @@ static ASTNode *parse_assignment(Parser *parser);
 static ASTNode *parse_expression(Parser *parser);
 // parse_statement is declared in parser.h
 static char *parse_type(Parser *parser, char **identifier);
+static ASTNode *parse_struct_declaration(Parser *parser, char *struct_name);
+
+static bool is_typedef_name(Parser *parser, const char *name) {
+    for (int i = 0; i < parser->typedef_count; i++) {
+        if (strcmp(parser->typedef_names[i], name) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 static ASTNode *parse_primary(Parser *parser) {
     Token *token = parser->current_token;
@@ -857,9 +884,14 @@ static char *parse_type(Parser *parser, char **identifier) {
         sprintf(base_type, "enum %s", parser->current_token->text);
         parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
-        // Could be a typedef'd type
-        base_type = strdup(parser->current_token->text);
-        parser_advance(parser);
+        // Check if it's a typedef'd type
+        if (is_typedef_name(parser, parser->current_token->text)) {
+            base_type = strdup(parser->current_token->text);
+            parser_advance(parser);
+        } else {
+            // Not a type
+            return NULL;
+        }
     } else {
         return NULL;
     }
@@ -1047,7 +1079,11 @@ ASTNode *parse_statement(Parser *parser) {
         parser->current_token->type == TOKEN_KEYWORD_DOUBLE ||
         parser->current_token->type == TOKEN_KEYWORD_VOID ||
         parser->current_token->type == TOKEN_KEYWORD_STRUCT ||
-        parser->current_token->type == TOKEN_KEYWORD_ENUM) {
+        parser->current_token->type == TOKEN_KEYWORD_ENUM ||
+        (parser->current_token->type == TOKEN_IDENTIFIER && 
+         is_typedef_name(parser, parser->current_token->text)) ||
+        (is_const && parser->current_token->type == TOKEN_IDENTIFIER && 
+         is_typedef_name(parser, parser->current_token->text))) {
         LOG_TRACE("Attempting to parse variable declaration starting with %s",
                   token_type_to_string(token->type));
         char *var_name = NULL;
@@ -1679,6 +1715,7 @@ static ASTNode *parse_typedef(Parser *parser) {
     
     int line = parser->current_token->line;
     int column = parser->current_token->column;
+    ASTNode *struct_decl = NULL;
     
     parser_expect(parser, TOKEN_KEYWORD_TYPEDEF);
     
@@ -1692,15 +1729,32 @@ static ASTNode *parse_typedef(Parser *parser) {
         parser_advance(parser);
     } else if (parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
         parser_advance(parser);
-        if (parser->current_token->type != TOKEN_IDENTIFIER) {
-            LOG_ERROR("Expected struct name after 'struct' at %d:%d",
+        
+        // Check if this is an anonymous struct (has { directly)
+        if (parser->current_token->type == TOKEN_LBRACE) {
+            // Anonymous struct - generate a unique name
+            static int anon_struct_counter = 0;
+            char anon_name[64];
+            snprintf(anon_name, sizeof(anon_name), "__anon_struct_%d", anon_struct_counter++);
+            
+            // Parse the struct body
+            struct_decl = parse_struct_declaration(parser, strdup(anon_name));
+            
+            // Use the anonymous struct name as the type
+            char struct_type[256];
+            snprintf(struct_type, sizeof(struct_type), "struct %s", anon_name);
+            base_type = strdup(struct_type);
+        } else if (parser->current_token->type == TOKEN_IDENTIFIER) {
+            // Named struct reference
+            char struct_type[256];
+            snprintf(struct_type, sizeof(struct_type), "struct %s", parser->current_token->text);
+            base_type = strdup(struct_type);
+            parser_advance(parser);
+        } else {
+            LOG_ERROR("Expected struct name or '{' after 'struct' at %d:%d",
                       parser->current_token->line, parser->current_token->column);
             exit(1);
         }
-        char struct_type[256];
-        snprintf(struct_type, sizeof(struct_type), "struct %s", parser->current_token->text);
-        base_type = strdup(struct_type);
-        parser_advance(parser);
     } else {
         LOG_ERROR("Expected type after typedef at %d:%d", 
                   parser->current_token->line, parser->current_token->column);
@@ -1737,6 +1791,17 @@ static ASTNode *parse_typedef(Parser *parser) {
     ASTNode *node = create_ast_node(AST_TYPEDEF_DECL, line, column);
     node->data.typedef_decl.name = new_type_name;
     node->data.typedef_decl.base_type = strdup(type_name);
+    
+    // Store the struct declaration if we created one  
+    node->data.typedef_decl.struct_decl = struct_decl;
+    
+    // Add typedef name to tracking list
+    if (parser->typedef_count >= parser->typedef_capacity) {
+        parser->typedef_capacity *= 2;
+        parser->typedef_names = realloc(parser->typedef_names, 
+                                       parser->typedef_capacity * sizeof(char*));
+    }
+    parser->typedef_names[parser->typedef_count++] = strdup(new_type_name);
     
     LOG_TRACE("Parsed typedef: %s as %s", new_type_name, type_name);
     return node;
@@ -1855,7 +1920,12 @@ static ASTNode *parse_struct_declaration(Parser *parser, char *struct_name) {
     }
     
     parser_expect(parser, TOKEN_RBRACE); // consume '}'
-    parser_expect(parser, TOKEN_SEMICOLON); // consume ';'
+    
+    // Only expect semicolon if not in typedef context
+    // Check if next token is a semicolon (struct declaration) or identifier (typedef)
+    if (parser->current_token->type == TOKEN_SEMICOLON) {
+        parser_advance(parser); // consume ';'
+    }
     
     LOG_DEBUG("Parsed struct %s with %d members", struct_name, struct_node->data.struct_decl.member_count);
     
@@ -1916,7 +1986,7 @@ ASTNode *parser_parse(Parser *parser) {
                                                                 typedef_capacity * sizeof(ASTNode*));
                     }
                     program->data.program.typedefs[program->data.program.typedef_count++] = struct_decl;
-                    free(struct_name);
+                    // Don't free struct_name - parse_struct_declaration takes ownership
                 } else {
                     // Not a struct declaration, rewind and let parse_function handle it
                     parser->current_token = saved_token;
@@ -2196,6 +2266,9 @@ void ast_destroy(ASTNode *node) {
         case AST_TYPEDEF_DECL:
             free(node->data.typedef_decl.name);
             free(node->data.typedef_decl.base_type);
+            if (node->data.typedef_decl.struct_decl) {
+                ast_destroy(node->data.typedef_decl.struct_decl);
+            }
             break;
         case AST_ENUM_DECL:
             free(node->data.enum_decl.name);

@@ -36,6 +36,12 @@ typedef struct StructType {
     struct StructType *next;
 } StructType;
 
+typedef struct TypedefEntry {
+    char *name;
+    char *base_type;
+    struct TypedefEntry *next;
+} TypedefEntry;
+
 typedef struct {
     FILE *output;
     int temp_counter;
@@ -54,6 +60,8 @@ typedef struct {
     int enum_count;
     // Struct type registry
     StructType *struct_types;
+    // Typedef registry
+    TypedefEntry *typedefs;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);

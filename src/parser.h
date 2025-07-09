@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "lexer.h"
+#include "symtab.h"
 #include <stdbool.h>
 
 typedef enum {
@@ -189,6 +190,7 @@ typedef struct ASTNode {
         struct {
             char *name;                     // The new type name being defined
             char *base_type;                // The existing type it's based on
+            struct ASTNode *struct_decl;    // Optional struct declaration for anonymous structs
         } typedef_decl;
         struct {
             char *name;                     // The enum name (can be NULL for anonymous enums)
@@ -209,6 +211,11 @@ typedef struct {
     struct ErrorManager *error_manager;
     const char *filename;
     bool had_error;
+    SymbolTable *symtab;
+    // Track typedef names for parsing
+    char **typedef_names;
+    int typedef_count;
+    int typedef_capacity;
 } Parser;
 
 Parser *parser_create(Lexer *lexer);

@@ -134,8 +134,31 @@ Symbol *symtab_insert_array(SymbolTable *table, const char *name, const char *da
 Symbol *symtab_insert_function(SymbolTable *table, const char *name, const char *return_type,
                               char **param_types, char **param_names, int param_count, bool is_variadic) {
     // Check if already exists in local scope
-    if (symtab_lookup_local(table, name)) {
-        LOG_ERROR("Function '%s' already defined in this scope", name);
+    Symbol *existing = symtab_lookup_local(table, name);
+    if (existing) {
+        // Allow function declarations to be followed by definitions
+        if (existing->type == SYM_FUNCTION) {
+            // Check if signatures match
+            if (strcmp(existing->data_type, return_type) != 0 ||
+                existing->param_count != param_count ||
+                existing->is_variadic != is_variadic) {
+                LOG_ERROR("Function '%s' redefined with different signature", name);
+                return NULL;
+            }
+            
+            // Check parameter types match
+            for (int i = 0; i < param_count; i++) {
+                if (strcmp(existing->param_types[i], param_types[i]) != 0) {
+                    LOG_ERROR("Function '%s' parameter %d type mismatch", name, i + 1);
+                    return NULL;
+                }
+            }
+            
+            // Allow redefinition (declaration followed by definition)
+            LOG_DEBUG("Function '%s' already declared, allowing redefinition", name);
+            return existing;
+        }
+        LOG_ERROR("Symbol '%s' already defined in this scope", name);
         return NULL;
     }
     

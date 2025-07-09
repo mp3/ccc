@@ -193,6 +193,21 @@ ccc/
 └── README.md
 ```
 
+## Self-Hosting Progress
+
+The compiler is approximately 99% self-hosting capable! Recent improvements include:
+
+- ✅ **Anonymous structs in typedef**: `typedef struct { int x; } Point;`
+- ✅ **Typedef name tracking**: Typedef'd types are recognized in variable declarations
+- ✅ **Function declaration/definition handling**: Proper support for separate declarations and definitions
+- ✅ **Standard library function declarations**: Avoids duplicate declarations
+- ✅ **Complex struct member resolution**: Handles typedef'd struct types
+
+### Known Limitations
+
+- Struct member access with certain type combinations may generate incorrect LLVM IR
+- Some edge cases in nested struct member access
+
 ## Implementation Status
 
 ### Completed Features ✅

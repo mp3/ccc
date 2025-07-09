@@ -22,8 +22,11 @@ The CCC compiler has made substantial progress with:
 - ✅ **Basic preprocessor with macros and conditionals**
 - ✅ **Function declarations (prototypes)**
 - ✅ **Variadic functions with builtin va_* support**
+- ✅ **Anonymous structs in typedef**
+- ✅ **Typedef name tracking in parser**
+- ✅ **Extern storage class**
 
-The compiler is now very close to achieving self-hosting capability (~95% complete).
+The compiler is now very close to achieving self-hosting capability (~99% complete).
 
 ## Missing Features Analysis
 
@@ -140,8 +143,7 @@ Based on the remaining features:
 **Total estimated effort**: 3-5 days for full self-hosting capability
 
 **Current blockers**:
-1. Edge cases in struct member handling
-2. Function declaration/definition conflict resolution
+1. Minor bug in struct member access code generation (incorrect type used in some getelementptr instructions)
 
 ## Alternative Approach: Limited Self-Hosting
 
@@ -155,9 +157,8 @@ This could be achieved in 4-6 weeks and would serve as a proof of concept.
 
 ## Conclusion
 
-The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, complete preprocessor with #include, function declarations, variadic functions, and extern storage class), only minor obstacles remain:
+The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, complete preprocessor with #include, function declarations, variadic functions, extern storage class, anonymous structs in typedef, and typedef name tracking), only one minor obstacle remains:
 
-1. **Minor issues** - Edge cases in struct handling and function redefinition
-2. **Testing** - Comprehensive self-hosting test needed
+1. **Minor bug** - Struct member access generates incorrect type in some LLVM IR instructions
 
-The compiler already has ~99% of the features needed for self-hosting. Given the substantial progress made, full self-hosting could realistically be achieved in a few days. The remaining work consists only of minor bug fixes and testing.
+The compiler already has ~99% of the features needed for self-hosting. A comprehensive self-hosting test (`samples/self_host_minimal.c`) successfully compiles and runs, though it fails one test case due to the struct member access bug. Given the substantial progress made, full self-hosting could realistically be achieved with just this one bug fix.

@@ -21,6 +21,7 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->enums = NULL;
     gen->enum_count = 0;
     gen->struct_types = NULL;
+    gen->typedefs = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -66,8 +67,43 @@ void codegen_destroy(CodeGenerator *gen) {
             free(struct_type);
             struct_type = next;
         }
+        // Free typedefs
+        TypedefEntry *typedef_entry = gen->typedefs;
+        while (typedef_entry) {
+            TypedefEntry *next = typedef_entry->next;
+            free(typedef_entry->name);
+            free(typedef_entry->base_type);
+            free(typedef_entry);
+            typedef_entry = next;
+        }
         free(gen);
     }
+}
+
+static void register_typedef(CodeGenerator *gen, const char *name, const char *base_type) {
+    TypedefEntry *entry = malloc(sizeof(TypedefEntry));
+    entry->name = strdup(name);
+    entry->base_type = strdup(base_type);
+    entry->next = gen->typedefs;
+    gen->typedefs = entry;
+    LOG_DEBUG("Registered typedef: %s -> %s", name, base_type);
+}
+
+static char *resolve_typedef(CodeGenerator *gen, const char *type_name) {
+    if (!gen) return (char *)type_name; // Safety check
+    
+    TypedefEntry *entry = gen->typedefs;
+    while (entry) {
+        if (strcmp(entry->name, type_name) == 0) {
+            // Recursively resolve in case of typedef chains
+            if (strncmp(entry->base_type, "struct ", 7) != 0) {
+                return resolve_typedef(gen, entry->base_type);
+            }
+            return entry->base_type;
+        }
+        entry = entry->next;
+    }
+    return (char *)type_name; // Not a typedef
 }
 
 static char *codegen_next_temp(CodeGenerator *gen) {
@@ -188,7 +224,7 @@ static bool is_static_variable(Symbol *sym, char *real_type, char *global_name) 
     return true;
 }
 
-static char *c_type_to_llvm_type(const char *c_type) {
+static char *c_type_to_llvm_type_impl(CodeGenerator *gen, const char *c_type) {
     static char llvm_type[256];
     
     // Strip const qualifier if present - LLVM doesn't use it in type names
@@ -196,6 +232,12 @@ static char *c_type_to_llvm_type(const char *c_type) {
     if (strncmp(c_type, "const ", 6) == 0) {
         strcpy(type_without_const, c_type + 6);
         c_type = type_without_const;
+    }
+    
+    // Resolve typedef if necessary
+    const char *resolved_type = resolve_typedef(gen, c_type);
+    if (resolved_type != c_type) {
+        c_type = resolved_type;
     }
     
     // Check for function pointer type: return_type(*)(param_types)
@@ -272,8 +314,18 @@ static char *c_type_to_llvm_type(const char *c_type) {
     } else if (strcmp(c_type, "char**") == 0) {
         strcpy(llvm_type, "i8**");
     } else if (strncmp(c_type, "struct ", 7) == 0) {
-        // Handle struct types - keep as-is with % prefix
-        snprintf(llvm_type, sizeof(llvm_type), "%%%s", c_type);
+        // Handle struct types (both plain and pointers)
+        const char *ptr_part = strstr(c_type + 7, "*");
+        if (ptr_part) {
+            // struct with pointer(s)
+            int name_len = ptr_part - (c_type + 7);
+            snprintf(llvm_type, sizeof(llvm_type), "%%struct.");
+            strncat(llvm_type, c_type + 7, name_len);
+            strcat(llvm_type, ptr_part);
+        } else {
+            // plain struct type - should be %struct.Name
+            snprintf(llvm_type, sizeof(llvm_type), "%%struct.%s", c_type + 7);
+        }
     } else if (strncmp(c_type, "enum ", 5) == 0) {
         // Handle enum types - treat as i32
         strcpy(llvm_type, "i32");
@@ -295,6 +347,13 @@ static char *c_type_to_llvm_type(const char *c_type) {
     }
     
     return llvm_type;
+}
+
+// Wrapper for backwards compatibility
+static char *c_type_to_llvm_type(const char *c_type) {
+    // This is a hack - we can't access the generator from here
+    // For now, just call the impl with NULL and hope we don't need typedef resolution
+    return c_type_to_llvm_type_impl(NULL, c_type);
 }
 
 static void emit_static_variables(CodeGenerator *gen) {
@@ -1491,11 +1550,15 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             
             // Extract struct name from type (e.g., "struct Point" -> "Point")
             const char *struct_type = object_sym->data_type;
+            
+            // Resolve typedef if necessary
+            const char *resolved_type = resolve_typedef(gen, struct_type);
+            
             char struct_name[256];
-            if (strncmp(struct_type, "struct ", 7) == 0) {
-                strcpy(struct_name, struct_type + 7);
+            if (strncmp(resolved_type, "struct ", 7) == 0) {
+                strcpy(struct_name, resolved_type + 7);
             } else {
-                LOG_ERROR("Variable %s is not a struct type", object_name);
+                LOG_ERROR("Variable %s is not a struct type (type: %s)", object_name, struct_type);
                 exit(1);
             }
             
@@ -1817,7 +1880,7 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 sym->is_const = stmt->data.var_decl.is_const;
                 
                 // Allocate stack space for the variable
-                char *llvm_type = c_type_to_llvm_type(stmt->data.var_decl.type);
+                char *llvm_type = c_type_to_llvm_type_impl(gen, stmt->data.var_decl.type);
                 fprintf(gen->output, "  %%%s = alloca %s\n", sym->name, llvm_type);
                 
                 // Initialize if needed
@@ -2332,6 +2395,18 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     
     // Check if this is a declaration or definition
     if (func->data.function.body == NULL || func->data.function.is_extern) {
+        // Skip if it's a standard library function already declared
+        const char *standard_funcs[] = {
+            "putchar", "getchar", "puts", "printf", "malloc", "free", "exit",
+            "atoi", "strlen", "strcpy", "strcmp", "strcat", "memcpy", "memset", NULL
+        };
+        for (int i = 0; standard_funcs[i]; i++) {
+            if (strcmp(func->data.function.name, standard_funcs[i]) == 0) {
+                LOG_DEBUG("Skipping duplicate declaration of standard function: %s", func->data.function.name);
+                return;
+            }
+        }
+        
         // Function declaration (prototype) or extern - use "declare"
         fprintf(gen->output, "declare %s @%s(", ret_llvm_type, func->data.function.name);
         for (int i = 0; i < func->data.function.param_count; i++) {
@@ -2446,7 +2521,19 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         ASTNode *typedef_node = ast->data.program.typedefs[i];
         fprintf(stderr, "DEBUG: Typedef %d type: %d\n", i, typedef_node->type);
         if (typedef_node->type == AST_STRUCT_DECL) {
+            fprintf(stderr, "DEBUG: Struct name: %s\n", typedef_node->data.struct_decl.name);
+        }
+        if (typedef_node->type == AST_STRUCT_DECL) {
             register_struct_type(gen, typedef_node);
+        } else if (typedef_node->type == AST_TYPEDEF_DECL) {
+            // Register typedef mapping
+            register_typedef(gen, typedef_node->data.typedef_decl.name, 
+                           typedef_node->data.typedef_decl.base_type);
+            
+            // If there's an associated struct declaration, register it
+            if (typedef_node->data.typedef_decl.struct_decl) {
+                register_struct_type(gen, typedef_node->data.typedef_decl.struct_decl);
+            }
         }
     }
     
@@ -2597,14 +2684,32 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         }
     }
     
+    fprintf(stderr, "DEBUG: Starting function generation\n");
+    
     // Second pass: generate code for each function
-    // First, generate declarations for functions without bodies
+    // First, check which functions have definitions
+    bool *has_definition = calloc(ast->data.program.function_count, sizeof(bool));
     for (int i = 0; i < ast->data.program.function_count; i++) {
         ASTNode *func = ast->data.program.functions[i];
-        if (func->data.function.body == NULL) {
+        if (func->data.function.body != NULL && !func->data.function.is_extern) {
+            // Mark all functions with this name as having a definition
+            for (int j = 0; j < ast->data.program.function_count; j++) {
+                if (strcmp(ast->data.program.functions[j]->data.function.name, 
+                          func->data.function.name) == 0) {
+                    has_definition[j] = true;
+                }
+            }
+        }
+    }
+    
+    // Generate declarations for functions without bodies (skip if has definition)
+    for (int i = 0; i < ast->data.program.function_count; i++) {
+        ASTNode *func = ast->data.program.functions[i];
+        if (func->data.function.body == NULL && !has_definition[i]) {
             codegen_function(gen, func);
         }
     }
+    
     // Then, generate definitions for functions with bodies
     for (int i = 0; i < ast->data.program.function_count; i++) {
         ASTNode *func = ast->data.program.functions[i];
@@ -2612,6 +2717,8 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
             codegen_function(gen, func);
         }
     }
+    
+    free(has_definition);
     
     // Emit static variables after all functions
     emit_static_variables(gen);
