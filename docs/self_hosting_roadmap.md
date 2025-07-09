@@ -20,8 +20,10 @@ The CCC compiler has made substantial progress with:
 - ✅ **Basic struct member access**
 - ✅ **Standard library bridge (malloc, printf, etc.)**
 - ✅ **Basic preprocessor with macros and conditionals**
+- ✅ **Function declarations (prototypes)**
+- ✅ **Variadic functions with builtin va_* support**
 
-The compiler is now very close to achieving self-hosting capability.
+The compiler is now very close to achieving self-hosting capability (~95% complete).
 
 ## Missing Features Analysis
 
@@ -35,8 +37,9 @@ The compiler is now very close to achieving self-hosting capability.
 - ✅ Macro expansion
 - ✅ Built-in macros (`__FILE__`, `__LINE__`)
 
-#### Standard Library Integration (Mostly Complete)
+#### Standard Library Integration (Complete)
 - ✅ External function declarations
+- ✅ Function prototypes without bodies
 - ✅ Linking with libc functions:
   - ✅ Memory: `malloc`, `free`, `calloc`, `realloc`
   - ✅ String: `strcmp`, `strcpy`, `strlen`, `strdup`
@@ -50,10 +53,11 @@ The compiler is now very close to achieving self-hosting capability.
 - ✅ Initialized globals
 - ✅ String literal globals
 
-#### Variadic Functions (Partially Complete)
+#### Variadic Functions (Complete)
 - ✅ Function declarations with `...`
-- ❌ `va_list`, `va_start`, `va_end` implementation
+- ✅ `va_list`, `va_start`, `va_end`, `va_arg` implementation via builtins
 - ✅ Calling variadic functions
+- ✅ Basic stdarg.h header with macros
 
 ### 2. Important Features (Highly Desirable)
 
@@ -125,16 +129,19 @@ Based on the remaining features:
 - ✅ ~~Standard library integration~~ (complete)
 - ✅ ~~Global variables completion~~ (complete)
 - ✅ ~~Missing operators~~ (complete)
-- Variadic functions (va_arg mechanism): 1-2 weeks
+- ✅ ~~Variadic functions~~ (complete)
+- ✅ ~~Function declarations~~ (complete)
+- `#include` directive: 1-2 weeks
 - Struct improvements (proper member offsets): 1 week
+- Extern storage class: 3-5 days
 - Testing and debugging: 1-2 weeks
 
-**Total estimated effort**: 4-7 weeks for full self-hosting capability
+**Total estimated effort**: 3-5 weeks for full self-hosting capability
 
 **Current blockers**:
 1. `#include` directive implementation (critical)
-2. `va_arg` mechanism for variadic functions
-3. Proper struct member offset calculation
+2. Proper struct member offset calculation
+3. `extern` storage class (minor)
 
 ## Alternative Approach: Limited Self-Hosting
 
@@ -148,10 +155,11 @@ This could be achieved in 4-6 weeks and would serve as a proof of concept.
 
 ## Conclusion
 
-The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With most critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, and basic preprocessor), only three main obstacles remain:
+The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With nearly all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, basic preprocessor, function declarations, and variadic functions), only two main obstacles remain:
 
 1. **#include directive** - The most critical missing piece
-2. **va_arg mechanism** - For full variadic function support
-3. **Struct member offsets** - Currently hardcoded, needs proper calculation
+2. **Struct member offsets** - Currently hardcoded, needs proper calculation
 
-Given the substantial progress made, full self-hosting could realistically be achieved in 4-7 weeks. The compiler already has 90% of the features needed, and the remaining work is well-understood and straightforward to implement.
+Additionally, the `extern` storage class would be helpful but is not strictly blocking.
+
+Given the substantial progress made, full self-hosting could realistically be achieved in 3-5 weeks. The compiler already has ~95% of the features needed, and the remaining work is well-understood and straightforward to implement.

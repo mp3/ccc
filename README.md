@@ -41,6 +41,7 @@ A C89 subset compiler that generates LLVM IR, supporting a comprehensive set of 
 
 #### Functions
 - **Function definitions**: With parameters and return values
+- **Function declarations**: Function prototypes without bodies
 - **Function calls**: With argument passing
 - **Recursive functions**: Full recursion support
 - **Variadic functions**: Functions with variable arguments `(...)`
@@ -197,11 +198,11 @@ All features listed above are fully implemented and tested.
 
 ### Known Limitations
 - Only `int` and `char` primitive types (no `float`, `double`, `long`, etc.)
-- No preprocessor support (`#include`, `#define`, etc.)
-- Limited standard library (only `putchar`/`getchar`)
+- Limited preprocessor support (no `#include` directive yet)
+- Limited standard library integration
 - No inline assembly
 - Single translation unit only (no linking multiple .c files)
-- Variadic functions require manual argument handling (no `stdarg.h`)
+- Basic variadic function support (simplified `va_arg` implementation)
 
 ## Testing
 
@@ -257,18 +258,19 @@ Significant progress has been made on self-hosting capabilities:
 - **Struct Member Access**: Basic struct declarations and member access (with limitations)
 - **Standard Library Bridge**: Integration with libc functions (malloc, printf, etc.)
 - **Preprocessor**: Basic macro expansion and conditional compilation
+- **Function Declarations**: Function prototypes without bodies for header files
+- **Variadic Functions**: Basic support with `...` syntax and builtin va_* functions
 
 ⚠️ **Remaining Obstacles**:
-1. **Preprocessor**: Limited to basic macros, no `#include` support yet
-2. **Variadic Function Implementation**: Declaration parsing exists but va_arg mechanism incomplete
-3. **Struct Support**: Member offsets are hardcoded, needs proper type system integration
+1. **Include Directive**: The `#include` preprocessor directive for header files
+2. **Struct Member Offsets**: Currently hardcoded, needs proper type system integration
+3. **Extern Storage Class**: For external variable declarations
 
-The compiler is very close to achieving self-hosting. With the standard library bridge in place, many missing features have been addressed.
+The compiler is now ~95% complete for self-hosting. With function declarations and variadic support added, only the #include directive remains as a critical blocker.
 
 ## Next Steps
 
 - [ ] Implement `#include` directive for header files
-- [ ] Complete variadic function implementation (va_arg mechanism)
 - [ ] Fix struct member offset calculation (currently hardcoded)
 - [ ] Add `extern` storage class support
 - [ ] Achieve full self-hosting capability
