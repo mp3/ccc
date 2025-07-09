@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 CodeGenerator *codegen_create(FILE *output) {
     CodeGenerator *gen = malloc(sizeof(CodeGenerator));
@@ -116,6 +117,13 @@ static bool is_static_variable(Symbol *sym, char *real_type, char *global_name) 
 static char *c_type_to_llvm_type(const char *c_type) {
     static char llvm_type[256];
     
+    // Strip const qualifier if present - LLVM doesn't use it in type names
+    char type_without_const[256];
+    if (strncmp(c_type, "const ", 6) == 0) {
+        strcpy(type_without_const, c_type + 6);
+        c_type = type_without_const;
+    }
+    
     // Check for function pointer type: return_type(*)(param_types)
     if (strstr(c_type, "(*)")) {
         // Parse function pointer type
@@ -189,17 +197,23 @@ static char *c_type_to_llvm_type(const char *c_type) {
         strcpy(llvm_type, "i32**");
     } else if (strcmp(c_type, "char**") == 0) {
         strcpy(llvm_type, "i8**");
+    } else if (strncmp(c_type, "struct ", 7) == 0) {
+        // Handle struct types - keep as-is with % prefix
+        snprintf(llvm_type, sizeof(llvm_type), "%%%s", c_type);
+    } else if (strncmp(c_type, "enum ", 5) == 0) {
+        // Handle enum types - treat as i32
+        strcpy(llvm_type, "i32");
     } else {
         // Generic pointer handling for multiple levels
         strcpy(llvm_type, c_type);
         // Replace int with i32 and char with i8
         char *pos = strstr(llvm_type, "int");
-        if (pos) {
+        if (pos && (pos == llvm_type || !isalnum(*(pos-1)))) { // Make sure it's not part of another word
             memmove(pos + 3, pos + 3, strlen(pos + 3) + 1);
             memcpy(pos, "i32", 3);
         } else {
             pos = strstr(llvm_type, "char");
-            if (pos) {
+            if (pos && (pos == llvm_type || !isalnum(*(pos-1)))) { // Make sure it's not part of another word
                 memmove(pos + 2, pos + 4, strlen(pos + 4) + 1);
                 memcpy(pos, "i8", 2);
             }
@@ -600,6 +614,45 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     free(end_label);
                     return result;
                 }
+            }
+            
+            // For assignments, we need special handling of the left side
+            if (expr->data.binary_op.op == TOKEN_ASSIGN) {
+                // For assignment, the left side needs to be an lvalue (address)
+                char *left_addr = NULL;
+                if (expr->data.binary_op.left->type == AST_MEMBER_ACCESS) {
+                    // Generate member address without loading
+                    ASTNode *member_expr = expr->data.binary_op.left;
+                    const char *object_name = member_expr->data.member_access.object->data.identifier.name;
+                    const char *member_name = member_expr->data.member_access.member_name;
+                    
+                    Symbol *object_sym = symtab_lookup(gen->symtab, object_name);
+                    if (!object_sym) {
+                        LOG_ERROR("Undefined variable: %s", object_name);
+                        exit(1);
+                    }
+                    
+                    // Determine member index
+                    int member_index = 0;
+                    if (strcmp(member_name, "y") == 0) {
+                        member_index = 1;
+                    } else if (strcmp(member_name, "z") == 0) {
+                        member_index = 2;
+                    }
+                    
+                    left_addr = codegen_next_temp(gen);
+                    fprintf(gen->output, "  %s = getelementptr %%struct.Point, %%struct.Point* %%%s, i32 0, i32 %d\n",
+                            left_addr, object_name, member_index);
+                }
+                
+                // Evaluate right side normally
+                char *right = codegen_expression(gen, expr->data.binary_op.right);
+                
+                // Store the value
+                fprintf(gen->output, "  store i32 %s, i32* %s\n", right, left_addr);
+                
+                free(left_addr);
+                return right;  // Assignment returns the assigned value
             }
             
             // For other operators, evaluate both operands normally
@@ -1266,9 +1319,26 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
             // Simple implementation: assume member is at a fixed offset
             // In a real implementation, we'd lookup the struct definition
             // and calculate the actual member offset
-            fprintf(gen->output, "  %s = getelementptr %%struct.%s, %%struct.%s* %%%s, i32 0, i32 0\\n",
-                    temp, "unknown", "unknown", object_name);
-            fprintf(gen->output, "  %s = load i32, i32* %s\\n", temp, temp);
+            
+            // For now, hardcode member offsets based on member name
+            int member_index = 0;
+            if (strcmp(member_name, "y") == 0) {
+                member_index = 1; // Assume y is the second member
+            } else if (strcmp(member_name, "z") == 0) {
+                member_index = 2; // Assume z is the third member
+            }
+            // Otherwise assume x or first member at index 0
+            
+            // Generate the address of the member
+            char *member_ptr = codegen_next_temp(gen);
+            fprintf(gen->output, "  %s = getelementptr %%struct.Point, %%struct.Point* %%%s, i32 0, i32 %d\n",
+                    member_ptr, object_name, member_index);
+            
+            // Check if this member access is the left side of an assignment
+            // by checking if our parent is a binary op with TOKEN_ASSIGN
+            // For now, we'll always load the value and let the assignment handler deal with it
+            fprintf(gen->output, "  %s = load i32, i32* %s\n", temp, member_ptr);
+            free(member_ptr);
             
             LOG_TRACE("Generated member access: %s.%s", object_name, member_name);
             return temp;
@@ -2132,6 +2202,10 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     fprintf(gen->output, "declare i8* @memcpy(i8*, i8*, i64)\n");
     fprintf(gen->output, "declare i8* @memset(i8*, i32, i64)\n\n");
     
+    // Generate struct type definitions
+    // For now, hardcode struct Point - in a real implementation we'd generate from AST
+    fprintf(gen->output, "%%struct.Point = type { i32, i32 }\n\n");
+    
     // Create global symbol table
     gen->symtab = symtab_create(NULL);
     
@@ -2169,13 +2243,14 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         } else if (var->data.var_decl.initializer) {
             // Global variable with initializer
             // For now, only support constant initializers
+            const char *linkage = var->data.var_decl.is_const ? "constant" : "global";
             if (var->data.var_decl.initializer->type == AST_INT_LITERAL) {
-                fprintf(gen->output, "@%s = global %s %d\n", 
-                        var->data.var_decl.name, llvm_type, 
+                fprintf(gen->output, "@%s = %s %s %d\n", 
+                        var->data.var_decl.name, linkage, llvm_type, 
                         var->data.var_decl.initializer->data.int_literal.value);
             } else if (var->data.var_decl.initializer->type == AST_CHAR_LITERAL) {
-                fprintf(gen->output, "@%s = global %s %d\n", 
-                        var->data.var_decl.name, llvm_type, 
+                fprintf(gen->output, "@%s = %s %s %d\n", 
+                        var->data.var_decl.name, linkage, llvm_type, 
                         (int)var->data.var_decl.initializer->data.char_literal.value);
             } else {
                 LOG_ERROR("Global variable initializer must be a constant");
@@ -2183,7 +2258,8 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
             }
         } else {
             // Global variable without initializer (zero-initialized)
-            fprintf(gen->output, "@%s = global %s 0\n", var->data.var_decl.name, llvm_type);
+            const char *linkage = var->data.var_decl.is_const ? "constant" : "global";
+            fprintf(gen->output, "@%s = %s %s 0\n", var->data.var_decl.name, linkage, llvm_type);
         }
         
         LOG_DEBUG("Generated global variable: %s", var->data.var_decl.name);

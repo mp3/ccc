@@ -724,7 +724,8 @@ static ASTNode *parse_assignment(Parser *parser) {
         op_type == TOKEN_STAR_ASSIGN ||
         op_type == TOKEN_SLASH_ASSIGN) {
         
-        if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS && left->type != AST_DEREFERENCE) {
+        if (left->type != AST_IDENTIFIER && left->type != AST_ARRAY_ACCESS && 
+            left->type != AST_DEREFERENCE && left->type != AST_MEMBER_ACCESS) {
             LOG_ERROR("Invalid assignment target at %d:%d", 
                      left->line, left->column);
             exit(1);
@@ -810,6 +811,13 @@ static char *parse_type(Parser *parser, char **identifier) {
               token_type_to_string(parser->current_token->type),
               parser->current_token->line,
               parser->current_token->column);
+    
+    // Check for const qualifier
+    bool is_const = false;
+    if (parser->current_token->type == TOKEN_KEYWORD_CONST) {
+        is_const = true;
+        parser_advance(parser);
+    }
     
     // Parse base type
     char *base_type = NULL;
@@ -922,7 +930,11 @@ static char *parse_type(Parser *parser, char **identifier) {
         
         // Build function pointer type string
         char *func_ptr_type = malloc(512);
-        snprintf(func_ptr_type, 512, "%s(*)(%s)", base_type, param_types);
+        if (is_const) {
+            snprintf(func_ptr_type, 512, "const %s(*)(%s)", base_type, param_types);
+        } else {
+            snprintf(func_ptr_type, 512, "%s(*)(%s)", base_type, param_types);
+        }
         free(base_type);
         return func_ptr_type;
     }
@@ -942,7 +954,12 @@ static char *parse_type(Parser *parser, char **identifier) {
     
     // Build the complete type string
     char type_name[256];
-    strcpy(type_name, base_type);
+    if (is_const) {
+        strcpy(type_name, "const ");
+        strcat(type_name, base_type);
+    } else {
+        strcpy(type_name, base_type);
+    }
     for (int i = 0; i < pointer_count; i++) {
         strcat(type_name, "*");
     }
@@ -989,83 +1006,11 @@ ASTNode *parse_statement(Parser *parser) {
               token->line,
               token->column);
     
-    // Struct declaration
-    LOG_TRACE("Checking for struct/union, token: %s", token_type_to_string(token->type));
-    if (token->type == TOKEN_KEYWORD_STRUCT || token->type == TOKEN_KEYWORD_UNION) {
-        bool is_union = (token->type == TOKEN_KEYWORD_UNION);
-        parser_advance(parser); // consume 'struct' or 'union'
-        
-        Token *name_token = parser->current_token;
-        char *struct_name = strdup(name_token->text);
-        parser_expect(parser, TOKEN_IDENTIFIER);
-        parser_expect(parser, TOKEN_LBRACE);
-        
-        // Parse struct members
-        int capacity = 8;
-        ASTNode **members = malloc(capacity * sizeof(ASTNode*));
-        int member_count = 0;
-        
-        while (parser->current_token->type != TOKEN_RBRACE) {
-            if (member_count >= capacity) {
-                capacity *= 2;
-                members = realloc(members, capacity * sizeof(ASTNode*));
-            }
-            
-            // Parse member declaration (similar to variable declaration)
-            if (parser->current_token->type == TOKEN_KEYWORD_INT || 
-                parser->current_token->type == TOKEN_KEYWORD_CHAR) {
-                
-                char *member_type = strdup(parser->current_token->type == TOKEN_KEYWORD_INT ? "int" : "char");
-                parser_advance(parser);
-                
-                // Check for pointer type
-                int pointer_count = 0;
-                while (parser->current_token->type == TOKEN_STAR) {
-                    pointer_count++;
-                    parser_advance(parser);
-                }
-                
-                // Build the complete type string  
-                char type_name[256];
-                strcpy(type_name, member_type);
-                for (int i = 0; i < pointer_count; i++) {
-                    strcat(type_name, "*");
-                }
-                
-                Token *member_name_token = parser->current_token;
-                char *member_name = strdup(member_name_token->text);
-                parser_expect(parser, TOKEN_IDENTIFIER);
-                parser_expect(parser, TOKEN_SEMICOLON);
-                
-                // Create member declaration node
-                ASTNode *member = create_ast_node(AST_VAR_DECL, member_name_token->line, member_name_token->column);
-                member->data.var_decl.type = strdup(type_name);
-                member->data.var_decl.name = member_name;
-                member->data.var_decl.initializer = NULL;
-                member->data.var_decl.array_size = NULL;
-                member->data.var_decl.is_static = false;
-                member->data.var_decl.is_global = false;
-                
-                members[member_count++] = member;
-                free(member_type);
-            } else {
-                LOG_ERROR("Expected type in struct member declaration");
-                exit(1);
-            }
-        }
-        
-        parser_expect(parser, TOKEN_RBRACE);
-        parser_expect(parser, TOKEN_SEMICOLON);
-        
-        // Create struct/union declaration node
-        ASTNode *node = create_ast_node(is_union ? AST_UNION_DECL : AST_STRUCT_DECL, 
-                                        name_token->line, name_token->column);
-        node->data.struct_decl.name = struct_name;
-        node->data.struct_decl.members = members;
-        node->data.struct_decl.member_count = member_count;
-        
-        return node;
-    }
+    // Don't parse struct declarations inside functions - they should be at top level
+    // Just fall through to variable declaration handling
+    
+    // Update token  
+    token = parser->current_token;
     
     // Check for static keyword
     bool is_static = false;
@@ -1092,7 +1037,9 @@ ASTNode *parse_statement(Parser *parser) {
         parser->current_token->type == TOKEN_KEYWORD_CHAR ||
         parser->current_token->type == TOKEN_KEYWORD_FLOAT ||
         parser->current_token->type == TOKEN_KEYWORD_DOUBLE ||
-        parser->current_token->type == TOKEN_KEYWORD_VOID) {
+        parser->current_token->type == TOKEN_KEYWORD_VOID ||
+        parser->current_token->type == TOKEN_KEYWORD_STRUCT ||
+        parser->current_token->type == TOKEN_KEYWORD_ENUM) {
         LOG_TRACE("Attempting to parse variable declaration starting with %s",
                   token_type_to_string(token->type));
         char *var_name = NULL;
@@ -1419,45 +1366,32 @@ ASTNode *parse_statement(Parser *parser) {
 }
 
 static ASTNode *parse_parameter(Parser *parser) {
-    char *base_type = NULL;
-    if (parser->current_token->type == TOKEN_KEYWORD_INT) {
-        base_type = strdup("int");
-        parser_advance(parser);
-    } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
-        base_type = strdup("char");
-        parser_advance(parser);
-    } else if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
-        base_type = strdup("void");
-        parser_advance(parser);
-    } else {
+    // Use parse_type to handle const and other qualifiers
+    char *param_name = NULL;
+    char *type_name = parse_type(parser, &param_name);
+    
+    if (!type_name) {
         LOG_ERROR("Expected type specifier but got %s", 
                   token_type_to_string(parser->current_token->type));
         exit(1);
     }
     
-    // Check for pointer type
-    int pointer_count = 0;
-    while (parser->current_token->type == TOKEN_STAR) {
-        pointer_count++;
+    // If parse_type didn't get the identifier, get it now
+    if (!param_name && parser->current_token->type == TOKEN_IDENTIFIER) {
+        param_name = strdup(parser->current_token->text);
         parser_advance(parser);
     }
     
-    // Build the complete type string
-    char type_name[256];
-    strcpy(type_name, base_type);
-    for (int i = 0; i < pointer_count; i++) {
-        strcat(type_name, "*");
+    if (!param_name) {
+        LOG_ERROR("Expected parameter name");
+        exit(1);
     }
-    free(base_type);
     
-    Token *name_token = parser->current_token;
-    char *param_name = strdup(name_token->text);
-    int param_line = name_token->line;
-    int param_column = name_token->column;
-    parser_expect(parser, TOKEN_IDENTIFIER);
+    int param_line = parser->current_token->line;
+    int param_column = parser->current_token->column;
     
     ASTNode *param = create_ast_node(AST_PARAM_DECL, param_line, param_column);
-    param->data.param_decl.type = strdup(type_name);
+    param->data.param_decl.type = type_name;
     param->data.param_decl.name = param_name;
     
     return param;
@@ -1496,7 +1430,7 @@ static ASTNode *parse_function(Parser *parser, bool is_static) {
         var_node->data.var_decl.type = type_name;
         var_node->data.var_decl.name = name;
         var_node->data.var_decl.is_static = false;
-        var_node->data.var_decl.is_const = false;
+        var_node->data.var_decl.is_const = (strstr(type_name, "const") != NULL);
         var_node->data.var_decl.is_global = true;
         
         // Check for array
@@ -1832,6 +1766,81 @@ static ASTNode *parse_global_variable(Parser *parser) {
     return var_decl;
 }
 
+static ASTNode *parse_struct_declaration(Parser *parser, char *struct_name) {
+    LOG_DEBUG("Parsing struct declaration: %s", struct_name);
+    
+    ASTNode *struct_node = create_ast_node(AST_STRUCT_DECL, 
+                                          parser->current_token->line, 
+                                          parser->current_token->column);
+    struct_node->data.struct_decl.name = struct_name;
+    
+    parser_expect(parser, TOKEN_LBRACE); // consume '{'
+    
+    // Parse struct members
+    int member_capacity = 8;
+    struct_node->data.struct_decl.members = malloc(member_capacity * sizeof(ASTNode*));
+    struct_node->data.struct_decl.member_count = 0;
+    
+    while (parser->current_token->type != TOKEN_RBRACE && 
+           parser->current_token->type != TOKEN_EOF) {
+        // Parse member type
+        char *member_type = parse_type(parser, NULL);
+        if (!member_type) {
+            LOG_ERROR("Expected member type in struct");
+            ast_destroy(struct_node);
+            return NULL;
+        }
+        
+        // Parse member name
+        if (parser->current_token->type != TOKEN_IDENTIFIER) {
+            LOG_ERROR("Expected member name after type");
+            free(member_type);
+            ast_destroy(struct_node);
+            return NULL;
+        }
+        
+        // Create member node
+        ASTNode *member = create_ast_node(AST_VAR_DECL, 
+                                        parser->current_token->line,
+                                        parser->current_token->column);
+        member->data.var_decl.type = member_type;
+        member->data.var_decl.name = strdup(parser->current_token->text);
+        member->data.var_decl.initializer = NULL;
+        member->data.var_decl.array_size = NULL;
+        member->data.var_decl.is_static = false;
+        member->data.var_decl.is_const = false;
+        member->data.var_decl.is_global = false;
+        
+        parser_advance(parser); // consume member name
+        
+        // Check for array
+        if (parser->current_token->type == TOKEN_LBRACKET) {
+            parser_advance(parser);
+            if (parser->current_token->type != TOKEN_RBRACKET) {
+                member->data.var_decl.array_size = parse_expression(parser);
+            }
+            parser_expect(parser, TOKEN_RBRACKET);
+        }
+        
+        parser_expect(parser, TOKEN_SEMICOLON);
+        
+        // Add member to struct
+        if (struct_node->data.struct_decl.member_count >= member_capacity) {
+            member_capacity *= 2;
+            struct_node->data.struct_decl.members = realloc(struct_node->data.struct_decl.members,
+                                                           member_capacity * sizeof(ASTNode*));
+        }
+        struct_node->data.struct_decl.members[struct_node->data.struct_decl.member_count++] = member;
+    }
+    
+    parser_expect(parser, TOKEN_RBRACE); // consume '}'
+    parser_expect(parser, TOKEN_SEMICOLON); // consume ';'
+    
+    LOG_DEBUG("Parsed struct %s with %d members", struct_name, struct_node->data.struct_decl.member_count);
+    
+    return struct_node;
+}
+
 ASTNode *parser_parse(Parser *parser) {
     ASTNode *program = create_ast_node(AST_PROGRAM, 1, 1);
     
@@ -1867,6 +1876,57 @@ ASTNode *parser_parse(Parser *parser) {
             }
             program->data.program.enums[program->data.program.enum_count++] = 
                 parse_enum(parser);
+        } else if (parser->current_token->type == TOKEN_KEYWORD_STRUCT) {
+            // Check if this is a struct declaration or just a struct variable
+            Token *saved_token = parser->current_token;
+            parser_advance(parser); // consume 'struct'
+            
+            if (parser->current_token->type == TOKEN_IDENTIFIER) {
+                char *struct_name = strdup(parser->current_token->text);
+                parser_advance(parser); // consume struct name
+                
+                if (parser->current_token->type == TOKEN_LBRACE) {
+                    // This is a struct declaration - parse it
+                    ASTNode *struct_decl = parse_struct_declaration(parser, struct_name);
+                    // For now, we'll add it to typedefs since there's no structs array in program
+                    if (program->data.program.typedef_count >= typedef_capacity) {
+                        typedef_capacity *= 2;
+                        program->data.program.typedefs = realloc(program->data.program.typedefs,
+                                                                typedef_capacity * sizeof(ASTNode*));
+                    }
+                    program->data.program.typedefs[program->data.program.typedef_count++] = struct_decl;
+                    free(struct_name);
+                } else {
+                    // Not a struct declaration, rewind and let parse_function handle it
+                    parser->current_token = saved_token;
+                    parser->peek_token = lexer_next_token(parser->lexer);
+                    
+                    // Parse as function or global variable
+                    if (program->data.program.function_count >= func_capacity) {
+                        func_capacity *= 2;
+                        program->data.program.functions = realloc(program->data.program.functions,
+                                                                 func_capacity * sizeof(ASTNode*));
+                    }
+                    
+                    ASTNode *node = parse_function(parser, false);
+                    if (node) {
+                        if (node->type == AST_FUNCTION) {
+                            program->data.program.functions[program->data.program.function_count++] = node;
+                        } else if (node->type == AST_VAR_DECL) {
+                            if (program->data.program.global_var_count >= var_capacity) {
+                                var_capacity *= 2;
+                                program->data.program.global_vars = realloc(program->data.program.global_vars,
+                                                                           var_capacity * sizeof(ASTNode*));
+                            }
+                            program->data.program.global_vars[program->data.program.global_var_count++] = node;
+                        }
+                    }
+                    free(struct_name);
+                }
+            } else {
+                LOG_ERROR("Expected struct name after 'struct'");
+                return NULL;
+            }
         } else if (parser->current_token->type == TOKEN_KEYWORD_STATIC) {
             // Static function or variable
             parser_advance(parser); // consume 'static'
@@ -2260,6 +2320,15 @@ void ast_print(ASTNode *node, int indent) {
             for (int i = 0; i < indent; i++) printf("  ");
             printf("}\n");
             break;
+        case AST_STRUCT_DECL:
+            printf("Struct: %s {\n", node->data.struct_decl.name);
+            for (int i = 0; i < node->data.struct_decl.member_count; i++) {
+                for (int j = 0; j < indent + 1; j++) printf("  ");
+                ast_print(node->data.struct_decl.members[i], indent + 1);
+            }
+            for (int i = 0; i < indent; i++) printf("  ");
+            printf("}\n");
+            break;
         default:
             printf("Unknown node type: %d\n", node->type);
     }
@@ -2318,6 +2387,14 @@ ASTNode *ast_clone(ASTNode *node) {
             for (int i = 0; i < clone->data.enum_decl.enumerator_count; i++) {
                 clone->data.enum_decl.enumerator_names[i] = strdup(node->data.enum_decl.enumerator_names[i]);
                 clone->data.enum_decl.enumerator_values[i] = node->data.enum_decl.enumerator_values[i];
+            }
+            break;
+        case AST_STRUCT_DECL:
+            clone->data.struct_decl.name = strdup(node->data.struct_decl.name);
+            clone->data.struct_decl.member_count = node->data.struct_decl.member_count;
+            clone->data.struct_decl.members = malloc(clone->data.struct_decl.member_count * sizeof(ASTNode*));
+            for (int i = 0; i < clone->data.struct_decl.member_count; i++) {
+                clone->data.struct_decl.members[i] = ast_clone(node->data.struct_decl.members[i]);
             }
             break;
         default:
