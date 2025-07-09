@@ -21,6 +21,21 @@ typedef struct StaticVariable {
     struct StaticVariable *next;
 } StaticVariable;
 
+typedef struct StructMember {
+    char *name;
+    char *type;
+    int offset;
+    int size;
+} StructMember;
+
+typedef struct StructType {
+    char *name;
+    StructMember *members;
+    int member_count;
+    int total_size;
+    struct StructType *next;
+} StructType;
+
 typedef struct {
     FILE *output;
     int temp_counter;
@@ -37,6 +52,8 @@ typedef struct {
     // Enum storage
     ASTNode **enums;
     int enum_count;
+    // Struct type registry
+    StructType *struct_types;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);

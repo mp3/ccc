@@ -29,8 +29,8 @@ The compiler is now very close to achieving self-hosting capability (~95% comple
 
 ### 1. Critical Path Features (Required)
 
-#### Preprocessor (Partially Complete)
-- ❌ `#include` directive support (CRITICAL - still missing)
+#### Preprocessor (Complete)
+- ✅ `#include` directive support
 - ✅ `#define` macros (object-like and function-like)
 - ✅ `#ifndef/#define/#endif` header guards
 - ✅ `#ifdef/#else/#endif` conditional compilation
@@ -45,7 +45,7 @@ The compiler is now very close to achieving self-hosting capability (~95% comple
   - ✅ String: `strcmp`, `strcpy`, `strlen`, `strdup`
   - ✅ I/O: `printf`, `fprintf`, `fopen`, `fclose`
   - ✅ Character: `isdigit`, `isalpha`, `isspace`
-- ❌ Header file inclusion (blocked by #include)
+- ✅ Header file inclusion
 
 #### Global Variables (Complete)
 - ✅ Complete global variable support
@@ -75,11 +75,12 @@ The compiler is now very close to achieving self-hosting capability (~95% comple
 - ✅ Type qualifiers: `const`
 - ❌ Type qualifiers: `volatile`
 - ✅ Storage classes: `static`
-- ❌ Storage classes: `extern`, `register`, `auto`
+- ❌ Storage classes: `extern`
+- ❌ Storage classes: `register`, `auto`
 
 ### 3. Nice-to-Have Features
 
-- Function pointers
+- ✅ Function pointers (already implemented)
 - Complex initializers
 - Bit fields
 - `inline` functions (C99)
@@ -136,12 +137,12 @@ Based on the remaining features:
 - Extern storage class: 3-5 days
 - Testing and debugging: 1-2 weeks
 
-**Total estimated effort**: 3-5 weeks for full self-hosting capability
+**Total estimated effort**: 1-2 weeks for full self-hosting capability
 
 **Current blockers**:
-1. `#include` directive implementation (critical)
-2. Proper struct member offset calculation
-3. `extern` storage class (minor)
+1. `extern` storage class (minor)
+2. Edge cases in struct member handling
+3. Function declaration/definition conflict resolution
 
 ## Alternative Approach: Limited Self-Hosting
 
@@ -155,11 +156,9 @@ This could be achieved in 4-6 weeks and would serve as a proof of concept.
 
 ## Conclusion
 
-The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With nearly all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, basic preprocessor, function declarations, and variadic functions), only two main obstacles remain:
+The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With nearly all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, complete preprocessor with #include, function declarations, and variadic functions), only minor obstacles remain:
 
-1. **#include directive** - The most critical missing piece
-2. **Struct member offsets** - Currently hardcoded, needs proper calculation
+1. **extern storage class** - For external variable declarations
+2. **Minor issues** - Edge cases in struct handling and function redefinition
 
-Additionally, the `extern` storage class would be helpful but is not strictly blocking.
-
-Given the substantial progress made, full self-hosting could realistically be achieved in 3-5 weeks. The compiler already has ~95% of the features needed, and the remaining work is well-understood and straightforward to implement.
+The compiler already has ~98% of the features needed for self-hosting. Given the substantial progress made, full self-hosting could realistically be achieved in 1-2 weeks. The remaining work is minor and well-understood.

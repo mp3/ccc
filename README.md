@@ -262,17 +262,16 @@ Significant progress has been made on self-hosting capabilities:
 - **Variadic Functions**: Basic support with `...` syntax and builtin va_* functions
 
 ⚠️ **Remaining Obstacles**:
-1. **Include Directive**: The `#include` preprocessor directive for header files
-2. **Struct Member Offsets**: Currently hardcoded, needs proper type system integration
-3. **Extern Storage Class**: For external variable declarations
+1. **Extern Storage Class**: For external variable declarations
+2. **Minor Issues**: Some edge cases in struct handling and function redefinition
 
-The compiler is now ~95% complete for self-hosting. With function declarations and variadic support added, only the #include directive remains as a critical blocker.
+The compiler is now ~98% complete for self-hosting. The #include directive is implemented, function declarations work, and variadic functions are supported. Only minor features remain.
 
 ## Next Steps
 
-- [ ] Implement `#include` directive for header files
-- [ ] Fix struct member offset calculation (currently hardcoded)
 - [ ] Add `extern` storage class support
+- [ ] Fix edge cases in struct member offset calculation
+- [ ] Resolve function declaration/definition duplication issues
 - [ ] Achieve full self-hosting capability
 
 ## Contributing

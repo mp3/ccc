@@ -20,6 +20,7 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->current_function_name = NULL;
     gen->enums = NULL;
     gen->enum_count = 0;
+    gen->struct_types = NULL;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -52,6 +53,19 @@ void codegen_destroy(CodeGenerator *gen) {
         if (gen->enums) {
             free(gen->enums);
         }
+        // Free struct types
+        StructType *struct_type = gen->struct_types;
+        while (struct_type) {
+            StructType *next = struct_type->next;
+            free(struct_type->name);
+            for (int i = 0; i < struct_type->member_count; i++) {
+                free(struct_type->members[i].name);
+                free(struct_type->members[i].type);
+            }
+            free(struct_type->members);
+            free(struct_type);
+            struct_type = next;
+        }
         free(gen);
     }
 }
@@ -78,6 +92,66 @@ static bool is_global_variable(CodeGenerator *gen, const char *name) {
     // Check if the variable exists in global scope
     Symbol *global_sym = symtab_lookup_local(global_table, name);
     return (global_sym != NULL);
+}
+
+// Helper function to get size of a type
+static int get_type_size(const char *type) {
+    if (strcmp(type, "char") == 0) return 1;
+    if (strcmp(type, "int") == 0) return 4;
+    if (strstr(type, "*")) return 8;  // pointers are 8 bytes
+    if (strstr(type, "struct")) return 4;  // default struct member size
+    return 4;  // default
+}
+
+// Register a struct type and calculate member offsets
+static void register_struct_type(CodeGenerator *gen, ASTNode *struct_decl) {
+    StructType *new_type = malloc(sizeof(StructType));
+    new_type->name = strdup(struct_decl->data.struct_decl.name);
+    new_type->member_count = struct_decl->data.struct_decl.member_count;
+    new_type->members = malloc(new_type->member_count * sizeof(StructMember));
+    new_type->total_size = 0;
+    
+    // Calculate member offsets
+    int current_offset = 0;
+    for (int i = 0; i < new_type->member_count; i++) {
+        ASTNode *member = struct_decl->data.struct_decl.members[i];
+        new_type->members[i].name = strdup(member->data.var_decl.name);
+        new_type->members[i].type = strdup(member->data.var_decl.type);
+        new_type->members[i].size = get_type_size(member->data.var_decl.type);
+        new_type->members[i].offset = current_offset;
+        
+        // Simple alignment: align to size of type (max 4 bytes)
+        int alignment = new_type->members[i].size;
+        if (alignment > 4) alignment = 4;
+        if (current_offset % alignment != 0) {
+            current_offset = ((current_offset / alignment) + 1) * alignment;
+            new_type->members[i].offset = current_offset;
+        }
+        
+        current_offset += new_type->members[i].size;
+    }
+    new_type->total_size = current_offset;
+    
+    // Add to linked list
+    new_type->next = gen->struct_types;
+    gen->struct_types = new_type;
+    
+    LOG_DEBUG("Registered struct type %s with %d members, total size %d",
+              new_type->name, new_type->member_count, new_type->total_size);
+    fprintf(stderr, "DEBUG: Registered struct type %s with %d members\n", 
+            new_type->name, new_type->member_count);
+}
+
+// Find a struct type by name
+static StructType *find_struct_type(CodeGenerator *gen, const char *name) {
+    StructType *type = gen->struct_types;
+    while (type) {
+        if (strcmp(type->name, name) == 0) {
+            return type;
+        }
+        type = type->next;
+    }
+    return NULL;
 }
 
 // Helper function to look up enum constant values
@@ -1415,35 +1489,68 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 exit(1);
             }
             
-            // For now, assume struct member access - in a full implementation 
-            // we'd need to resolve the struct type and find the member offset
-            char *temp = codegen_next_temp(gen);
-            
-            // Simple implementation: assume member is at a fixed offset
-            // In a real implementation, we'd lookup the struct definition
-            // and calculate the actual member offset
-            
-            // For now, hardcode member offsets based on member name
-            int member_index = 0;
-            if (strcmp(member_name, "y") == 0) {
-                member_index = 1; // Assume y is the second member
-            } else if (strcmp(member_name, "z") == 0) {
-                member_index = 2; // Assume z is the third member
+            // Extract struct name from type (e.g., "struct Point" -> "Point")
+            const char *struct_type = object_sym->data_type;
+            char struct_name[256];
+            if (strncmp(struct_type, "struct ", 7) == 0) {
+                strcpy(struct_name, struct_type + 7);
+            } else {
+                LOG_ERROR("Variable %s is not a struct type", object_name);
+                exit(1);
             }
-            // Otherwise assume x or first member at index 0
+            
+            // Look up the struct type
+            StructType *stype = find_struct_type(gen, struct_name);
+            if (!stype) {
+                // Fallback to hardcoded struct.Point for backward compatibility
+                LOG_WARN("Struct type %s not found in registry, using default", struct_name);
+                fprintf(stderr, "WARNING: Struct type %s not found in registry\n", struct_name);
+                int member_index = 0;
+                if (strcmp(member_name, "y") == 0) {
+                    member_index = 1;
+                } else if (strcmp(member_name, "z") == 0) {
+                    member_index = 2;
+                }
+                
+                char *member_ptr = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = getelementptr %%struct.%s, %%struct.%s* %%%s, i32 0, i32 %d\n",
+                        member_ptr, struct_name, struct_name, object_name, member_index);
+                
+                char *temp = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = load i32, i32* %s\n", temp, member_ptr);
+                free(member_ptr);
+                return temp;
+            }
+            
+            // Find the member in the struct type
+            int member_index = -1;
+            char *member_type = NULL;
+            for (int i = 0; i < stype->member_count; i++) {
+                if (strcmp(stype->members[i].name, member_name) == 0) {
+                    member_index = i;
+                    member_type = stype->members[i].type;
+                    break;
+                }
+            }
+            
+            if (member_index == -1) {
+                LOG_ERROR("Member %s not found in struct %s", member_name, struct_name);
+                exit(1);
+            }
             
             // Generate the address of the member
             char *member_ptr = codegen_next_temp(gen);
-            fprintf(gen->output, "  %s = getelementptr %%struct.Point, %%struct.Point* %%%s, i32 0, i32 %d\n",
-                    member_ptr, object_name, member_index);
+            fprintf(gen->output, "  %s = getelementptr %%struct.%s, %%struct.%s* %%%s, i32 0, i32 %d\n",
+                    member_ptr, struct_name, struct_name, object_name, member_index);
             
-            // Check if this member access is the left side of an assignment
-            // by checking if our parent is a binary op with TOKEN_ASSIGN
-            // For now, we'll always load the value and let the assignment handler deal with it
-            fprintf(gen->output, "  %s = load i32, i32* %s\n", temp, member_ptr);
+            // Load the value with the correct type
+            char *temp = codegen_next_temp(gen);
+            const char *llvm_type = c_type_to_llvm_type(member_type);
+            fprintf(gen->output, "  %s = load %s, %s* %s\n", temp, llvm_type, llvm_type, member_ptr);
             free(member_ptr);
             
-            LOG_TRACE("Generated member access: %s.%s", object_name, member_name);
+            LOG_TRACE("Generated member access: %s.%s (index %d, type %s)", 
+                     object_name, member_name, member_index, member_type);
             return temp;
         }
         
@@ -2161,6 +2268,9 @@ static void codegen_statement(CodeGenerator *gen, ASTNode *stmt) {
                 exit(1);
             }
             
+            // Register the struct type for member offset calculation
+            register_struct_type(gen, stmt);
+            
             // Generate LLVM struct type declaration
             fprintf(gen->output, "  ; struct %s definition (members: %d)\n", 
                     stmt->data.struct_decl.name, stmt->data.struct_decl.member_count);
@@ -2330,9 +2440,49 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     fprintf(gen->output, "declare void @llvm.va_end(i8*)\n");
     fprintf(gen->output, "declare void @llvm.va_copy(i8*, i8*)\n\n");
     
+    // Process struct declarations from typedefs to register struct types
+    fprintf(stderr, "DEBUG: Processing %d typedefs\n", ast->data.program.typedef_count);
+    for (int i = 0; i < ast->data.program.typedef_count; i++) {
+        ASTNode *typedef_node = ast->data.program.typedefs[i];
+        fprintf(stderr, "DEBUG: Typedef %d type: %d\n", i, typedef_node->type);
+        if (typedef_node->type == AST_STRUCT_DECL) {
+            register_struct_type(gen, typedef_node);
+        }
+    }
+    
+    // Also process struct declarations from functions (local structs)
+    for (int i = 0; i < ast->data.program.function_count; i++) {
+        ASTNode *func = ast->data.program.functions[i];
+        if (func->data.function.body) {
+            // Process compound statement for struct declarations
+            ASTNode *body = func->data.function.body;
+            for (int j = 0; j < body->data.compound.statement_count; j++) {
+                ASTNode *stmt = body->data.compound.statements[j];
+                if (stmt->type == AST_STRUCT_DECL) {
+                    register_struct_type(gen, stmt);
+                }
+            }
+        }
+    }
+    
     // Generate struct type definitions
-    // For now, hardcode struct Point - in a real implementation we'd generate from AST
-    fprintf(gen->output, "%%struct.Point = type { i32, i32 }\n\n");
+    StructType *stype = gen->struct_types;
+    while (stype) {
+        fprintf(gen->output, "%%struct.%s = type { ", stype->name);
+        for (int i = 0; i < stype->member_count; i++) {
+            if (i > 0) fprintf(gen->output, ", ");
+            const char *llvm_type = c_type_to_llvm_type(stype->members[i].type);
+            fprintf(gen->output, "%s", llvm_type);
+        }
+        fprintf(gen->output, " }\n");
+        stype = stype->next;
+    }
+    
+    // Also generate hardcoded struct.Point for backward compatibility if not already defined
+    if (!find_struct_type(gen, "Point")) {
+        fprintf(gen->output, "%%struct.Point = type { i32, i32 }\n");
+    }
+    fprintf(gen->output, "\n");
     
     // Create global symbol table
     gen->symtab = symtab_create(NULL);
