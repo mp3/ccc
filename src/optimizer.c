@@ -66,11 +66,25 @@ static bool constant_map_get(ConstantMap *map, const char *name, int *value) {
     return false;
 }
 
+static void constant_map_remove(ConstantMap *map, const char *name) {
+    ConstantEntry **entry_ptr = &map->entries;
+    while (*entry_ptr) {
+        ConstantEntry *entry = *entry_ptr;
+        if (strcmp(entry->name, name) == 0) {
+            *entry_ptr = entry->next;
+            free(entry->name);
+            free(entry);
+            return;
+        }
+        entry_ptr = &entry->next;
+    }
+}
+
 Optimizer *optimizer_create(void) {
     Optimizer *opt = malloc(sizeof(Optimizer));
     opt->enable_constant_folding = true;
     opt->enable_dead_code_elimination = true;
-    opt->enable_constant_propagation = true;
+    opt->enable_constant_propagation = false; // Disabled due to loop condition issues
     opt->enable_strength_reduction = true;
     opt->enable_algebraic_simplification = true;
     opt->enable_common_subexpr_elimination = false; // Complex, disabled by default
@@ -105,6 +119,7 @@ static ASTNode *create_int_literal(int value, int line, int column) {
 
 // Forward declaration for helper function
 static void optimize_node_children(ASTNode *node, ASTNode *(*optimize_fn)(Optimizer *, ASTNode *), Optimizer *opt);
+static void invalidate_assigned_vars(Optimizer *opt, ASTNode *node);
 
 // Constant folding for binary operations
 static ASTNode *fold_binary_op(Optimizer *opt, ASTNode *node) {
@@ -790,8 +805,9 @@ ASTNode *optimize_constant_propagation(Optimizer *opt, ASTNode *node) {
     
     switch (node->type) {
         case AST_VAR_DECL:
-            // If initializing with a constant, track it
-            if (node->data.var_decl.initializer && 
+            // If initializing with a constant, track it (but not for static variables)
+            if (!node->data.var_decl.is_static &&
+                node->data.var_decl.initializer && 
                 node->data.var_decl.initializer->type == AST_INT_LITERAL) {
                 constant_map_set(opt->constants, node->data.var_decl.name, 
                                node->data.var_decl.initializer->data.int_literal.value);
@@ -823,9 +839,10 @@ ASTNode *optimize_constant_propagation(Optimizer *opt, ASTNode *node) {
                                node->data.assignment.value->data.int_literal.value);
             } else {
                 // Non-constant assignment invalidates the constant tracking
-                constant_map_set(opt->constants, node->data.assignment.name, 0);
+                constant_map_remove(opt->constants, node->data.assignment.name);
             }
             break;
+            
             
         default:
             // Recursively optimize other node types
@@ -834,6 +851,80 @@ ASTNode *optimize_constant_propagation(Optimizer *opt, ASTNode *node) {
     }
     
     return node;
+}
+
+// Helper function to find and invalidate all variables assigned in a subtree
+static void invalidate_assigned_vars(Optimizer *opt, ASTNode *node) {
+    if (!node) return;
+    
+    switch (node->type) {
+        case AST_ASSIGNMENT:
+            // Remove this variable from constant tracking
+            constant_map_remove(opt->constants, node->data.assignment.name);
+            // Also process the value in case it contains assignments
+            invalidate_assigned_vars(opt, node->data.assignment.value);
+            break;
+            
+        case AST_COMPOUND_STMT:
+            for (int i = 0; i < node->data.compound.statement_count; i++) {
+                invalidate_assigned_vars(opt, node->data.compound.statements[i]);
+            }
+            break;
+            
+        case AST_EXPR_STMT:
+            invalidate_assigned_vars(opt, node->data.expr_stmt.expression);
+            break;
+            
+        case AST_IF_STMT:
+            invalidate_assigned_vars(opt, node->data.if_stmt.then_stmt);
+            if (node->data.if_stmt.else_stmt) {
+                invalidate_assigned_vars(opt, node->data.if_stmt.else_stmt);
+            }
+            break;
+            
+        case AST_WHILE_STMT:
+            invalidate_assigned_vars(opt, node->data.while_stmt.body);
+            break;
+            
+        case AST_DO_WHILE_STMT:
+            invalidate_assigned_vars(opt, node->data.do_while_stmt.body);
+            break;
+            
+        case AST_FOR_STMT:
+            if (node->data.for_stmt.init) {
+                invalidate_assigned_vars(opt, node->data.for_stmt.init);
+            }
+            if (node->data.for_stmt.update) {
+                invalidate_assigned_vars(opt, node->data.for_stmt.update);
+            }
+            invalidate_assigned_vars(opt, node->data.for_stmt.body);
+            break;
+            
+        case AST_SWITCH_STMT:
+            for (int i = 0; i < node->data.switch_stmt.case_count; i++) {
+                invalidate_assigned_vars(opt, node->data.switch_stmt.cases[i]);
+            }
+            if (node->data.switch_stmt.default_case) {
+                invalidate_assigned_vars(opt, node->data.switch_stmt.default_case);
+            }
+            break;
+            
+        case AST_CASE_STMT:
+            for (int i = 0; i < node->data.case_stmt.statement_count; i++) {
+                invalidate_assigned_vars(opt, node->data.case_stmt.statements[i]);
+            }
+            break;
+            
+        case AST_DEFAULT_STMT:
+            for (int i = 0; i < node->data.default_stmt.statement_count; i++) {
+                invalidate_assigned_vars(opt, node->data.default_stmt.statements[i]);
+            }
+            break;
+            
+        default:
+            // For other node types, no action needed
+            break;
+    }
 }
 
 // Placeholder for complex optimizations

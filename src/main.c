@@ -143,13 +143,13 @@ int main(int argc, char **argv) {
         } else if (opt_level == 1) {
             optimizer->enable_constant_folding = true;
             optimizer->enable_dead_code_elimination = false;
-            optimizer->enable_constant_propagation = true;
+            optimizer->enable_constant_propagation = false; // Disabled due to loop issues
             optimizer->enable_strength_reduction = false;
             optimizer->enable_algebraic_simplification = true;
         } else { // opt_level >= 2
             optimizer->enable_constant_folding = true;
             optimizer->enable_dead_code_elimination = true;
-            optimizer->enable_constant_propagation = true;
+            optimizer->enable_constant_propagation = false; // Disabled due to loop issues
             optimizer->enable_strength_reduction = true;
             optimizer->enable_algebraic_simplification = true;
         }
