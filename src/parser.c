@@ -1020,6 +1020,14 @@ ASTNode *parse_statement(Parser *parser) {
         token = parser->current_token;
     }
     
+    // Check for extern keyword
+    bool is_extern = false;
+    if (token->type == TOKEN_KEYWORD_EXTERN) {
+        is_extern = true;
+        parser_advance(parser);
+        token = parser->current_token;
+    }
+    
     // Check for const keyword (can appear before type)
     bool is_const = false;
     if (token->type == TOKEN_KEYWORD_CONST) {
@@ -1081,6 +1089,7 @@ ASTNode *parse_statement(Parser *parser) {
         node->data.var_decl.name = var_name;
         node->data.var_decl.array_size = NULL;
         node->data.var_decl.is_static = is_static;
+        node->data.var_decl.is_extern = is_extern;
         node->data.var_decl.is_const = is_const;
         node->data.var_decl.is_global = false;  // Local variable
         
@@ -1397,7 +1406,7 @@ static ASTNode *parse_parameter(Parser *parser) {
     return param;
 }
 
-static ASTNode *parse_function(Parser *parser, bool is_static) {
+static ASTNode *parse_function(Parser *parser, bool is_static, bool is_extern) {
     LOG_TRACE("parse_function called at %d:%d", 
               parser->current_token->line, parser->current_token->column);
     
@@ -1429,7 +1438,8 @@ static ASTNode *parse_function(Parser *parser, bool is_static) {
         ASTNode *var_node = create_ast_node(AST_VAR_DECL, saved_line, saved_col);
         var_node->data.var_decl.type = type_name;
         var_node->data.var_decl.name = name;
-        var_node->data.var_decl.is_static = false;
+        var_node->data.var_decl.is_static = is_static;
+        var_node->data.var_decl.is_extern = is_extern;
         var_node->data.var_decl.is_const = (strstr(type_name, "const") != NULL);
         var_node->data.var_decl.is_global = true;
         
@@ -1463,6 +1473,7 @@ static ASTNode *parse_function(Parser *parser, bool is_static) {
     node->data.function.name = name;
     node->data.function.return_type = type_name;
     node->data.function.is_static = is_static;
+    node->data.function.is_extern = is_extern;
     
     parser_advance(parser); // consume '('
     
@@ -1918,7 +1929,7 @@ ASTNode *parser_parse(Parser *parser) {
                                                                  func_capacity * sizeof(ASTNode*));
                     }
                     
-                    ASTNode *node = parse_function(parser, false);
+                    ASTNode *node = parse_function(parser, false, false);
                     if (node) {
                         if (node->type == AST_FUNCTION) {
                             program->data.program.functions[program->data.program.function_count++] = node;
@@ -1948,12 +1959,37 @@ ASTNode *parser_parse(Parser *parser) {
             }
             
             // Parse with static flag
-            ASTNode *node = parse_function(parser, true);
+            ASTNode *node = parse_function(parser, true, false);
             if (node) {
                 if (node->type == AST_FUNCTION) {
                     program->data.program.functions[program->data.program.function_count++] = node;
                 } else if (node->type == AST_VAR_DECL) {
                     // Static global variable
+                    if (program->data.program.global_var_count >= var_capacity) {
+                        var_capacity *= 2;
+                        program->data.program.global_vars = realloc(program->data.program.global_vars,
+                                                                   var_capacity * sizeof(ASTNode*));
+                    }
+                    program->data.program.global_vars[program->data.program.global_var_count++] = node;
+                }
+            }
+        } else if (parser->current_token->type == TOKEN_KEYWORD_EXTERN) {
+            // Extern function or variable
+            parser_advance(parser); // consume 'extern'
+            
+            if (program->data.program.function_count >= func_capacity) {
+                func_capacity *= 2;
+                program->data.program.functions = realloc(program->data.program.functions,
+                                                         func_capacity * sizeof(ASTNode*));
+            }
+            
+            // Parse with extern flag
+            ASTNode *node = parse_function(parser, false, true);
+            if (node) {
+                if (node->type == AST_FUNCTION) {
+                    program->data.program.functions[program->data.program.function_count++] = node;
+                } else if (node->type == AST_VAR_DECL) {
+                    // Extern global variable
                     if (program->data.program.global_var_count >= var_capacity) {
                         var_capacity *= 2;
                         program->data.program.global_vars = realloc(program->data.program.global_vars,
@@ -1972,7 +2008,7 @@ ASTNode *parser_parse(Parser *parser) {
             }
             
             // Attempt to parse as function
-            ASTNode *node = parse_function(parser, false);
+            ASTNode *node = parse_function(parser, false, false);
             if (node) {
                 if (node->type == AST_FUNCTION) {
                     program->data.program.functions[program->data.program.function_count++] = node;

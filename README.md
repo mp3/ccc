@@ -46,11 +46,13 @@ A C89 subset compiler that generates LLVM IR, supporting a comprehensive set of 
 - **Recursive functions**: Full recursion support
 - **Variadic functions**: Functions with variable arguments `(...)`
 - **Static variables**: Function-scoped static variables
+- **Extern declarations**: External variable and function declarations
 
 #### Storage Classes
 - **Global variables**: Top-level variable declarations
 - **Local variables**: Function and block-scoped variables
 - **Static variables**: Both global and local static storage
+- **Extern declarations**: External linkage for variables and functions
 
 #### I/O Support
 - **Built-in functions**: `putchar()` and `getchar()` for basic I/O
@@ -260,18 +262,20 @@ Significant progress has been made on self-hosting capabilities:
 - **Preprocessor**: Basic macro expansion and conditional compilation
 - **Function Declarations**: Function prototypes without bodies for header files
 - **Variadic Functions**: Basic support with `...` syntax and builtin va_* functions
+- **Extern Storage Class**: External declarations for variables and functions
 
 ⚠️ **Remaining Obstacles**:
-1. **Extern Storage Class**: For external variable declarations
-2. **Minor Issues**: Some edge cases in struct handling and function redefinition
+1. **Minor Issues**: Some edge cases in struct handling and function redefinition
+2. **Testing**: Comprehensive self-hosting test needed
 
-The compiler is now ~98% complete for self-hosting. The #include directive is implemented, function declarations work, and variadic functions are supported. Only minor features remain.
+The compiler is now ~99% complete for self-hosting. All major features are implemented: #include directive, function declarations, variadic functions, and extern storage class. Only minor edge cases and testing remain.
 
 ## Next Steps
 
-- [ ] Add `extern` storage class support
+- [x] Add `extern` storage class support ✅
 - [ ] Fix edge cases in struct member offset calculation
 - [ ] Resolve function declaration/definition duplication issues
+- [ ] Perform comprehensive self-hosting test
 - [ ] Achieve full self-hosting capability
 
 ## Contributing

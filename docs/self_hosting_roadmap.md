@@ -75,7 +75,7 @@ The compiler is now very close to achieving self-hosting capability (~95% comple
 - ✅ Type qualifiers: `const`
 - ❌ Type qualifiers: `volatile`
 - ✅ Storage classes: `static`
-- ❌ Storage classes: `extern`
+- ✅ Storage classes: `extern`
 - ❌ Storage classes: `register`, `auto`
 
 ### 3. Nice-to-Have Features
@@ -134,15 +134,14 @@ Based on the remaining features:
 - ✅ ~~Function declarations~~ (complete)
 - `#include` directive: 1-2 weeks
 - Struct improvements (proper member offsets): 1 week
-- Extern storage class: 3-5 days
-- Testing and debugging: 1-2 weeks
+- ✅ ~~Extern storage class~~ (complete)
+- Testing and debugging: 3-5 days
 
-**Total estimated effort**: 1-2 weeks for full self-hosting capability
+**Total estimated effort**: 3-5 days for full self-hosting capability
 
 **Current blockers**:
-1. `extern` storage class (minor)
-2. Edge cases in struct member handling
-3. Function declaration/definition conflict resolution
+1. Edge cases in struct member handling
+2. Function declaration/definition conflict resolution
 
 ## Alternative Approach: Limited Self-Hosting
 
@@ -156,9 +155,9 @@ This could be achieved in 4-6 weeks and would serve as a proof of concept.
 
 ## Conclusion
 
-The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With nearly all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, complete preprocessor with #include, function declarations, and variadic functions), only minor obstacles remain:
+The CCC compiler has made tremendous progress and is now within striking distance of achieving self-hosting. With all critical features implemented (global variables, enums, static functions, type casting, const support, standard library bridge, complete preprocessor with #include, function declarations, variadic functions, and extern storage class), only minor obstacles remain:
 
-1. **extern storage class** - For external variable declarations
-2. **Minor issues** - Edge cases in struct handling and function redefinition
+1. **Minor issues** - Edge cases in struct handling and function redefinition
+2. **Testing** - Comprehensive self-hosting test needed
 
-The compiler already has ~98% of the features needed for self-hosting. Given the substantial progress made, full self-hosting could realistically be achieved in 1-2 weeks. The remaining work is minor and well-understood.
+The compiler already has ~99% of the features needed for self-hosting. Given the substantial progress made, full self-hosting could realistically be achieved in a few days. The remaining work consists only of minor bug fixes and testing.

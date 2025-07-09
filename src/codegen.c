@@ -2331,8 +2331,8 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     const char *linkage = func->data.function.is_static ? "internal " : "";
     
     // Check if this is a declaration or definition
-    if (func->data.function.body == NULL) {
-        // Function declaration (prototype) - use "declare"
+    if (func->data.function.body == NULL || func->data.function.is_extern) {
+        // Function declaration (prototype) or extern - use "declare"
         fprintf(gen->output, "declare %s @%s(", ret_llvm_type, func->data.function.name);
         for (int i = 0; i < func->data.function.param_count; i++) {
             if (i > 0) fprintf(gen->output, ", ");
@@ -2510,7 +2510,22 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         // Generate global variable declaration
         char *llvm_type = c_type_to_llvm_type(var->data.var_decl.type);
         
-        if (var->data.var_decl.array_size) {
+        if (var->data.var_decl.is_extern) {
+            // Extern variable - declare but don't define
+            if (var->data.var_decl.array_size) {
+                // Extern array declaration
+                int array_size = 0;
+                if (var->data.var_decl.array_size->type == AST_INT_LITERAL) {
+                    array_size = var->data.var_decl.array_size->data.int_literal.value;
+                }
+                fprintf(gen->output, "@%s = external global [%d x %s]\n", 
+                        var->data.var_decl.name, array_size, llvm_type);
+            } else {
+                // Extern variable declaration
+                fprintf(gen->output, "@%s = external global %s\n", 
+                        var->data.var_decl.name, llvm_type);
+            }
+        } else if (var->data.var_decl.array_size) {
             // Global array declaration
             int array_size = 0;
             if (var->data.var_decl.array_size->type == AST_INT_LITERAL) {

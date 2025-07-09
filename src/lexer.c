@@ -182,6 +182,7 @@ static Token *lexer_read_identifier(Lexer *lexer) {
     else if (strcmp(buffer, "enum") == 0) type = TOKEN_KEYWORD_ENUM;
     else if (strcmp(buffer, "static") == 0) type = TOKEN_KEYWORD_STATIC;
     else if (strcmp(buffer, "const") == 0) type = TOKEN_KEYWORD_CONST;
+    else if (strcmp(buffer, "extern") == 0) type = TOKEN_KEYWORD_EXTERN;
     
     Token *token = create_token(type, buffer, start_line, start_column);
     LOG_TRACE("Lexed %s: %s", token_type_to_string(type), buffer);
@@ -466,7 +467,7 @@ const char *token_type_to_string(TokenType type) {
     static const char *names[] = {
         "EOF", "INT_LITERAL", "FLOAT_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IDENTIFIER", 
         "IF", "ELSE", "WHILE", "DO", "FOR", "BREAK", "CONTINUE", "RETURN", "INT", "CHAR", "FLOAT", "DOUBLE", "VOID", "STRUCT", "UNION", "SIZEOF",
-        "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "CONST", "COLON", "AND", "OR", "NOT",
+        "SWITCH", "CASE", "DEFAULT", "TYPEDEF", "ENUM", "STATIC", "CONST", "EXTERN", "COLON", "AND", "OR", "NOT",
         "PLUS", "MINUS", "STAR", "SLASH", "PERCENT", "LPAREN", "RPAREN", "LBRACE", "RBRACE",
         "SEMICOLON", "ASSIGN", "EQ", "NE", "LT", "GT", "LE", "GE", "COMMA", 
         "LBRACKET", "RBRACKET", "AMPERSAND", "DOT", "PIPE", "CARET", "TILDE", 
