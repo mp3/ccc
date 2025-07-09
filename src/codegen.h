@@ -34,6 +34,9 @@ typedef struct {
     // Loop control labels for break/continue
     char *current_loop_end_label;
     char *current_loop_continue_label;
+    // Enum storage
+    ASTNode **enums;
+    int enum_count;
 } CodeGenerator;
 
 CodeGenerator *codegen_create(FILE *output);

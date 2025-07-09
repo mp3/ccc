@@ -1024,6 +1024,7 @@ ASTNode *parse_statement(Parser *parser) {
                 member->data.var_decl.initializer = NULL;
                 member->data.var_decl.array_size = NULL;
                 member->data.var_decl.is_static = false;
+                member->data.var_decl.is_global = false;
                 
                 members[member_count++] = member;
                 free(member_type);
@@ -1114,6 +1115,7 @@ ASTNode *parse_statement(Parser *parser) {
         node->data.var_decl.array_size = NULL;
         node->data.var_decl.is_static = is_static;
         node->data.var_decl.is_const = is_const;
+        node->data.var_decl.is_global = false;  // Local variable
         
         // Check for array declaration
         if (parser->current_token->type == TOKEN_LBRACKET) {
@@ -1441,47 +1443,74 @@ static ASTNode *parse_parameter(Parser *parser) {
     return param;
 }
 
-static ASTNode *parse_function(Parser *parser) {
+static ASTNode *parse_function(Parser *parser, bool is_static) {
     LOG_TRACE("parse_function called at %d:%d", 
               parser->current_token->line, parser->current_token->column);
-    char *base_type = NULL;
-    if (parser->current_token->type == TOKEN_KEYWORD_INT) {
-        base_type = strdup("int");
-        parser_advance(parser);
-    } else if (parser->current_token->type == TOKEN_KEYWORD_CHAR) {
-        base_type = strdup("char");
-        parser_advance(parser);
-    } else if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
-        base_type = strdup("void");
-        parser_advance(parser);
-    } else {
-        LOG_ERROR("Expected return type but got %s", 
-                  token_type_to_string(parser->current_token->type));
-        exit(1);
+    
+    int saved_line = parser->current_token->line;
+    int saved_col = parser->current_token->column;
+    
+    // Parse the type
+    char *type_name = parse_type(parser, NULL);
+    if (!type_name) {
+        LOG_ERROR("Expected type at %d:%d", saved_line, saved_col);
+        return NULL;
     }
     
-    // Check for pointer return type
-    int pointer_count = 0;
-    while (parser->current_token->type == TOKEN_STAR) {
-        pointer_count++;
-        parser_advance(parser);
+    // Should now be at identifier
+    if (parser->current_token->type != TOKEN_IDENTIFIER) {
+        LOG_ERROR("Expected identifier after type");
+        free(type_name);
+        return NULL;
     }
     
-    // Build the complete return type string
-    char return_type[256];
-    strcpy(return_type, base_type);
-    for (int i = 0; i < pointer_count; i++) {
-        strcat(return_type, "*");
+    char *name = strdup(parser->current_token->text);
+    int name_line = parser->current_token->line;
+    int name_col = parser->current_token->column;
+    parser_advance(parser);
+    
+    // Check what follows - if not '(', it's a global variable
+    if (parser->current_token->type != TOKEN_LPAREN) {
+        // It's a global variable, not a function
+        ASTNode *var_node = create_ast_node(AST_VAR_DECL, saved_line, saved_col);
+        var_node->data.var_decl.type = type_name;
+        var_node->data.var_decl.name = name;
+        var_node->data.var_decl.is_static = false;
+        var_node->data.var_decl.is_const = false;
+        var_node->data.var_decl.is_global = true;
+        
+        // Check for array
+        if (parser->current_token->type == TOKEN_LBRACKET) {
+            parser_advance(parser);
+            if (parser->current_token->type != TOKEN_RBRACKET) {
+                var_node->data.var_decl.array_size = parse_expression(parser);
+            }
+            parser_expect(parser, TOKEN_RBRACKET);
+        } else {
+            var_node->data.var_decl.array_size = NULL;
+        }
+        
+        // Check for initializer
+        if (parser->current_token->type == TOKEN_ASSIGN) {
+            parser_advance(parser);
+            var_node->data.var_decl.initializer = parse_expression(parser);
+        } else {
+            var_node->data.var_decl.initializer = NULL;
+        }
+        
+        parser_expect(parser, TOKEN_SEMICOLON);
+        
+        LOG_DEBUG("Parsed global variable: %s", name);
+        return var_node;
     }
-    free(base_type);
     
-    Token *name_token = parser->current_token;
-    char *func_name = strdup(name_token->text);  // Save the name before advancing
-    int func_line = name_token->line;
-    int func_column = name_token->column;
-    parser_expect(parser, TOKEN_IDENTIFIER);
+    // It's a function - continue parsing
+    ASTNode *node = create_ast_node(AST_FUNCTION, saved_line, saved_col);
+    node->data.function.name = name;
+    node->data.function.return_type = type_name;
+    node->data.function.is_static = is_static;
     
-    parser_expect(parser, TOKEN_LPAREN);
+    parser_advance(parser); // consume '('
     
     // Parse parameters
     int param_capacity = 4;
@@ -1531,9 +1560,6 @@ static ASTNode *parse_function(Parser *parser) {
               parser->current_token->column);
     parser_expect(parser, TOKEN_RPAREN);
     
-    ASTNode *node = create_ast_node(AST_FUNCTION, func_line, func_column);
-    node->data.function.name = func_name;
-    node->data.function.return_type = strdup(return_type);
     node->data.function.params = params;
     node->data.function.param_count = param_count;
     node->data.function.is_variadic = is_variadic;
@@ -1544,18 +1570,43 @@ static ASTNode *parse_function(Parser *parser) {
 }
 
 static bool is_function_declaration(Parser *parser) {
-    (void)parser;  // Suppress unused parameter warning
-    // Simplified approach: try to parse as function first, if it fails, parse as variable
-    // This is based on the observation that functions have '(' after the identifier
-    // while variables have ';' or '=' after the identifier
+    // Try to parse as function first since that's more common
+    // Check current pattern: type [*]* identifier (
     
-    // We'll implement this by attempting to look for specific patterns
-    // For a proper implementation, we'd need better lookahead infrastructure
+    // We must be at a type keyword
+    if (parser->current_token->type != TOKEN_KEYWORD_INT &&
+        parser->current_token->type != TOKEN_KEYWORD_CHAR &&
+        parser->current_token->type != TOKEN_KEYWORD_VOID &&
+        parser->current_token->type != TOKEN_KEYWORD_FLOAT &&
+        parser->current_token->type != TOKEN_KEYWORD_DOUBLE) {
+        return false;
+    }
     
-    // Simple heuristic: if line contains '(' before ';', it's likely a function
-    // For now, let's default to the previous behavior and fix this incrementally
+    // Simple heuristic: if type is void, it's almost certainly a function
+    if (parser->current_token->type == TOKEN_KEYWORD_VOID) {
+        return true;
+    }
     
-    return true;  // Start by defaulting to function parsing
+    // For other types, check if peek token helps us decide
+    Token *peek = parser->peek_token;
+    
+    // If next token is identifier, it could be either
+    if (peek && peek->type == TOKEN_IDENTIFIER) {
+        // No stars between type and identifier
+        // We can't look ahead further, so we'll parse as function by default
+        // and let parse_function fail if it's not
+        return true;
+    }
+    
+    // If next token is *, we might have a pointer
+    if (peek && peek->type == TOKEN_STAR) {
+        // Could be either int *func() or int *var
+        // Default to function
+        return true;
+    }
+    
+    // Default to function (most common at global scope)
+    return true;
 }
 
 static ASTNode *parse_enum(Parser *parser) {
@@ -1718,29 +1769,28 @@ static ASTNode *parse_typedef(Parser *parser) {
 
 static ASTNode *parse_global_variable(Parser *parser) {
     // Parse global variable declaration (similar to local but at global scope)
-    char *base_type = strdup(parser->current_token->type == TOKEN_KEYWORD_INT ? "int" : "char");
-    parser_advance(parser);
+    char *type_name = parse_type(parser, NULL);
     
-    // Check for pointer type
-    int pointer_count = 0;
-    while (parser->current_token->type == TOKEN_STAR) {
-        pointer_count++;
-        parser_advance(parser);
+    if (!type_name) {
+        LOG_ERROR("Failed to parse type for global variable");
+        return NULL;
     }
-    
-    // Build the complete type string
-    char type_name[256];
-    strcpy(type_name, base_type);
-    for (int i = 0; i < pointer_count; i++) {
-        strcat(type_name, "*");
-    }
-    free(base_type);
     
     Token *name_token = parser->current_token;
     char *var_name = strdup(name_token->text);
     int var_line = name_token->line;
     int var_column = name_token->column;
     parser_expect(parser, TOKEN_IDENTIFIER);
+    
+    ASTNode *array_size = NULL;
+    // Check for array declaration
+    if (parser->current_token->type == TOKEN_LBRACKET) {
+        parser_advance(parser);
+        if (parser->current_token->type != TOKEN_RBRACKET) {
+            array_size = parse_expression(parser);
+        }
+        parser_expect(parser, TOKEN_RBRACKET);
+    }
     
     ASTNode *initializer = NULL;
     if (parser->current_token->type == TOKEN_ASSIGN) {
@@ -1754,9 +1804,11 @@ static ASTNode *parse_global_variable(Parser *parser) {
     var_decl->data.var_decl.type = strdup(type_name);
     var_decl->data.var_decl.name = var_name;
     var_decl->data.var_decl.initializer = initializer;
-    var_decl->data.var_decl.array_size = NULL;
+    var_decl->data.var_decl.array_size = array_size;
     var_decl->data.var_decl.is_static = false;
+    var_decl->data.var_decl.is_global = true;  // Mark as global
     
+    free(type_name);
     return var_decl;
 }
 
@@ -1795,15 +1847,55 @@ ASTNode *parser_parse(Parser *parser) {
             }
             program->data.program.enums[program->data.program.enum_count++] = 
                 parse_enum(parser);
-        } else {
-            // Parse function (for now, we'll add global variables later)
+        } else if (parser->current_token->type == TOKEN_KEYWORD_STATIC) {
+            // Static function or variable
+            parser_advance(parser); // consume 'static'
+            
             if (program->data.program.function_count >= func_capacity) {
                 func_capacity *= 2;
                 program->data.program.functions = realloc(program->data.program.functions,
                                                          func_capacity * sizeof(ASTNode*));
             }
-            program->data.program.functions[program->data.program.function_count++] = 
-                parse_function(parser);
+            
+            // Parse with static flag
+            ASTNode *node = parse_function(parser, true);
+            if (node) {
+                if (node->type == AST_FUNCTION) {
+                    program->data.program.functions[program->data.program.function_count++] = node;
+                } else if (node->type == AST_VAR_DECL) {
+                    // Static global variable
+                    if (program->data.program.global_var_count >= var_capacity) {
+                        var_capacity *= 2;
+                        program->data.program.global_vars = realloc(program->data.program.global_vars,
+                                                                   var_capacity * sizeof(ASTNode*));
+                    }
+                    program->data.program.global_vars[program->data.program.global_var_count++] = node;
+                }
+            }
+        } else {
+            // Try to parse as function - this handles both functions and will
+            // internally detect and parse global variables
+            if (program->data.program.function_count >= func_capacity) {
+                func_capacity *= 2;
+                program->data.program.functions = realloc(program->data.program.functions,
+                                                         func_capacity * sizeof(ASTNode*));
+            }
+            
+            // Attempt to parse as function
+            ASTNode *node = parse_function(parser, false);
+            if (node) {
+                if (node->type == AST_FUNCTION) {
+                    program->data.program.functions[program->data.program.function_count++] = node;
+                } else if (node->type == AST_VAR_DECL) {
+                    // parse_function detected it was actually a global variable
+                    if (program->data.program.global_var_count >= var_capacity) {
+                        var_capacity *= 2;
+                        program->data.program.global_vars = realloc(program->data.program.global_vars,
+                                                                   var_capacity * sizeof(ASTNode*));
+                    }
+                    program->data.program.global_vars[program->data.program.global_var_count++] = node;
+                }
+            }
         }
     }
     

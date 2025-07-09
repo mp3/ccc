@@ -65,6 +65,7 @@ typedef struct ASTNode {
             struct ASTNode **params;
             int param_count;
             bool is_variadic;
+            bool is_static;
         } function;
         struct {
             struct ASTNode **statements;
@@ -131,6 +132,7 @@ typedef struct ASTNode {
             struct ASTNode *array_size;  // NULL for non-arrays
             bool is_static;              // true if declared with static keyword
             bool is_const;               // true if declared with const keyword
+            bool is_global;              // true if declared at global scope
         } var_decl;
         struct {
             char *name;

@@ -17,6 +17,8 @@ CodeGenerator *codegen_create(FILE *output) {
     gen->current_loop_end_label = NULL;
     gen->current_loop_continue_label = NULL;
     gen->current_function_name = NULL;
+    gen->enums = NULL;
+    gen->enum_count = 0;
     LOG_DEBUG("Created code generator");
     return gen;
 }
@@ -45,6 +47,10 @@ void codegen_destroy(CodeGenerator *gen) {
             free(svar);
             svar = next;
         }
+        // Free enum array
+        if (gen->enums) {
+            free(gen->enums);
+        }
         free(gen);
     }
 }
@@ -71,6 +77,20 @@ static bool is_global_variable(CodeGenerator *gen, const char *name) {
     // Check if the variable exists in global scope
     Symbol *global_sym = symtab_lookup_local(global_table, name);
     return (global_sym != NULL);
+}
+
+// Helper function to look up enum constant values
+static bool get_enum_value(CodeGenerator *gen, const char *name, int *value) {
+    for (int i = 0; i < gen->enum_count; i++) {
+        ASTNode *enum_node = gen->enums[i];
+        for (int j = 0; j < enum_node->data.enum_decl.enumerator_count; j++) {
+            if (strcmp(enum_node->data.enum_decl.enumerator_names[j], name) == 0) {
+                *value = enum_node->data.enum_decl.enumerator_values[j];
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 // Helper function to check if a symbol is a static variable and extract its info
@@ -307,6 +327,15 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
         }
         
         case AST_IDENTIFIER: {
+            // First check if it's an enum constant
+            int enum_value;
+            if (get_enum_value(gen, expr->data.identifier.name, &enum_value)) {
+                // It's an enum constant - return its value as a literal
+                char *temp = codegen_next_temp(gen);
+                fprintf(gen->output, "  %s = add i32 0, %d\n", temp, enum_value);
+                return temp;
+            }
+            
             Symbol *sym = symtab_lookup(gen->symtab, expr->data.identifier.name);
             if (!sym) {
                 LOG_ERROR("Undefined variable: %s", expr->data.identifier.name);
@@ -409,8 +438,13 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                     // Generate getelementptr to get address of array element
                     char *addr = codegen_next_temp(gen);
                     const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
-                    fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
-                            addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                    
+                    // Check if it's a global array
+                    bool is_global = is_global_variable(gen, name);
+                    const char *prefix = is_global ? "@" : "%";
+                    
+                    fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %s%s, i32 0, i32 %s\n",
+                            addr, sym->array_size, llvm_type, sym->array_size, llvm_type, prefix, sym->name, index);
                     
                     // Store the value - need to check if we need to truncate
                     if (strcmp(llvm_type, "i8") == 0) {
@@ -961,8 +995,13 @@ static char *codegen_expression(CodeGenerator *gen, ASTNode *expr) {
                 // Generate getelementptr to get address of array element
                 char *addr = codegen_next_temp(gen);
                 const char *llvm_type = strcmp(sym->data_type, "char") == 0 ? "i8" : "i32";
-                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %%%s, i32 0, i32 %s\n",
-                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, sym->name, index);
+                
+                // Check if it's a global array
+                bool is_global = is_global_variable(gen, name);
+                const char *prefix = is_global ? "@" : "%";
+                
+                fprintf(gen->output, "  %s = getelementptr [%d x %s], [%d x %s]* %s%s, i32 0, i32 %s\n",
+                        addr, sym->array_size, llvm_type, sym->array_size, llvm_type, prefix, sym->name, index);
                 
                 // Load the value
                 char *value = codegen_next_temp(gen);
@@ -2006,7 +2045,8 @@ static void codegen_function(CodeGenerator *gen, ASTNode *func) {
     
     // Generate function signature
     const char *ret_llvm_type = strcmp(func->data.function.return_type, "char") == 0 ? "i8" : "i32";
-    fprintf(gen->output, "define %s @%s(", ret_llvm_type, func->data.function.name);
+    const char *linkage = func->data.function.is_static ? "internal " : "";
+    fprintf(gen->output, "define %s%s @%s(", linkage, ret_llvm_type, func->data.function.name);
     for (int i = 0; i < func->data.function.param_count; i++) {
         if (i > 0) fprintf(gen->output, ", ");
         const char *param_llvm_type = strcmp(func->data.function.params[i]->data.param_decl.type, "char") == 0 ? "i8" : "i32";
@@ -2071,8 +2111,10 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
     // Generate LLVM IR header
     fprintf(gen->output, "; ModuleID = 'ccc_output'\n");
     fprintf(gen->output, "source_filename = \"ccc_output\"\n");
-    fprintf(gen->output, "target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
-    fprintf(gen->output, "target triple = \"x86_64-unknown-linux-gnu\"\n\n");
+    
+    // Use generic target triple that works on multiple platforms
+    // The specific target will be determined by the LLVM tools at compile time
+    fprintf(gen->output, "\n");
     
     // Declare external functions
     fprintf(gen->output, "declare i32 @putchar(i32)\n");
@@ -2105,10 +2147,26 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
             exit(1);
         }
         
+        // Check if it's an array and set the appropriate flags
+        if (var->data.var_decl.array_size) {
+            sym->is_array = true;
+            if (var->data.var_decl.array_size->type == AST_INT_LITERAL) {
+                sym->array_size = var->data.var_decl.array_size->data.int_literal.value;
+            }
+        }
+        
         // Generate global variable declaration
         char *llvm_type = c_type_to_llvm_type(var->data.var_decl.type);
         
-        if (var->data.var_decl.initializer) {
+        if (var->data.var_decl.array_size) {
+            // Global array declaration
+            int array_size = 0;
+            if (var->data.var_decl.array_size->type == AST_INT_LITERAL) {
+                array_size = var->data.var_decl.array_size->data.int_literal.value;
+            }
+            fprintf(gen->output, "@%s = global [%d x %s] zeroinitializer\n", 
+                    var->data.var_decl.name, array_size, llvm_type);
+        } else if (var->data.var_decl.initializer) {
             // Global variable with initializer
             // For now, only support constant initializers
             if (var->data.var_decl.initializer->type == AST_INT_LITERAL) {
@@ -2161,13 +2219,12 @@ void codegen_generate(CodeGenerator *gen, ASTNode *ast) {
         free(param_names);
     }
     
-    // Process enums - add enum constants to symbol table
-    for (int i = 0; i < ast->data.program.enum_count; i++) {
-        ASTNode *enum_node = ast->data.program.enums[i];
-        for (int j = 0; j < enum_node->data.enum_decl.enumerator_count; j++) {
-            // For now, store enum constants as "int" type in symbol table
-            // This is a simplified approach - enum constants are treated as global constants
-            symtab_insert(gen->symtab, enum_node->data.enum_decl.enumerator_names[j], SYM_VARIABLE, "int");
+    // Process enums - store them in the code generator for later lookup
+    gen->enum_count = ast->data.program.enum_count;
+    if (gen->enum_count > 0) {
+        gen->enums = malloc(gen->enum_count * sizeof(ASTNode*));
+        for (int i = 0; i < gen->enum_count; i++) {
+            gen->enums[i] = ast->data.program.enums[i];
         }
     }
     
